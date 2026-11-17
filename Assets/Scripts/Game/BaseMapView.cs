@@ -343,6 +343,7 @@ namespace SuruSavasi.Game
                 if (sel == k) Draw(circle, new Color(1, .82f, .25f, .45f + .2f * Mathf.Sin(t * 6)), p.x, p.y + 10, 112, 34, 5);
                 if (k == BuildingKind.Wall) Spr(Art.WallGate(tier), p.x, p.y, ord, sc);
                 else if (L == 0) Spr(Art.BaseMisc(busy ? 1 : 0), p.x, p.y, ord);
+                else if (Art.HasCustomBuilding(k, L)) Spr(Art.Building(k, L), p.x, p.y + 4, ord, sc * Art.LevelScale(L));
                 else Spr(Art.Building(k, L), p.x, p.y + 8, ord, sc);
 
                 if (busy)

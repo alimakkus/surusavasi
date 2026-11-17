@@ -56,8 +56,42 @@ namespace SuruSavasi.Game
         static readonly Dictionary<string, Sprite> singles = new Dictionary<string, Sprite>();
 
         /// <summary>Binanın seviyeye göre görseli (1-20). Pivot: binanın harita konumu + 8 piksel.</summary>
-        public static Sprite Building(SuruSavasi.Core.BuildingKind k, int level) =>
-            Pick(Sheet("bld_" + BldNames[(int)k], 5, 4, 320, 36f / 160f, 200), Mathf.Clamp(level, 1, 20) - 1);
+        public static Sprite Building(SuruSavasi.Core.BuildingKind k, int level)
+        {
+            int L = Mathf.Clamp(level, 1, 20);
+            var custom = CustomBuilding(k, L);
+            if (custom != null) return custom;
+            return Pick(Sheet("bld_" + BldNames[(int)k], 5, 4, 320, 36f / 160f, 200), L - 1);
+        }
+
+        // ---------- Çizerden / yapay zekadan gelen bina görselleri ----------
+        // Dosya: Resources/Art/bld/<bina>_t<kademe>.png (Tools/artgen/normalize.py ile hazırlanır).
+        // Tuval 512x768, zemin plakasının ortası (256, 600), plaka genişliği 420 px = oyunda 118 piksel.
+        const float PlateTexWidth = 420f, PlateGameWidth = 118f;
+        static readonly Dictionary<string, Sprite> custom = new Dictionary<string, Sprite>();
+
+        public static int Tier(int level) => (Mathf.Clamp(level, 1, 20) + 3) / 4;
+
+        static Sprite CustomBuilding(SuruSavasi.Core.BuildingKind k, int level)
+        {
+            string key = $"bld/{BldNames[(int)k]}_t{Tier(level)}";
+            if (custom.TryGetValue(key, out var s)) return s;
+            var tex = Resources.Load<Texture2D>("Art/" + key);
+            if (tex != null)
+            {
+                tex.filterMode = FilterMode.Bilinear;
+                float k2 = tex.width / 512f; // içe aktarırken küçültüldüyse oranla
+                s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(.5f, 168f / 768f),
+                    100f * PlateTexWidth / PlateGameWidth * k2, 0, SpriteMeshType.FullRect);
+            }
+            custom[key] = s;
+            return s;
+        }
+
+        public static bool HasCustomBuilding(SuruSavasi.Core.BuildingKind k, int level) => CustomBuilding(k, level) != null;
+
+        /// <summary>Aynı kademe içinde seviye arttıkça bina hafifçe büyür (her seviye görünür bir fark).</summary>
+        public static float LevelScale(int level) => 1f + .03f * ((Mathf.Clamp(level, 1, 20) - 1) % 4);
         /// <summary>0 temel, 1 temel (inşaat), 2 işçi, 3 yük sandığı, 4 çekiç, 5 görev panosu, 6 hazine sandığı.</summary>
         public static Sprite BaseMisc(int i) => Pick(Sheet("base_misc", 7, 1, 320, 44f / 160f, 200), i);
 
@@ -80,7 +114,7 @@ namespace SuruSavasi.Game
         {
             var l = new List<string> { "bosses", "elites", "units", "props", "trees", "base_misc", "base_ground", "logo" };
             for (int m = 0; m < 20; m++) { l.Add($"enemies_m{m:00}"); l.Add($"bg_m{m:00}"); }
-            foreach (var b in BldNames) if (b != "wall") l.Add("bld_" + b);
+            foreach (var b in BldNames) if (b != "wall") { l.Add("bld_" + b); for (int t = 1; t <= 5; t++) l.Add($"bld/{b}_t{t}"); }
             for (int t = 0; t < 6; t++) { l.Add("wall_ring_t" + t); l.Add("wall_gate_t" + t); }
             return l;
         }
