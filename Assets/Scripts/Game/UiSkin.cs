@@ -7,7 +7,7 @@ namespace SuruSavasi.Game
     {
         static Texture2D Rounded(Color fill, Color border, Color top, int s = 32, int r = 9)
         {
-            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave }; // UnloadUnusedAssets silmesin
             var px = new Color[s * s];
             for (int y = 0; y < s; y++)
                 for (int x = 0; x < s; x++)
@@ -26,7 +26,7 @@ namespace SuruSavasi.Game
         /// <summary>Altıgen buton dokusu (üs menüsü).</summary>
         public static Texture2D Hex(Color fill, Color top, Color border, int s = 96)
         {
-            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave }; // UnloadUnusedAssets silmesin
             var px = new Color[s * s]; float c = s / 2f, R = s / 2f - 2;
             for (int y = 0; y < s; y++)
                 for (int x = 0; x < s; x++)
