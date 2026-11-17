@@ -18,6 +18,10 @@ namespace SuruSavasi.Core
         public static float SquadTime(int lv) => 22f - lv * 0.06f;
         public static int RowsOf(int lv) => 8 + lv / 8;
 
+        /// <summary>Zorluk eğrisi: düşman canı (×H), temas hasarı ve tabelalar (×√H). Oyuncunun yükseltmelerle büyüyen
+        /// gücünü takip eder; yükseltme yapmayan oyuncu zamanla takılır. Denge simülasyonuyla ayarlanır.</summary>
+        public static float Difficulty(int lv) => 1f;
+
         /// <summary>Oran = kalan asker / (0.33 * son düşman gücü). 1 ve üstü 3 yıldız, 0.5 ve üstü 2 yıldız.</summary>
         public static int Stars(float ratio) => ratio >= 1f ? 3 : ratio >= 0.5f ? 2 : 1;
 

@@ -9,6 +9,18 @@ namespace SuruSavasi.EditorTools
     /// <summary>Menü: Sürü Savaşı > Denge Simülasyonu. Botla 100 bölümü oynatır, raporları proje kökündeki Balance klasörüne yazar.</summary>
     public static class BalanceSimMenu
     {
+        [MenuItem("Sürü Savaşı/Güç Payı Ölçümü")]
+        public static void Headroom()
+        {
+            var dir = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Balance");
+            Directory.CreateDirectory(dir);
+            var t0 = System.DateTime.Now;
+            EditorUtility.DisplayProgressBar("Denge", "Güç payı ölçülüyor", .5f);
+            try { File.WriteAllText(Path.Combine(dir, "guc_payi.csv"), BalanceModel.HeadroomCurve()); }
+            finally { EditorUtility.ClearProgressBar(); }
+            Debug.Log($"[Denge] Güç payı yazıldı ({(System.DateTime.Now - t0).TotalSeconds:0} sn)");
+        }
+
         [MenuItem("Sürü Savaşı/Denge Simülasyonu")]
         public static void Run()
         {

@@ -46,12 +46,12 @@ namespace SuruSavasi.Core.Battle
         /// <summary>Görünüm için olaylar: vuruş, patlama, ölüm vb. (ses ve efekt burada bağlanır).</summary>
         public event Action<string, float, float> Fx;
 
-        public BattleSim(int level, BattleMods m = null, int fails = 0, int seed = 0)
+        public BattleSim(int level, BattleMods m = null, int fails = 0, int seed = 0, float hardMul = 1)
         {
             lv = level; mods = m ?? new BattleMods();
             map = BattleData.MapOf(lv); mapScale = BattleData.MapScale(map);
             rnd = new System.Random(seed == 0 ? Environment.TickCount : seed);
-            L = LevelGen.Build(lv);
+            L = LevelGen.Build(lv, hardMul);
             objs = L.objs;
             assist = Math.Min(4, fails);
             float st0 = (float)Math.Ceiling(Balance.StartSoldiers(lv) * mods.startMul) + mods.startBonus;
@@ -391,10 +391,10 @@ namespace SuruSavasi.Core.Battle
                         if (boss.isBoss && boss.sum >= 7)
                         {
                             boss.sum = 0;
-                            float mhp = Math.Max(4, (float)Math.Ceiling(Balance.DpsOf(.33f * L.efin, lv) * Balance.Tw(lv) * .5f));
+                            float mhp = Math.Max(4, (float)Math.Ceiling(Balance.DpsOf(.33f * L.efin, lv) * Balance.Tw(lv) * .5f * L.hard));
                             for (int s2 = -1; s2 <= 1; s2 += 2)
                                 objs.Add(new BattleObj { kind = ObjKind.Enemy, type = BattleData.Types["walker"], x = boss.x + s2 * 70, wy = boss.y + 40 - scroll,
-                                    max = mhp, hp = mhp, chip = mhp, contact = Math.Max(1, (float)Math.Ceiling(L.efin * .04f)), seed = s2 + 3 });
+                                    max = mhp, hp = mhp, chip = mhp, contact = Math.Max(1, (float)Math.Ceiling(L.efin * .04f * Math.Sqrt(L.hard))), seed = s2 + 3 });
                         }
                     }
                 }

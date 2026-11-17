@@ -36,6 +36,7 @@ namespace SuruSavasi.Core.Battle
         public float efin;
         public FinalFoe fin;
         public string fresh;   // bu bölümde ilk kez çıkan düşman
+        public float hard = 1; // zorluk çarpanı (düşman canı ve hasarı)
     }
 
     /// <summary>Prototipteki buildLevel ile aynı kurallar ve aynı rastgele dizilim.</summary>
@@ -43,11 +44,12 @@ namespace SuruSavasi.Core.Battle
     {
         static float DpsOf(float e, int lv) => Balance.DpsOf(e, lv);
 
-        public static LevelLayout Build(int lv)
+        public static LevelLayout Build(int lv, float hardMul = 1)
         {
             var rg = new Rng(lv * 7919 + 13);
             int R = Balance.RowsOf(lv);
-            var L = new LevelLayout { rows = R };
+            float H = Balance.Difficulty(lv) * hardMul;
+            var L = new LevelLayout { rows = R, hard = H };
             int map = BattleData.MapOf(lv);
             var avail = BattleData.Order.Where(k => BattleData.Types[k].unlock <= lv).ToList();
             var themed = BattleData.Themed.Where(k => Array.IndexOf(BattleData.Types[k].maps, map) >= 0).ToList();
@@ -88,15 +90,15 @@ namespace SuruSavasi.Core.Battle
                     float lvMul = 1f + .05f * lv;
                     if (kind == ObjKind.Barrel) o.v = Math.Max(2, (float)Math.Ceiling(rg.Range(i == 0 ? 3 : 4, i == 0 ? 6 : 12) * lvMul * Field.BARV));
                     else if (kind == ObjKind.Power) o.v = Math.Max(2, (float)Math.Ceiling(rg.Range(4, 12) * lvMul * .5f * Field.BARV));
-                    else if (kind == ObjKind.Board) o.v = (float)Math.Ceiling(rg.Range(3, 9) * (1 + .03 * lv));
+                    else if (kind == ObjKind.Board) o.v = (float)Math.Ceiling(rg.Range(3, 9) * (1 + .03 * lv) * Math.Sqrt(H));
                     else
                     {
                         var T = BattleData.Types[PickType()];
                         float E = Balance.EnemyRef(lv, i);
                         o.type = T;
-                        o.max = o.hp = Math.Max(4, (float)Math.Ceiling(DpsOf(E, lv) * Balance.Tw(lv) * T.mul * (.92 + rg.Next() * .16)));
+                        o.max = o.hp = Math.Max(4, (float)Math.Ceiling(DpsOf(E, lv) * Balance.Tw(lv) * T.mul * (.92 + rg.Next() * .16) * H));
                         o.chip = o.hp;
-                        o.contact = Math.Max(1, (float)Math.Ceiling(E * T.dmg));
+                        o.contact = Math.Max(1, (float)Math.Ceiling(E * T.dmg * Math.Sqrt(H)));
                     }
                     if (kind == ObjKind.Barrel || kind == ObjKind.Power)
                     {
@@ -109,7 +111,7 @@ namespace SuruSavasi.Core.Battle
 
             L.efin = Balance.EnemyRef(lv, R);
             bool isBoss = lv % 10 == 0;
-            float bas = DpsOf(.33f * L.efin, lv) * Balance.TimeToKill0(lv);
+            float bas = DpsOf(.33f * L.efin, lv) * Balance.TimeToKill0(lv) * H;
             if (isBoss)
             {
                 int bi = Math.Min(BattleData.BossNames.Length - 1, lv / 10 - 1);

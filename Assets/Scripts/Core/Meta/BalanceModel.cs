@@ -54,9 +54,9 @@ namespace SuruSavasi.Core.Meta
         }
 
         /// <summary>Bölümü baştan sona oynatır. Dönen: kazandı mı, yıldız, süre.</summary>
-        public static (bool win, int stars, float time) Play(int lv, BattleMods mods, int fails, int seed, float skill = 1f)
+        public static (bool win, int stars, float time) Play(int lv, BattleMods mods, int fails, int seed, float skill = 1f, float hardMul = 1f)
         {
-            var s = new BattleSim(lv, mods, fails, seed);
+            var s = new BattleSim(lv, mods, fails, seed, hardMul);
             var bot = new AutoPilot(seed) { skill = skill };
             const float dt = 1f / 30f;
             while (s.Live && s.t < 400) { bot.Tick(s, dt); s.Step(dt); }
@@ -203,6 +203,49 @@ namespace SuruSavasi.Core.Meta
                 int w = 0, st = 0; float tt = 0;
                 for (int s = 0; s < seeds; s++) { var r = AutoPilot.Play(lv, mods, 0, 1000 + s * 31 + lv); if (r.win) { w++; st += r.stars; } tt += r.time; }
                 sb.AppendLine($"{lv};{w / (float)seeds:0.00};{(w > 0 ? st / (float)w : 0):0.0};{tt / seeds:0}");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Oyuncunun bu güçle kaldırabileceği en yüksek ek zorluk çarpanı (3 denemenin 2'si kazanılır).</summary>
+        public static float Headroom(int lv, BattleMods mods, float skill = 1f)
+        {
+            float lo = .1f, hi = 200f;
+            for (int it = 0; it < 9; it++)
+            {
+                float mid = (float)Math.Sqrt(lo * hi); int w = 0;
+                for (int s = 0; s < 3; s++) if (AutoPilot.Play(lv, mods, 0, 500 + s * 17 + lv, skill, mid).win) w++;
+                if (w >= 2) lo = mid; else hi = mid;
+            }
+            return (float)Math.Sqrt(lo * hi);
+        }
+
+        /// <summary>Yükseltme seviyesi verilen hayali oyuncunun savaş gücü (kayıt).</summary>
+        public static SaveData Upgraded(int bld, int hq, int hero, int weapon, string heroId = "ayaz")
+        {
+            var d = NewSave();
+            for (int i = 0; i < 9; i++) d.buildings[i] = bld;
+            d.buildings[(int)BuildingKind.Headquarters] = hq;
+            d.hero = heroId; for (int i = 0; i < 3; i++) d.heroLevels[i] = hero;
+            for (int w = Progress.Weapons.Length - 1; w >= 0; w--) if (Progress.WeaponOpen(d, w)) { d.weapon = Progress.Weapons[w].id; break; }
+            d.weaponLevels[Progress.WeaponIndex(d.weapon)] = weapon;
+            for (int i = 0; i < d.stars.Length; i++) d.stars[i] = 3;
+            return d;
+        }
+
+        public static string HeadroomCurve()
+        {
+            var prof = new (string name, SaveData d)[]
+            {
+                ("yukseltmesiz", NewSave()), ("bina5", Upgraded(5, 3, 3, 1)), ("bina10", Upgraded(10, 5, 5, 3)),
+                ("bina15", Upgraded(15, 8, 8, 4)), ("bina20", Upgraded(20, 10, 10, 5)),
+            };
+            var sb = new StringBuilder("bolum"); foreach (var p in prof) sb.Append(";" + p.name); sb.AppendLine();
+            foreach (int lv in new[] { 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 })
+            {
+                sb.Append(lv);
+                foreach (var p in prof) sb.Append(";" + Headroom(lv, Progress.BuildMods(p.d)).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine();
             }
             return sb.ToString();
         }
