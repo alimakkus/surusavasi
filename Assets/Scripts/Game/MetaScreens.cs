@@ -10,7 +10,7 @@ namespace SuruSavasi.Game
     public static class MetaScreens
     {
         static Vector2 shopScroll, dailyScroll;
-        static int shopTab; // 0 elmas, 1 kaynak
+        public static int shopTab; // 0 elmas, 1 kaynak, 2 tema
 
         static SaveData D => GameServices.Save.Data;
         static Wallet Wl => GameServices.Wallet;
@@ -40,9 +40,11 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn)) { flow.Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Mağaza</b>", label);
 
-            float tw = (w - 10) / 2;
+            float tw = (w - 20) / 3;
             if (GUI.Button(new Rect(x0, 96, tw, 40), "Elmas", shopTab == 0 ? UiSkin.ButtonGold : btn)) shopTab = 0;
             if (GUI.Button(new Rect(x0 + tw + 10, 96, tw, 40), "Kaynak", shopTab == 1 ? UiSkin.ButtonGold : btn)) shopTab = 1;
+            if (GUI.Button(new Rect(x0 + 2 * tw + 20, 96, tw, 40), "Tema", shopTab == 2 ? UiSkin.ButtonGold : btn)) shopTab = 2;
+            GUI.Label(new Rect(x0 + w - 150, 48, 150, 40), $"<color=#9fe8ff><b>Elmas {Wl.Get(Currency.Diamonds)}</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleRight });
 
             var store = GameServices.Store;
             float y0 = 146, ch = 86;
@@ -79,6 +81,7 @@ namespace SuruSavasi.Game
                 y += 54;
                 GUI.Label(new Rect(0, y, w, 60), $"<size=12>Mağaza: {store?.Name ?? "yok"}. Fiyatlar mağazadan gelir; Editor'de satın alma sahtedir, para çekilmez.</size>", small);
             }
+            else if (shopTab == 2) y = ThemeTab(flow, y, w);
             else
             {
                 int lv = Mathf.Clamp(D.unlocked, 1, 100);
@@ -104,6 +107,43 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(0, y, w, 40), "<size=13>Paket miktarı açtığın bölümle büyür.</size>", small);
             }
             GUI.EndScrollView();
+        }
+
+        // Üs temaları: elmasla satın al, seç
+        static float ThemeTab(GameFlow flow, float y, float w)
+        {
+            var label = UiSkin.Label; var small = UiSkin.Small; float h = 132;
+            GUI.Label(new Rect(0, y, w, 30), "<size=13>Üssünün çevresini değiştir. Tema sadece görünümü değiştirir.</size>", small);
+            y += 34;
+            foreach (var th in Themes.All)
+            {
+                bool owned = Themes.Owned(D, th.id), active = D.theme == th.id;
+                GUI.Box(new Rect(0, y, w, h), "", UiSkin.Card);
+                if (active) GUI.DrawTexture(new Rect(4, y + 4, 6, h - 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, .82f, .25f), 0, 3);
+                // Önizleme: zeminin köy kısmı
+                var tex = Resources.Load<Texture2D>("Art/" + th.ground);
+                if (tex != null) GUI.DrawTextureWithTexCoords(new Rect(16, y + 10, 112, 112), tex, new Rect(.175f, .3f, .65f, .4333f));
+                GUI.Label(new Rect(140, y + 10, w - 290, 30), $"<b>{th.name}</b>", label);
+                GUI.Label(new Rect(140, y + 42, w - 290, 80), th.desc, small);
+                var r = new Rect(w - 144, y + 40, 132, 52);
+                if (active) GUI.Label(r, "<color=#8be39d><b>Kullanılıyor</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                else if (owned)
+                {
+                    if (GUI.Button(r, "Seç", UiSkin.Button)) { D.theme = th.id; GameServices.Save.Save(); SoundFx.Play("click"); flow.ShowToast($"{th.name} seçildi"); }
+                }
+                else if (GUI.Button(r, $"{th.price} elmas", UiSkin.ButtonGold))
+                {
+                    if (Wl.Spend(Currency.Diamonds, th.price, "buy_theme_" + th.id))
+                    {
+                        if (!D.ownedThemes.Contains(th.id)) D.ownedThemes.Add(th.id);
+                        D.theme = th.id; GameServices.Save.Save(); SoundFx.Play("power"); flow.ShowToast($"{th.name} açıldı!");
+                        GameServices.Analytics?.LogEvent("theme_buy", new System.Collections.Generic.Dictionary<string, object> { { "theme", th.id }, { "price", th.price } });
+                    }
+                    else flow.ShowToast("Yeterli elmas yok");
+                }
+                y += h + 10;
+            }
+            return y;
         }
 
         static float Product(GameFlow flow, string id, string title, string desc, string icon, float y, float w, bool highlight)

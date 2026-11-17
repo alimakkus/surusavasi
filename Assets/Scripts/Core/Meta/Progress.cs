@@ -48,6 +48,11 @@ namespace SuruSavasi.Core.Meta
 
         // ---------- Binalar ----------
         public static int Level(SaveData d, BuildingKind k) => d.buildings != null && (int)k < d.buildings.Length ? d.buildings[(int)k] : 0;
+        public const int HqMax = 10;
+        public static int MaxLevel(BuildingKind k) => k == BuildingKind.Headquarters ? HqMax : BuildingMax;
+        /// <summary>Karargâh seviyesi diğer binaların tavanını belirler: Sv. 2 × Karargâh.</summary>
+        public static int CapFromHq(int hq) => Math.Min(BuildingMax, 2 * Math.Max(1, hq));
+        public static int LevelCap(SaveData d, BuildingKind k) => k == BuildingKind.Headquarters ? HqMax : CapFromHq(Level(d, BuildingKind.Headquarters));
         public static float Eff(SaveData d, BuildingKind k) => BuildingData.EffectiveLevel(Level(d, k));
         /// <summary>5. ve 10. seviyede açılan ek bonus kademesi (0, 1, 2).</summary>
         public static int Milestone(SaveData d, BuildingKind k) { int L = Level(d, k); return L >= 10 ? 2 : L >= 5 ? 1 : 0; }

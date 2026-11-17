@@ -28,6 +28,7 @@ namespace SuruSavasi.Core.Meta
             new BuildingDef { kind = BuildingKind.Hospital, name = "Hastane", gold = 70, food = 50, g = 1.55f, effect = e => $"Savaşta can yenilenmesi %{F1(.2f * e)}/sn", extra = m => $"Kahraman canı +%{Math.Round(2f * m)}" },
             new BuildingDef { kind = BuildingKind.Tower, name = "Gözetleme Kulesi", gold = 60, iron = 60, g = 1.55f, effect = e => $"Ateş hızı +%{Math.Round(1.2f * e)}", extra = m => "" },
             new BuildingDef { kind = BuildingKind.Market, name = "Pazar", gold = 80, iron = 30, food = 30, g = 1.55f, effect = e => $"Takas oranı %{Math.Round(TradeRateFor(e) * 100)}", extra = m => $"Zafer demir/yiyeceği +%{Math.Round(1f * m)}" },
+            new BuildingDef { kind = BuildingKind.Headquarters, name = "Karargâh", gold = 150, iron = 100, food = 100, g = 1.7f, effect = e => $"Diğer binalar en fazla Sv. {Progress.CapFromHq((int)Math.Round(e))}", extra = m => "" },
             new BuildingDef { kind = BuildingKind.Wall, name = "Kale Duvarı", iron = 60, food = 30, g = 1.6f, effect = e => $"Alınan hasar −%{Math.Round(3 * e)}", extra = m => $"Ek hasar −%{4 * m}" },
         };
 
@@ -44,12 +45,13 @@ namespace SuruSavasi.Core.Meta
         public static bool Building(SaveData d) => d.buildKind >= 0;
         public static float Remaining(SaveData d) => Building(d) ? Math.Max(0, (d.buildEnd - Now) / 1000f) : 0;
 
-        public enum UpResult { Ok, MaxLevel, Busy, Stars, Resources }
+        public enum UpResult { Ok, MaxLevel, Busy, Stars, Resources, NeedHq }
 
         public static UpResult Check(SaveData d, BuildingKind k)
         {
             int L = Progress.Level(d, k);
-            if (L >= Progress.BuildingMax) return UpResult.MaxLevel;
+            if (L >= Progress.MaxLevel(k)) return UpResult.MaxLevel;
+            if (L >= Progress.LevelCap(d, k)) return UpResult.NeedHq;
             if (Building(d)) return UpResult.Busy;
             if (Progress.TotalStars(d) < ReqStars(L)) return UpResult.Stars;
             if (d.gold < CostGold(k, L) || d.iron < CostIron(k, L) || d.food < CostFood(k, L)) return UpResult.Resources;

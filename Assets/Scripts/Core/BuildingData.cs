@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Core
 {
-    public enum BuildingKind { Barracks, Armory, Wall, Mine, Quarry, Farm, Hospital, Tower, Market }
+    public enum BuildingKind { Barracks, Armory, Wall, Mine, Quarry, Farm, Hospital, Tower, Market, Headquarters }
 
     /// <summary>Bina tanımı. Unity'de Create > SuruSavasi > Building ile her bina için bir asset oluşturulur.</summary>
     [CreateAssetMenu(menuName = "SuruSavasi/Building")]

@@ -52,7 +52,7 @@ namespace SuruSavasi.Game
         public static Sprite Tree(int map) => Pick(Sheet("trees", 8, 3, 256, 28f / 128f, 200), map);
 
         // ---------- Üs ----------
-        static readonly string[] BldNames = { "barracks", "armory", "wall", "mine", "quarry", "farm", "hospital", "tower", "market" }; // BuildingKind sırası
+        static readonly string[] BldNames = { "barracks", "armory", "wall", "mine", "quarry", "farm", "hospital", "tower", "market", "hq" }; // BuildingKind sırası
         static readonly Dictionary<string, Sprite> singles = new Dictionary<string, Sprite>();
 
         /// <summary>Binanın seviyeye göre görseli (1-20). Pivot: binanın harita konumu + 8 piksel.</summary>
@@ -61,6 +61,7 @@ namespace SuruSavasi.Game
             int L = Mathf.Clamp(level, 1, 20);
             var custom = CustomBuilding(k, L);
             if (custom != null) return custom;
+            if (k == SuruSavasi.Core.BuildingKind.Headquarters) return null;
             return Pick(Sheet("bld_" + BldNames[(int)k], 5, 4, 320, 36f / 160f, 200), L - 1);
         }
 
@@ -72,9 +73,13 @@ namespace SuruSavasi.Game
 
         public static int Tier(int level) => (Mathf.Clamp(level, 1, 20) + 3) / 4;
 
+        /// <summary>Karargâh 10 seviyeli: her 2 seviyede bir yeni görsel.</summary>
+        public static int TierOf(SuruSavasi.Core.BuildingKind k, int level) =>
+            k == SuruSavasi.Core.BuildingKind.Headquarters ? (Mathf.Clamp(level, 1, 10) + 1) / 2 : Tier(level);
+
         static Sprite CustomBuilding(SuruSavasi.Core.BuildingKind k, int level)
         {
-            string key = $"bld/{BldNames[(int)k]}_t{Tier(level)}";
+            string key = $"bld/{BldNames[(int)k]}_t{TierOf(k, level)}";
             if (custom.TryGetValue(key, out var s)) return s;
             var tex = Resources.Load<Texture2D>("Art/" + key);
             if (tex != null)
@@ -92,6 +97,8 @@ namespace SuruSavasi.Game
 
         /// <summary>Aynı kademe içinde seviye arttıkça bina hafifçe büyür (her seviye görünür bir fark).</summary>
         public static float LevelScale(int level) => 1f + .03f * ((Mathf.Clamp(level, 1, 20) - 1) % 4);
+        public static float LevelScale(SuruSavasi.Core.BuildingKind k, int level) =>
+            k == SuruSavasi.Core.BuildingKind.Headquarters ? 1f + .04f * ((Mathf.Clamp(level, 1, 10) - 1) % 2) : LevelScale(level);
         /// <summary>0 temel, 1 temel (inşaat), 2 işçi, 3 yük sandığı, 4 çekiç, 5 görev panosu, 6 hazine sandığı.</summary>
         public static Sprite BaseMisc(int i) => Pick(Sheet("base_misc", 7, 1, 320, 44f / 160f, 200), i);
 
@@ -105,17 +112,21 @@ namespace SuruSavasi.Game
             singles[name] = s;
             return s;
         }
-        public static Sprite BaseGround() => Single("base_ground", 360);
-        public static Sprite WallRing(int tier) => Single("wall_ring_t" + Mathf.Clamp(tier, 0, 5), 360);
+        /// <summary>Yuvarlak üs zemini: 800x1200 oyun pikseli, ortası köy merkezi.</summary>
+        public static Sprite ThemeGround(string themeId) => Single("base_ground_" + themeId, 800);
+        /// <summary>Sur parçası (26x34) ve kule (40x60), alt ortadan.</summary>
+        public static Sprite WallSeg(int tier) => Single("wall_seg_t" + Mathf.Clamp(tier, 0, 5), 26, 2f / 34f);
+        public static Sprite WallTower(int tier) => Single("wall_tower_t" + Mathf.Clamp(tier, 0, 5), 40, 2f / 60f);
         public static Sprite WallGate(int tier) => Single("wall_gate_t" + Mathf.Clamp(tier, 0, 5), 160, 44f / 160f);
 
         /// <summary>Açılışta ön yüklenecek tüm görseller.</summary>
         public static List<string> AllNames()
         {
-            var l = new List<string> { "bosses", "elites", "units", "props", "trees", "base_misc", "base_ground", "logo" };
+            var l = new List<string> { "bosses", "elites", "units", "props", "trees", "base_misc", "logo" };
             for (int m = 0; m < 20; m++) { l.Add($"enemies_m{m:00}"); l.Add($"bg_m{m:00}"); }
-            foreach (var b in BldNames) if (b != "wall") { l.Add("bld_" + b); for (int t = 1; t <= 5; t++) l.Add($"bld/{b}_t{t}"); }
-            for (int t = 0; t < 6; t++) { l.Add("wall_ring_t" + t); l.Add("wall_gate_t" + t); }
+            foreach (var b in BldNames) if (b != "wall") { if (b != "hq") l.Add("bld_" + b); for (int t = 1; t <= 5; t++) l.Add($"bld/{b}_t{t}"); }
+            for (int t = 0; t < 6; t++) { l.Add("wall_seg_t" + t); l.Add("wall_tower_t" + t); l.Add("wall_gate_t" + t); }
+            l.Add("base_ground_green");
             return l;
         }
 

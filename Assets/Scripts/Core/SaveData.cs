@@ -20,7 +20,7 @@ namespace SuruSavasi.Core
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
         // Üs: bina seviyeleri BuildingKind sırasıyla
-        public int[] buildings = new int[9];
+        public int[] buildings = new int[10]; // 9 = Karargâh
         public int buildKind = -1;      // inşaattaki bina (-1 = yok)
         public int buildFrom;
         public long buildEnd;           // UTC milisaniye
@@ -34,6 +34,10 @@ namespace SuruSavasi.Core
         public bool noAds;              // reklamsız paket ya da başlangıç paketi alındı
         public bool starterPackBought;
         public long monthlyCardUntil;   // aylık kart bitiş zamanı (UTC saniye)
+
+        // Üs teması (elmasla satılan çevre görünümü)
+        public string theme = "green";
+        public List<string> ownedThemes = new List<string> { "green" };
     }
 
     [Serializable]
@@ -58,7 +62,28 @@ namespace SuruSavasi.Core
         public static SaveData Load()
         {
             var json = PlayerPrefs.GetString(Key, "");
-            return string.IsNullOrEmpty(json) ? new SaveData() : JsonUtility.FromJson<SaveData>(json);
+            var d = string.IsNullOrEmpty(json) ? new SaveData() : JsonUtility.FromJson<SaveData>(json);
+            Migrate(d);
+            return d;
+        }
+
+        /// <summary>Eski kayıtları yeni alanlara uyarlar.</summary>
+        public static void Migrate(SaveData d)
+        {
+            const int kinds = 10;
+            if (d.buildings == null) d.buildings = new int[kinds];
+            if (d.buildings.Length < kinds) { var b = new int[kinds]; d.buildings.CopyTo(b, 0); d.buildings = b; }
+            int hq = (int)BuildingKind.Headquarters;
+            if (d.buildings[hq] <= 0)
+            {
+                // Karargâh yeni geldi: mevcut binaları kilitlemesin diye en yüksek binanın yarısından başlar
+                int mx = 0; for (int i = 0; i < hq; i++) mx = Mathf.Max(mx, d.buildings[i]);
+                d.buildings[hq] = Mathf.Max(1, Mathf.CeilToInt(mx / 2f));
+            }
+            if (string.IsNullOrEmpty(d.theme)) d.theme = "green";
+            if (d.ownedThemes == null) d.ownedThemes = new List<string>();
+            if (!d.ownedThemes.Contains("green")) d.ownedThemes.Add("green");
+            if (!d.ownedThemes.Contains(d.theme)) d.theme = "green";
         }
 
         public static void Save(SaveData data)

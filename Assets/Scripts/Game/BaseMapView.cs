@@ -9,18 +9,29 @@ namespace SuruSavasi.Game
 {
     /// <summary>Haritalı üs: surla çevrili alan, seviyeye göre değişen binalar, çalışan inşaatçılar,
     /// devriye atan askerler, toplanacak üretim balonları, dokununca açılan altıgen menü ve yükseltme penceresi.
-    /// Koordinatlar prototipteki üs dünyasıyla aynı: 360 x 880 piksel, y aşağı doğru.</summary>
+    /// Yuvarlak köy: ortada Karargâh, çevresinde 8 bina, en dışta oval sur ve kapı. Çevre seçilen temaya göre değişir.
+    /// Koordinatlar oyun pikseli (100 = 1 dünya birimi), y aşağı doğru. Dünya 800 x 1200, köy merkezi (400, 600).</summary>
     public class BaseMapView : MonoBehaviour
     {
-        public const float WW = 360, WH = 880;
-        static readonly Dictionary<BuildingKind, Vector2> Pos = new Dictionary<BuildingKind, Vector2>
+        public const float WW = 800, WH = 1200, CX = 400, CY = 600;
+        public const float WallRX = 250, WallRY = 215, RingRX = 175, RingRY = 150; // Tools/artgen/gen_ground.py ile aynı
+        static readonly Dictionary<BuildingKind, Vector2> Pos = MakeLayout();
+
+        static Dictionary<BuildingKind, Vector2> MakeLayout()
         {
-            { BuildingKind.Farm, new Vector2(95, 205) }, { BuildingKind.Mine, new Vector2(265, 205) },
-            { BuildingKind.Quarry, new Vector2(95, 340) }, { BuildingKind.Armory, new Vector2(265, 340) },
-            { BuildingKind.Barracks, new Vector2(95, 475) }, { BuildingKind.Hospital, new Vector2(265, 475) },
-            { BuildingKind.Tower, new Vector2(95, 610) }, { BuildingKind.Market, new Vector2(265, 610) },
-            { BuildingKind.Wall, new Vector2(180, 770) },
-        };
+            var d = new Dictionary<BuildingKind, Vector2>();
+            void At(BuildingKind k, float deg) { float r = deg * Mathf.Deg2Rad; d[k] = new Vector2(CX + RingRX * Mathf.Cos(r), CY + RingRY * Mathf.Sin(r)); }
+            At(BuildingKind.Farm, 247.5f); At(BuildingKind.Mine, -67.5f);
+            At(BuildingKind.Armory, 202.5f); At(BuildingKind.Quarry, -22.5f);
+            d[BuildingKind.Headquarters] = new Vector2(CX, CY + 6);
+            At(BuildingKind.Tower, 157.5f); At(BuildingKind.Market, 22.5f);
+            At(BuildingKind.Barracks, 112.5f); At(BuildingKind.Hospital, 67.5f);
+            d[BuildingKind.Wall] = new Vector2(CX, CY + WallRY + 2);
+            return d;
+        }
+
+        /// <summary>Binanın haritadaki çizim ölçeği: Karargâh büyük, kapı biraz küçük.</summary>
+        static float BScale(BuildingKind k) => k == BuildingKind.Headquarters ? 1.3f : k == BuildingKind.Wall ? .8f : .92f;
 
         public GameFlow flow;
         Camera cam;
@@ -28,14 +39,17 @@ namespace SuruSavasi.Game
         Material mat;
         readonly List<SpriteRenderer> pool = new List<SpriteRenderer>();
         int used;
-        float camY = 440, visH = 640, t;
+        float camX = CX, camY = CY + 30, visW = 460, visH = 820, t;
+        bool pinching; float pinchDist;
+        readonly List<Vector2> wallSegs = new List<Vector2>(), wallTowers = new List<Vector2>();
+        readonly List<Vector3> trees = new List<Vector3>(); // x, y, ölçek
         bool inited;
 
         SaveData D => GameServices.Save.Data;
         Wallet Wl => GameServices.Wallet;
 
         // Canlı üs
-        class Worker { public float x = 180, y = 760, tx = 180, ty = 400, wait, ph, dir = 1; public bool carry, builder; public int kind = -1; }
+        class Worker { public float x = CX, y = CY + WallRY - 10, tx = CX, ty = CY + 100, wait, ph, dir = 1; public bool carry, builder; public int kind = -1; }
         class Ev { public bool chest, dead; public float x, y, life, t, flash; public int hp; }
         class Float { public float x, y, life; public string text; public Color c; }
         class Part { public float x, y, vx, vy, life, max, size; public Color c; }
@@ -66,6 +80,40 @@ namespace SuruSavasi.Game
             for (int y = 0; y < s; y++) for (int x = 0; x < s; x++) { float d = Mathf.Sqrt((x + .5f - 32) * (x + .5f - 32) + (y + .5f - 32) * (y + .5f - 32)); cp[y * s + x] = new Color(1, 1, 1, Mathf.Clamp01(32 - d)); }
             ct.SetPixels(cp); ct.Apply();
             circle = Sprite.Create(ct, new Rect(0, 0, s, s), new Vector2(.5f, .5f), s);
+            BuildScenery();
+        }
+
+        /// <summary>Sur parçalarını elips boyunca eşit aralıkla dizer, kuleleri ve dıştaki ağaçları yerleştirir.</summary>
+        void BuildScenery()
+        {
+            const int N = 720; const float step = 21f; float acc = step;
+            Vector2 prev = new Vector2(CX + WallRX, CY);
+            for (int i = 1; i <= N; i++)
+            {
+                float a = i * Mathf.PI * 2 / N;
+                var p = new Vector2(CX + WallRX * Mathf.Cos(a), CY + WallRY * Mathf.Sin(a));
+                acc += Vector2.Distance(prev, p); prev = p;
+                if (acc < step) continue;
+                acc = 0;
+                if (Mathf.Abs(p.x - CX) < 50 && p.y > CY) continue; // kapı boşluğu
+                wallSegs.Add(p);
+            }
+            foreach (float deg in new[] { 0f, 45f, 135f, 180f, 225f, 270f, 315f })
+            {
+                float r = deg * Mathf.Deg2Rad;
+                wallTowers.Add(new Vector2(CX + WallRX * Mathf.Cos(r), CY + WallRY * Mathf.Sin(r)));
+            }
+            var rng = new System.Random(7);
+            for (int tries = 0; tries < 900 && trees.Count < 120; tries++)
+            {
+                float x = (float)rng.NextDouble() * WW, y = (float)rng.NextDouble() * (WH + 60);
+                float e = ((x - CX) / WallRX) * ((x - CX) / WallRX) + ((y - CY) / WallRY) * ((y - CY) / WallRY);
+                if (e < 1.38f || (Mathf.Abs(x - CX) < 40 && y > CY)) continue; // surun dibi ve kapı yolu boş kalsın
+                bool close = false;
+                foreach (var tr in trees) if (Mathf.Abs(tr.x - x) < 34 && Mathf.Abs(tr.y - y) < 22) { close = true; break; }
+                if (close) continue;
+                trees.Add(new Vector3(x, y, .8f + (float)rng.NextDouble() * .4f));
+            }
         }
 
         public void Open()
@@ -74,6 +122,7 @@ namespace SuruSavasi.Game
             gameObject.SetActive(true);
             sel = null; popup = Popup.None;
             if (cam != null) { cam.transform.position = new Vector3(0, 0, -10); cam.orthographic = true; }
+            camX = CX; camY = CY + 30; visW = 460;
             nextTick = 0;
         }
 
@@ -84,7 +133,7 @@ namespace SuruSavasi.Game
         }
 
         // ---------- Çizim yardımcıları ----------
-        Vector3 W(float px, float py) => new Vector3((px - 180f) / 100f, (camY - py) / 100f, 0);
+        Vector3 W(float px, float py) => new Vector3((px - camX) / 100f, (camY - py) / 100f, 0);
 
         void Draw(Sprite s, Color c, float px, float py, float w, float h, int order, float rot = 0)
         {
@@ -134,7 +183,14 @@ namespace SuruSavasi.Game
                 var k = built[Random.Range(0, built.Count)];
                 w.tx = Pos[k].x + (Random.value - .5f) * 30; w.ty = Pos[k].y + 26; w.kind = (int)k;
             }
-            else { w.tx = 60 + Random.value * 240; w.ty = 250 + Random.value * 420; w.kind = -1; }
+            else { var q = RandomInside(); w.tx = q.x; w.ty = q.y; w.kind = -1; }
+        }
+
+        /// <summary>Sur içinde, meydanın dışında rastgele bir nokta.</summary>
+        static Vector2 RandomInside()
+        {
+            float a = Random.value * Mathf.PI * 2, r = Random.Range(.5f, .82f);
+            return new Vector2(CX + (WallRX - 22) * r * Mathf.Cos(a), CY + (WallRY - 22) * r * Mathf.Sin(a));
         }
 
         void LiveTick(float dt)
@@ -175,8 +231,8 @@ namespace SuruSavasi.Game
                 evTimer = 14 + Random.value * 14;
                 if (events.Count < 2)
                 {
-                    if (Random.value < .6f) { events.Add(new Ev { chest = true, x = 80 + Random.value * 200, y = 260 + Random.value * 380, life = 28 }); SoundFx.Play("power"); }
-                    else { events.Add(new Ev { x = 180, y = 800, hp = 3, life = 30 }); SoundFx.Play("hurt"); AddFloat(180, 735, "Kaçak zombi!", Hex("#ff8a80")); }
+                    if (Random.value < .6f) { var q = RandomInside(); events.Add(new Ev { chest = true, x = q.x, y = q.y, life = 28 }); SoundFx.Play("power"); }
+                    else { float zy = CY + WallRY + 130; events.Add(new Ev { x = CX, y = zy, hp = 3, life = 30 }); SoundFx.Play("hurt"); AddFloat(CX, zy - 70, "Kaçak zombi!", Hex("#ff8a80")); }
                 }
             }
             foreach (var e in events)
@@ -184,7 +240,7 @@ namespace SuruSavasi.Game
                 e.t += dt; e.life -= dt; e.flash = Mathf.Max(0, e.flash - dt * 4);
                 if (e.chest) continue;
                 e.y -= 22 * dt; e.x += Mathf.Sin(e.t * 1.5f) * 8 * dt;
-                if (e.y < 470)
+                if (e.y < CY + 120)
                 {   // askerler yakaladı
                     e.dead = true; int q = 8 + Mathf.Min(40, Progress.TotalStars(D) / 3);
                     Wl.Add(Currency.Gold, q, "base_event"); AddFloat(e.x, e.y - 30, $"+{q} altın", Gold);
@@ -245,19 +301,13 @@ namespace SuruSavasi.Game
             SoundFx.Play("pickup"); AddFloat(p.x, p.y - 60, $"+{q} {nm}", col); Burst(p.x, p.y - 50, 14, new[] { col, Color.white }, 90, 50);
         }
 
-        // Devriye yolu: surun içinden dikdörtgen tur
-        static readonly Vector2[] Path = { new Vector2(62, 165), new Vector2(298, 165), new Vector2(298, 725), new Vector2(62, 725) };
+        // Devriye yolu: surun üstünde tur (elips, yaklaşık 1460 piksel)
+        const float PathLen = 1460f;
         static Vector2 OnPath(float dist, out float dirX)
         {
-            float total = 0; for (int i = 0; i < 4; i++) total += Vector2.Distance(Path[i], Path[(i + 1) % 4]);
-            dist = Mathf.Repeat(dist, total);
-            for (int i = 0; i < 4; i++)
-            {
-                Vector2 a = Path[i], b = Path[(i + 1) % 4]; float len = Vector2.Distance(a, b);
-                if (dist <= len) { dirX = b.x - a.x; return Vector2.Lerp(a, b, dist / len); }
-                dist -= len;
-            }
-            dirX = 1; return Path[0];
+            float a = Mathf.Repeat(dist, PathLen) / PathLen * Mathf.PI * 2;
+            dirX = -Mathf.Sin(a);
+            return new Vector2(CX + WallRX * Mathf.Cos(a), CY + WallRY * Mathf.Sin(a));
         }
 
         // ---------- Güncelleme ve çizim ----------
@@ -265,10 +315,8 @@ namespace SuruSavasi.Game
         {
             if (!inited || cam == null || GameServices.Save == null) return;
             float dt = Mathf.Min(Time.deltaTime, .05f); t += dt;
-            float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
-            cam.orthographicSize = Mathf.Max(2.8f, 1.8f / Mathf.Max(.01f, aspect));
-            visH = cam.orthographicSize * 200f;
-            camY = visH >= WH ? WH / 2 : Mathf.Clamp(camY, visH / 2, WH - visH / 2);
+            CameraInput();
+            ApplyCamera();
 
             if (Time.unscaledTime > nextTick)
             {
@@ -294,30 +342,80 @@ namespace SuruSavasi.Game
             Render();
         }
 
+        // ---------- Kamera: sürükle kaydır, tekerlek / iki parmak yakınlaştır ----------
+        void ApplyCamera()
+        {
+            float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+            visW = Mathf.Clamp(visW, 300, Mathf.Min(WW, WH * aspect));
+            visH = visW / aspect;
+            cam.orthographicSize = visH / 200f;
+            camX = Mathf.Clamp(camX, visW / 2, WW - visW / 2);
+            camY = Mathf.Clamp(camY, visH / 2, WH - visH / 2);
+        }
+
+        Vector2 ScreenToGame(Vector2 sp) =>
+            new Vector2(camX + (sp.x / Screen.width - .5f) * visW, camY - (sp.y / Screen.height - .5f) * visH);
+
+        /// <summary>Ekrandaki bir noktanın altındaki yer sabit kalacak şekilde yakınlaştırır.</summary>
+        void ZoomAt(Vector2 screenPos, float newW)
+        {
+            var g = ScreenToGame(screenPos);
+            float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+            visW = Mathf.Clamp(newW, 300, Mathf.Min(WW, WH * aspect)); visH = visW / aspect;
+            camX = g.x - (screenPos.x / Screen.width - .5f) * visW;
+            camY = g.y + (screenPos.y / Screen.height - .5f) * visH;
+        }
+
+        void CameraInput()
+        {
+            if (popup != Popup.None) { pinching = false; return; }
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > .01f) ZoomAt(Input.mousePosition, visW * (1 - .12f * Mathf.Sign(wheel)));
+            if (Input.touchCount >= 2)
+            {
+                Vector2 a = Input.GetTouch(0).position, b = Input.GetTouch(1).position; float d = Vector2.Distance(a, b);
+                if (!pinching) { pinching = true; pinchDist = d; dragging = true; }
+                else if (d > 10) { ZoomAt((a + b) / 2, visW * pinchDist / d); pinchDist = d; }
+            }
+            else pinching = false;
+        }
+
         void Render()
         {
             used = 0;
-            Spr(Art.BaseGround(), 180, 440, 0);
+            var theme = Themes.Current(D);
+            Spr(Art.ThemeGround(theme.id), WW / 2, WH / 2, 0);
             int wallL = Progress.Level(D, BuildingKind.Wall), tier = Mathf.CeilToInt(wallL / 4f);
-            Spr(Art.WallRing(tier), 180, 440, 1);
 
-            // Meydandaki kahraman ve nöbetçiler
+            // Çevredeki ağaçlar (sadece ekrandakiler)
+            var tree = Art.Tree(theme.treeMap);
+            foreach (var tr in trees)
+                if (Mathf.Abs(tr.x - camX) < visW / 2 + 70 && Mathf.Abs(tr.y - camY) < visH / 2 + 140)
+                    Spr(tree, tr.x, tr.y, 100 + (int)tr.y, tr.z);
+
+            // Sur: parçalar, kuleler
+            var seg = Art.WallSeg(tier); var tow = Art.WallTower(tier);
+            foreach (var p in wallSegs) Spr(seg, p.x, p.y, 100 + (int)p.y);
+            foreach (var p in wallTowers) Spr(tow, p.x, p.y + 1, 101 + (int)p.y);
+
+            // Karargâh önünde kahraman ve talim yapan askerler
             int frame = Mathf.FloorToInt(t * 3) & 1;
             for (int i = 0; i < 4; i++)
             {
-                float wx = 180 + Mathf.Sin(t * .45f + i * 1.7f) * 62, wy = 392 + (i % 3) * 48 + Mathf.Cos(t * .6f + i) * 6;
-                Spr(Art.Soldier((int)(t * 6) + i), wx, wy + 8, 100 + (int)wy, .9f);
+                float wx = CX + Mathf.Sin(t * .45f + i * 1.7f) * 44, wy = CY + 96 + (i % 2) * 18 + Mathf.Cos(t * .6f + i) * 4;
+                Spr(Art.Soldier((int)(t * 6) + i), wx, wy + 8, 100 + (int)wy, .8f);
             }
-            Spr(Art.Hero(Progress.HeroIndex(D.hero), frame), 180, 410, 100 + 410, 1.1f);
+            Spr(Art.Hero(Progress.HeroIndex(D.hero), frame), CX - 70, CY + 104, 100 + (int)(CY + 104), 1f);
 
-            // Devriye: iki manga surun içinde tur atar, iki nöbetçi kapıda bekler
+            // Devriye: iki manga surun üstünde tur atar, iki nöbetçi kapıda bekler
             for (int sq = 0; sq < 2; sq++)
                 for (int i = 0; i < 3; i++)
                 {
-                    var p = OnPath(t * 26 + sq * 796 - i * 16, out float dx);
-                    Spr(Art.Soldier((int)(t * 8) + i), p.x, p.y, 100 + (int)p.y, .85f, dx < 0);
+                    var p = OnPath(t * 22 + sq * PathLen / 2 - i * 16, out float dx);
+                    Spr(Art.Soldier((int)(t * 8) + i), p.x, p.y - 18, 102 + (int)p.y, .7f, dx < 0);
                 }
-            Spr(Art.Soldier(0), 148, 752, 100 + 752, .9f); Spr(Art.Soldier(2), 212, 752, 100 + 752, .9f, true);
+            float gy = Pos[BuildingKind.Wall].y + 22;
+            Spr(Art.Soldier(0), CX - 62, gy, 100 + (int)gy, .85f); Spr(Art.Soldier(2), CX + 62, gy, 100 + (int)gy, .85f, true);
 
             // İşçiler
             foreach (var w in workers)
@@ -346,12 +444,13 @@ namespace SuruSavasi.Game
             foreach (var kv in Pos)
             {
                 var k = kv.Key; var p = kv.Value; int L = Progress.Level(D, k);
-                pop.TryGetValue(k, out float pp); float sc = 1 + pp * .16f; int ord = 100 + (int)p.y;
+                float bs = BScale(k);
+                pop.TryGetValue(k, out float pp); float sc = (1 + pp * .16f) * bs; int ord = 100 + (int)p.y;
                 bool busy = BaseLogic.Building(D) && D.buildKind == (int)k;
-                if (sel == k) Draw(circle, new Color(1, .82f, .25f, .45f + .2f * Mathf.Sin(t * 6)), p.x, p.y + 10, 112, 34, 5);
+                if (sel == k) Draw(circle, new Color(1, .82f, .25f, .45f + .2f * Mathf.Sin(t * 6)), p.x, p.y + 10, 112 * bs, 34 * bs, 5);
                 if (k == BuildingKind.Wall) Spr(Art.WallGate(tier), p.x, p.y, ord, sc);
-                else if (L == 0) Spr(Art.BaseMisc(busy ? 1 : 0), p.x, p.y, ord);
-                else if (Art.HasCustomBuilding(k, L)) Spr(Art.Building(k, L), p.x, p.y + 4, ord, sc * Art.LevelScale(L));
+                else if (L == 0) Spr(Art.BaseMisc(busy ? 1 : 0), p.x, p.y, ord, bs);
+                else if (Art.HasCustomBuilding(k, L)) Spr(Art.Building(k, L), p.x, p.y + 4, ord, sc * Art.LevelScale(k, L));
                 else Spr(Art.Building(k, L), p.x, p.y + 8, ord, sc);
 
                 if (busy)
@@ -364,7 +463,7 @@ namespace SuruSavasi.Game
                 }
                 if (L > 0)
                 {
-                    float bx = p.x + (k == BuildingKind.Wall ? 64 : 36), by = p.y - 30;
+                    float bx = p.x + 40 * bs, by = p.y - 30 * bs;
                     Draw(circle, Color.white, bx, by, 23, 23, 703); Draw(circle, Hex("#4b3aa8"), bx, by, 20, 20, 704);
                 }
                 var pk = ProdOf(k);
@@ -377,7 +476,7 @@ namespace SuruSavasi.Game
 
             foreach (var p in parts) { var c = p.c; c.a *= Mathf.Clamp01(p.life / p.max); Draw(circle, c, p.x, p.y, p.size, p.size, 800); }
             // Bulut gölgeleri
-            for (int cl = 0; cl < 3; cl++) Draw(circle, new Color(.04f, .08f, .12f, .07f), ((t * 9 + cl * 170) % 560) - 100, 220 + cl * 250, 160, 60, 810);
+            for (int cl = 0; cl < 4; cl++) Draw(circle, new Color(.04f, .08f, .12f, .07f), ((t * 9 + cl * 290) % 1100) - 150, CY - 420 + cl * 280, 180, 70, 810);
 
             for (int i = used; i < pool.Count; i++) if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
         }
@@ -438,8 +537,9 @@ namespace SuruSavasi.Game
             {
                 var k = kv.Key; var p = kv.Value; int L = Progress.Level(D, k);
                 bool busy = BaseLogic.Building(D) && D.buildKind == (int)k;
-                if (sel != k) Outlined(ToGui(p.x, p.y + 32), BaseLogic.Def(k).name, Color.white, tiny);
-                if (L > 0) Outlined(ToGui(p.x + (k == BuildingKind.Wall ? 64 : 36), p.y - 30), L.ToString(), Color.white, tiny, 40);
+                float bs = BScale(k);
+                if (sel != k) Outlined(ToGui(p.x, p.y + 32 * bs), BaseLogic.Def(k).name, Color.white, tiny);
+                if (L > 0) Outlined(ToGui(p.x + 40 * bs, p.y - 30 * bs), L.ToString(), Color.white, tiny, 40);
                 if (busy) Outlined(ToGui(p.x, p.y - 62), Fmt(BaseLogic.Remaining(D)), Color.white, center);
                 else if (sel != k && BaseLogic.Check(D, k) == BaseLogic.UpResult.Ok) Outlined(ToGui(p.x - 42, p.y - 8 + Mathf.Sin(t * 5 + p.x) * 3), "▲", Hex("#5be06a"), big, 40);
                 if (ProdOf(k).HasValue && L > 0 && Pending(k) >= 1 && !busy)
@@ -493,13 +593,13 @@ namespace SuruSavasi.Game
         /// <summary>Sadece Editor: binanın seviyesini anında değiştirir (görselleri denemek için). Kaynak harcamaz.</summary>
         void DebugSetLevel(BuildingKind k, int delta)
         {
-            int L = Mathf.Clamp(Progress.Level(D, k) + delta, 0, Progress.BuildingMax);
+            int L = Mathf.Clamp(Progress.Level(D, k) + delta, k == BuildingKind.Headquarters ? 1 : 0, Progress.MaxLevel(k));
             D.buildings[(int)k] = L;
             if (BaseLogic.Building(D) && D.buildKind == (int)k) D.buildKind = -1;
             GameServices.Save.Save();
             pop[k] = 1;
             var p = Pos[k];
-            AddFloat(p.x, p.y - 70, $"TEST: Sv. {L} · kademe {Art.Tier(Mathf.Max(1, L))}", Hex("#ff9a3a"));
+            AddFloat(p.x, p.y - 70, $"TEST: Sv. {L} · kademe {Art.TierOf(k, Mathf.Max(1, L))}", Hex("#ff9a3a"));
         }
 
         void DebugButtons(BuildingKind k)
@@ -525,6 +625,7 @@ namespace SuruSavasi.Game
             else if (k == BuildingKind.Market && Progress.Level(D, k) > 0) { third = "Takas"; glyph = "$"; }
             else if (k == BuildingKind.Barracks) { third = "Kahraman"; glyph = "★"; }
             else if (k == BuildingKind.Armory) { third = "Silah"; glyph = "★"; }
+            else if (k == BuildingKind.Headquarters) { third = "Tema"; glyph = "◆"; }
 
             float hs = 66; float gap = third != null ? 78 : 44;
             bool HexBtn(float cx, float cy, string g, string text, GUIStyle st)
@@ -540,6 +641,7 @@ namespace SuruSavasi.Game
                 if (third == "Topla") CollectOne(k);
                 else if (third == "Takas") { popKind = k; popup = Popup.Trade; }
                 else if (third == "Kahraman") flow.Show(GameScreen.Heroes);
+                else if (third == "Tema") { MetaScreens.shopTab = 2; flow.Show(GameScreen.Shop); }
                 else flow.Show(GameScreen.Weapons);
             }
             if (HexBtn(bot.x + gap, bot.y + 26, "▲", "Yükselt", hexGreen)) { popKind = k; popup = Popup.Upgrade; SoundFx.Play("click"); }
@@ -569,14 +671,16 @@ namespace SuruSavasi.Game
             var sp = k == BuildingKind.Wall ? Art.WallGate(Mathf.CeilToInt(L / 4f)) : L > 0 ? Art.Building(k, L) : Art.BaseMisc(0);
             if (sp != null) { var r = sp.textureRect; var tx = sp.texture; GUI.DrawTextureWithTexCoords(new Rect(x + 8, y + 4, 110, 110), tx, new Rect(r.x / tx.width, r.y / tx.height, r.width / tx.width, r.height / tx.height)); }
             GUI.Label(new Rect(x + 122, y + 22, w - 180, 32), def.name, head);
-            GUI.Label(new Rect(x + 122, y + 54, w - 140, 26), $"<color=#ffd23f>Seviye {L} / {Progress.BuildingMax}</color>", label);
+            GUI.Label(new Rect(x + 122, y + 54, w - 140, 26), $"<color=#ffd23f>Seviye {L} / {Progress.MaxLevel(k)}</color>", label);
 
             if (popup == Popup.Info)
             {
                 GUI.Label(new Rect(x + 20, y + 124, w - 40, 30), $"<b>Şu an:</b> {(L > 0 ? def.effect(e) : "Henüz kurulmadı")}", label);
                 string ex = def.extra(1);
                 if (!string.IsNullOrEmpty(ex)) GUI.Label(new Rect(x + 20, y + 160, w - 40, 50), $"<color=#c9b8ff><b>5. ve 10. seviye eki:</b> {ex}</color>", label);
-                GUI.Label(new Rect(x + 20, y + 216, w - 40, 60), "Her 4 seviyede binanın görünümü değişir. 10. seviyeden sonra etki yarı hızla artar.", small);
+                GUI.Label(new Rect(x + 20, y + 216, w - 40, 60), k == BuildingKind.Headquarters
+                    ? "Karargâh köyün kalbidir. Her seviyesi diğer binaların 2 seviye daha yükselmesine izin verir. Her 2 seviyede görünümü değişir."
+                    : $"Her 4 seviyede binanın görünümü değişir. 10. seviyeden sonra etki yarı hızla artar. Şu an en fazla Sv. {Progress.LevelCap(D, k)} (Karargâh sınırı).", small);
                 if (GUI.Button(new Rect(x + 20, y + h - 70, w - 40, 50), "Yükseltme ekranı", btn)) popup = Popup.Upgrade;
                 return;
             }
@@ -612,7 +716,7 @@ namespace SuruSavasi.Game
                     Shop.WatchAd(AdPlacement.SpeedUpBuild, () => { BaseLogic.Shorten(D, 300); nextTick = 0; GameServices.Save.Save(); }, () => flow.ShowToast("Reklam hazır değil"));
                 return;
             }
-            if (L >= Progress.BuildingMax) { GUI.Label(new Rect(x, y + 180, w, 40), "<color=#8be39d><b>En üst seviye</b></color>", mid); return; }
+            if (L >= Progress.MaxLevel(k)) { GUI.Label(new Rect(x, y + 180, w, 40), "<color=#8be39d><b>En üst seviye</b></color>", mid); return; }
 
             float ne = BuildingData.EffectiveLevel(L + 1);
             GUI.Label(new Rect(x + 20, y + 122, w - 40, 26), L > 0 ? def.effect(e) : "Henüz kurulmadı", label);
@@ -633,7 +737,8 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(x + 20, ry, w - 40, 26), Fmt(BaseLogic.Duration(L)), new GUIStyle(label) { alignment = TextAnchor.MiddleRight });
 
             var chk = BaseLogic.Check(D, k);
-            string bt = chk == BaseLogic.UpResult.Ok ? (L == 0 ? "KUR" : "YÜKSELT") : chk == BaseLogic.UpResult.Busy ? "İnşaatçı meşgul" : chk == BaseLogic.UpResult.Stars ? $"{rs} yıldız gerekli" : "Kaynak yetersiz";
+            string bt = chk == BaseLogic.UpResult.Ok ? (L == 0 ? "KUR" : "YÜKSELT") : chk == BaseLogic.UpResult.Busy ? "İnşaatçı meşgul" : chk == BaseLogic.UpResult.Stars ? $"{rs} yıldız gerekli"
+                : chk == BaseLogic.UpResult.NeedHq ? $"Karargâh Sv. {(L + 2) / 2} gerekli" : "Kaynak yetersiz";
             GUI.enabled = chk == BaseLogic.UpResult.Ok;
             if (GUI.Button(new Rect(x + 20, y + h - 72, w - 40, 56), bt, UiSkin.ButtonGold))
             {
@@ -658,7 +763,7 @@ namespace SuruSavasi.Game
             else if (ev.type == EventType.MouseDrag && pressed)
             {
                 if (!dragging && (ev.mousePosition - downPos).magnitude > 8) dragging = true;
-                if (dragging) camY -= ev.delta.y * visH / 800f;
+                if (dragging && !pinching && Input.touchCount < 2) { camX -= ev.delta.x * visH / 800f; camY -= ev.delta.y * visH / 800f; }
                 ev.Use();
             }
             else if (ev.rawType == EventType.MouseUp && pressed)
@@ -666,7 +771,7 @@ namespace SuruSavasi.Game
                 pressed = false;
                 if (dragging || modal) return;
                 var wp = cam.ScreenToWorldPoint(new Vector3(ev.mousePosition.x * gs, Screen.height - ev.mousePosition.y * gs, 10));
-                float lx = wp.x * 100f + 180f, ly = camY - wp.y * 100f;
+                float lx = wp.x * 100f + camX, ly = camY - wp.y * 100f;
                 Tap(lx, ly);
             }
         }
@@ -683,16 +788,17 @@ namespace SuruSavasi.Game
             BuildingKind? best = null; float bd = 1e9f;
             foreach (var kv in Pos)
             {
-                var p = kv.Value; float hw = kv.Key == BuildingKind.Wall ? 60 : 48;
-                if (Mathf.Abs(lx - p.x) < hw && ly > p.y - 62 && ly < p.y + 36)
+                var p = kv.Value; float bs = BScale(kv.Key), hw = (kv.Key == BuildingKind.Wall ? 75 : 50) * bs;
+                if (Mathf.Abs(lx - p.x) < hw && ly > p.y - 70 * bs && ly < p.y + 36 * bs)
                 { float d = Mathf.Abs(lx - p.x) + Mathf.Abs(ly - p.y); if (d < bd) { bd = d; best = kv.Key; } }
             }
             if (best.HasValue && best != sel) SoundFx.Play("click");
             sel = best;
             if (best.HasValue)
             {   // seçilen bina ve menüsü ekranda kalsın
-                float py = Pos[best.Value].y;
-                camY = Mathf.Clamp(camY, py + 150 - visH / 2 + 90, py - 110 + visH / 2 - 60);
+                var bp = Pos[best.Value];
+                camY = Mathf.Clamp(camY, bp.y + 150 - visH / 2 + 90, bp.y - 110 + visH / 2 - 60);
+                camX = Mathf.Clamp(camX, bp.x + 125 - visW / 2, bp.x - 125 + visW / 2);
             }
         }
     }
