@@ -50,7 +50,7 @@ namespace SuruSavasi.Game
 
         // Canlı üs
         class Worker { public float x = CX, y = CY + WallRY - 10, tx = CX, ty = CY + 100, wait, ph, dir = 1; public bool carry, builder; public int kind = -1; }
-        class Ev { public bool chest, dead; public float x, y, life, t, flash; public int hp; }
+        class Ev { public bool chest, dead, raid; public float x, y, life, t, flash; public int hp; }
         class Float { public float x, y, life; public string text; public Color c; }
         class Part { public float x, y, vx, vy, life, max, size; public Color c; }
         readonly List<Worker> workers = new List<Worker>();
@@ -61,7 +61,7 @@ namespace SuruSavasi.Game
         float evTimer = 8, nextTick;
 
         // Seçim ve pencereler
-        enum Popup { None, Upgrade, Info, Trade, Settings }
+        enum Popup { None, Upgrade, Info, Trade, Settings, Defense }
         BuildingKind? sel;
         Popup popup;
         Rect popupRect;
@@ -114,6 +114,7 @@ namespace SuruSavasi.Game
                 float x = (float)rng.NextDouble() * WW, y = (float)rng.NextDouble() * (WH + 60);
                 float e = ((x - CX) / WallRX) * ((x - CX) / WallRX) + ((y - CY) / WallRY) * ((y - CY) / WallRY);
                 if (e < 1.38f || (Mathf.Abs(x - CX) < 40 && y > CY)) continue; // surun dibi ve kapı yolu boş kalsın
+                if (Mathf.Abs(x - CX) < 150 && y > CY + WallRY + 20 && y < CY + WallRY + 300) continue; // savunma kule yerleri
                 bool close = false;
                 foreach (var tr in trees) if (Mathf.Abs(tr.x - x) < 34 && Mathf.Abs(tr.y - y) < 22) { close = true; break; }
                 if (close) continue;
@@ -232,14 +233,24 @@ namespace SuruSavasi.Game
                 w.x += dx / d * sp * dt; w.y += dy / d * sp * dt; w.ph += dt * 9; if (Mathf.Abs(dx) > .5f) w.dir = Mathf.Sign(dx);
             }
 
+            // Gece baskını: karanlıkta zombiler daha sık ve kalabalık gelir, ödülleri iki kat
+            bool raid = NightRaid;
+            if (raid && !raidAnnounced && def == null && previewTheme == null)
+            { raidAnnounced = true; AddFloat(CX, CY - 40, "GECE BASKINI! Zombiler ×2 ödül", Hex("#ff8a80")); SoundFx.Play("boss"); }
+            if (!raid) raidAnnounced = false;
             evTimer -= dt;
-            if (evTimer <= 0)
+            if (evTimer <= 0 && def == null)
             {
-                evTimer = 14 + Random.value * 14;
-                if (events.Count < 2)
+                evTimer = raid ? 5 + Random.value * 6 : 14 + Random.value * 14;
+                if (events.Count < (raid ? 5 : 2))
                 {
-                    if (Random.value < .6f) { var q = RandomInside(); events.Add(new Ev { chest = true, x = q.x, y = q.y, life = 28 }); SoundFx.Play("power"); }
-                    else { float zy = CY + WallRY + 130; events.Add(new Ev { x = CX, y = zy, hp = 3, life = 30 }); SoundFx.Play("hurt"); AddFloat(CX, zy - 70, "Kaçak zombi!", Hex("#ff8a80")); }
+                    if (Random.value < (raid ? .2f : .6f)) { var q = RandomInside(); events.Add(new Ev { chest = true, x = q.x, y = q.y, life = 28 }); SoundFx.Play("power"); }
+                    else
+                    {
+                        float zy = CY + WallRY + 130, zx = CX + (raid ? Random.Range(-30f, 30f) : 0);
+                        events.Add(new Ev { x = zx, y = zy, hp = raid ? 4 : 3, life = 30, raid = raid }); SoundFx.Play("hurt");
+                        AddFloat(zx, zy - 70, raid ? "Gece baskını!" : "Kaçak zombi!", Hex("#ff8a80"));
+                    }
                 }
             }
             foreach (var e in events)
@@ -249,7 +260,7 @@ namespace SuruSavasi.Game
                 e.y -= 22 * dt; e.x += Mathf.Sin(e.t * 1.5f) * 8 * dt;
                 if (e.y < CY + 120)
                 {   // askerler yakaladı
-                    e.dead = true; int q = 8 + Mathf.Min(40, Progress.TotalStars(D) / 3);
+                    e.dead = true; int q = (8 + Mathf.Min(40, Progress.TotalStars(D) / 3)) * (e.raid ? 2 : 1);
                     Wl.Add(Currency.Gold, q, "base_event"); AddFloat(e.x, e.y - 30, $"+{q} altın", Gold);
                     Burst(e.x, e.y - 10, 16, new[] { Hex("#8dbd80"), Hex("#ff5a4d"), Color.white }, 100, 40); SoundFx.Play("kill");
                 }
@@ -283,7 +294,8 @@ namespace SuruSavasi.Game
                     e.hp--; e.flash = 1; SoundFx.Play("hit"); Burst(e.x, e.y - 20, 8, new[] { Hex("#8dbd80"), Color.white }, 80, 30);
                     if (e.hp <= 0)
                     {
-                        int q2 = 20 + Mathf.Min(60, Progress.TotalStars(D) / 2);
+                        int q2 = (20 + Mathf.Min(60, Progress.TotalStars(D) / 2)) * (e.raid ? 2 : 1);
+                        if (e.raid) { Quests.Add(D, "raid"); if (Random.value < .15f) { Wl.Add(Currency.Diamonds, 1, "night_raid"); AddFloat(e.x, e.y - 60, "+1 elmas", Gem); } }
                         Wl.Add(Currency.Gold, q2, "base_event"); AddFloat(e.x, e.y - 40, $"+{q2} altın", Gold); SoundFx.Play("kill"); e.dead = true;
                     }
                     return true;
@@ -304,7 +316,7 @@ namespace SuruSavasi.Game
             else { q = Mathf.FloorToInt(D.pendFood); D.pendFood -= q; cur = Currency.Food; nm = "yiyecek"; col = Food; }
             var p = Pos[k];
             if (q < 1) { AddFloat(p.x, p.y - 50, "Henüz birikmedi", Color.white); return; }
-            Wl.Add(cur, q, "production"); Daily.Add(D, "gather"); GameServices.Save.Save();
+            Wl.Add(cur, q, "production"); Daily.Add(D, "gather"); Quests.Add(D, "gather"); GameServices.Save.Save();
             SoundFx.Play("pickup"); AddFloat(p.x, p.y - 60, $"+{q} {nm}", col); Burst(p.x, p.y - 50, 14, new[] { col, Color.white }, 90, 50);
         }
 
@@ -338,6 +350,7 @@ namespace SuruSavasi.Game
                 }
             }
             LiveTick(dt);
+            DefenseTick(dt);
             AmbientTick(dt, ThemeId);
             NightTick(dt);
             PreviewTick();
@@ -486,6 +499,7 @@ namespace SuruSavasi.Game
                 }
             }
 
+            DefenseDraw();
             NightDraw();
             AmbientDraw();
             foreach (var p in parts) { var c = p.c; c.a *= Mathf.Clamp01(p.life / p.max); Draw(circle, c, p.x, p.y, p.size, p.size, 2100); }
@@ -563,6 +577,7 @@ namespace SuruSavasi.Game
             foreach (var f in floats) { var c = f.c; c.a = Mathf.Clamp01(f.life * 1.5f); Outlined(ToGui(f.x, f.y), f.text, c, center, 260); }
 
             if (previewTheme != null) { PreviewGui(); WorldInput(false); return; }
+            if (def != null) { DefenseGui(); WorldInput(false); return; }
 #if UNITY_EDITOR
             if (nightDebug > 0) Outlined(new Vector2(VW / 2, 100), $"TEST: {NightDebugNames[nightDebug]} (N)", Hex("#ff9a3a"), tiny, 260);
 #endif
@@ -575,6 +590,58 @@ namespace SuruSavasi.Game
             if (modal) DrawPopup();
             WorldInput(modal);
         }
+
+        /// <summary>Hikâye görevi kartı: ne yapılacağını gösterir; dokununca ilgili yere götürür, bitince ödül verir.</summary>
+        void QuestPanel(float x, float y, float w)
+        {
+            var q = Quests.Current(D);
+            if (q == null) return;
+            bool done = Quests.Done(D); int v = Mathf.Min(Quests.Value(D, q), q.target);
+            var r = new Rect(x, y, w, 58);
+            GUI.Box(r, "", card);
+            if (done) { float pu = .5f + .5f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x + 3, y + 3, w - 6, 52), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, .82f, .25f, .18f + .12f * pu), 0, 8); }
+            GUI.Label(new Rect(x + 10, y + 3, w - 20, 24), $"<color=#ffd23f><b>Görev {D.storyIndex + 1}</b></color>  {q.text}", new GUIStyle(small) { fontSize = 13, wordWrap = false, clipping = TextClipping.Clip });
+            if (done) GUI.Label(new Rect(x + 10, y + 28, w - 20, 26), "<color=#8be39d><b>Tamamlandı! Ödülü al ›</b></color>", new GUIStyle(label) { fontSize = 15 });
+            else
+            {
+                float f = q.target > 0 ? v / (float)q.target : 0;
+                GUI.DrawTexture(new Rect(x + 10, y + 36, w - 80, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.05f, .07f, .1f, .9f), 0, 5);
+                GUI.DrawTexture(new Rect(x + 11, y + 37, Mathf.Max(4, (w - 82) * f), 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, Hex("#4fc16a"), 0, 4);
+                GUI.Label(new Rect(x + w - 66, y + 28, 58, 26), $"{v}/{q.target}", new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontSize = 13 });
+            }
+            if (GUI.Button(r, "", GUIStyle.none))
+            {
+                SoundFx.Play("click");
+                if (done)
+                {
+                    var rw = Quests.Claim(D, (c, n) => { if (n <= 0) return; Wl.Add(c == "gold" ? Currency.Gold : c == "iron" ? Currency.Iron : c == "food" ? Currency.Food : Currency.Diamonds, n, "story_quest"); });
+                    GameServices.Save.Save(); SoundFx.Play("power");
+                    var hp = Pos[BuildingKind.Headquarters];
+                    AddFloat(hp.x, hp.y - 90, $"+{rw.gold} altın  +{rw.gems} elmas", Gold);
+                    Burst(hp.x, hp.y - 60, 30, new[] { Gold, Color.white, Gem }, 140, 70);
+                    GameServices.Analytics?.LogEvent("story_quest", new Dictionary<string, object> { { "index", D.storyIndex } });
+                }
+                else QuestGo(q);
+            }
+        }
+
+        void QuestGo(StoryQuest q)
+        {
+            switch (q.kind)
+            {
+                case "level": case "stars": flow.Show(GameScreen.Levels); break;
+                case "hero": flow.Show(GameScreen.Heroes); break;
+                case "weapon": flow.Show(GameScreen.Weapons); break;
+                case "defense": popup = Popup.Defense; break;
+                case "raid": flow.ShowToast("Gece baskını akşam karanlığında başlar"); break;
+                case "gather":
+                    foreach (var k in new[] { BuildingKind.Farm, BuildingKind.Mine, BuildingKind.Quarry }) if (Progress.Level(D, k) > 0) { Focus(k); return; }
+                    Focus(BuildingKind.Farm); break;
+                default: Focus(q.kind == "hq" ? BuildingKind.Headquarters : q.bld); break;
+            }
+        }
+
+        void Focus(BuildingKind k) { sel = k; var p = Pos[k]; camX = p.x; camY = p.y + 40; }
 
         void Hud()
         {
@@ -594,6 +661,13 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0 + w - 164, 48, 78, 34), "Günlük", tb)) { SoundFx.Play("click"); flow.Show(GameScreen.Daily); }
             if (ready) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 96 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + w - 80, 48, 80, 34), "Mağaza", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Show(GameScreen.Shop); }
+
+            QuestPanel(x0, 90, Mathf.Min(270, w - 110));
+
+            // Savunma
+            long drem = DefenseSim.ReadyIn(D);
+            if (GUI.Button(new Rect(x0 + w - 100, 800 - 160, 100, 58), drem > 0 ? $"Savunma\n<size=12>{Fmt(drem / 1000f)}</size>" : "Savunma\n<size=12>Hazır!</size>", drem > 0 ? new GUIStyle(btn) { fontSize = 14 } : new GUIStyle(UiSkin.ButtonGold) { fontSize = 14 }))
+            { SoundFx.Play("click"); popup = Popup.Defense; }
 
             // Alt menü
             float bh = 64, by = 800 - bh - 8, mid = 124, side = (w - mid - 32) / 4;
@@ -668,7 +742,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 310 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 310 : popup == Popup.Defense ? 340 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -676,6 +750,7 @@ namespace SuruSavasi.Game
             var head = new GUIStyle(label) { fontSize = 22, fontStyle = FontStyle.Bold };
             var mid = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
 
+            if (popup == Popup.Defense) { DefenseTierPopup(x, y, w, h, head); return; }
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);
@@ -798,6 +873,7 @@ namespace SuruSavasi.Game
         void Tap(float lx, float ly)
         {
             if (previewTheme != null) return;
+            if (DefenseTap(lx, ly)) return;
             if (EventTap(lx, ly)) return;
             // Üretim balonu
             foreach (var kv in Pos)
