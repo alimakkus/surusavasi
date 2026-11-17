@@ -23,6 +23,25 @@ namespace SuruSavasi.Game
             return t;
         }
 
+        /// <summary>Altıgen buton dokusu (üs menüsü).</summary>
+        public static Texture2D Hex(Color fill, Color top, Color border, int s = 96)
+        {
+            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[s * s]; float c = s / 2f, R = s / 2f - 2;
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++)
+                {
+                    float dx = Mathf.Abs(x + .5f - c), dy = Mathf.Abs(y + .5f - c);
+                    // sivri uçları üstte-altta olan altıgen: uzaklık
+                    float d = Mathf.Max(dx, dx * .5f + dy * .8660254f);
+                    float a = Mathf.Clamp01(R * .8660254f - d + .5f);
+                    var col = d > R * .8660254f - 5 ? border : Color.Lerp(fill, top, y / (float)s);
+                    col.a *= a; px[y * s + x] = col;
+                }
+            t.SetPixels(px); t.Apply();
+            return t;
+        }
+
         static GUIStyle button, buttonGold, card, label, small, title, big;
         public static GUIStyle Button => Init() ? button : null;
         public static GUIStyle ButtonGold => Init() ? buttonGold : null;

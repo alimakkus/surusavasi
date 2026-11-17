@@ -437,7 +437,7 @@ namespace SuruSavasi.Game
             if (sim.t < 2.6f && sim.Live)
                 Text(new Vector2(VW / 2, 300), $"BÖLÜM {level}", Color.white, big, 400);
 
-            if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), "Menü", btn)) { GoMenu(); return; }
+            if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), "Üs", btn)) { GoMenu(); return; }
 
             // Yetenek butonu
             if (sim.Live)
@@ -470,7 +470,7 @@ namespace SuruSavasi.Game
                 }
                 by += 60;
                 if (GUI.Button(new Rect(px + 20, by, (pw - 50) / 2, 50), "Tekrar oyna", btn)) StartLevel(level);
-                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Menü", btn)) GoMenu();
+                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Üsse dön", btn)) GoMenu();
             }
             else
             {
@@ -480,7 +480,7 @@ namespace SuruSavasi.Game
                     Shop.WatchAd(AdPlacement.SecondChance, () => sim.Revive());
                 by += 70;
                 if (GUI.Button(new Rect(px + 20, by, (pw - 50) / 2, 50), "Tekrar dene", btn)) StartLevel(level);
-                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Menü", btn)) GoMenu();
+                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Üsse dön", btn)) GoMenu();
             }
         }
     }

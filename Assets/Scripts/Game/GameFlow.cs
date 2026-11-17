@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SuruSavasi.Core;
 using SuruSavasi.Core.Battle;
 using SuruSavasi.Core.Meta;
@@ -6,19 +7,25 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Title, Levels, Heroes, Weapons, Base, Battle }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle }
 
-    /// <summary>Oyunun ekran akışı: başlık, bölüm seçimi, kahramanlar, silahlar, üs, savaş.
-    /// Geçici arayüz (OnGUI); görsel adımda Unity UI'ya taşınacak.</summary>
+    /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
+    /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
     public class GameFlow : MonoBehaviour
     {
         public static GameFlow I { get; private set; }
-        public GameScreen screen = GameScreen.Title;
+        public GameScreen screen = GameScreen.Splash;
         BattleView battle;
+        BaseMapView baseMap;
         Vector2 scroll;
         string toast; float toastT;
         GUIStyle title, label, small, btn, card;
         float gs, VW;
+
+        // Açılış
+        readonly Texture2D[] frames = new Texture2D[16];
+        Texture2D logo;
+        List<string> toLoad; int loaded; float splashT;
 
         SaveData D => GameServices.Save.Data;
         Wallet Wl => GameServices.Wallet;
@@ -26,27 +33,57 @@ namespace SuruSavasi.Game
         void Awake()
         {
             I = this;
-            var go = new GameObject("Battle");
-            go.transform.SetParent(transform);
+            Application.targetFrameRate = 60;
+            UnityEngine.Screen.orientation = ScreenOrientation.Portrait;
+            var go = new GameObject("Battle"); go.transform.SetParent(transform);
             battle = go.AddComponent<BattleView>();
-            battle.onMenu = () => Show(GameScreen.Title);
+            battle.onMenu = () => Show(GameScreen.Base);
             go.SetActive(false);
+            var bg = new GameObject("Base"); bg.transform.SetParent(transform);
+            baseMap = bg.AddComponent<BaseMapView>(); baseMap.flow = this;
+            bg.SetActive(false);
             SoundFx.Ensure();
             var cam = Camera.main;
-            if (cam != null) { cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(.1f, .11f, .14f); }
+            if (cam == null) { var cg = new GameObject("Main Camera"); cam = cg.AddComponent<Camera>(); cg.tag = "MainCamera"; }
+            cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(.05f, .05f, .09f);
+            cam.transform.position = new Vector3(0, 0, -10);
+
+            for (int i = 0; i < frames.Length; i++) frames[i] = Resources.Load<Texture2D>($"Art/title_{i:00}");
+            logo = Resources.Load<Texture2D>("Art/logo");
+            toLoad = Art.AllNames();
         }
 
-        public void Show(GameScreen s) { screen = s; scroll = Vector2.zero; }
+        public void Show(GameScreen s)
+        {
+            screen = s; scroll = Vector2.zero;
+            if (s == GameScreen.Base) baseMap.Open(); else baseMap.Close();
+        }
 
         public void Play(int lv)
         {
+            baseMap.Close();
             screen = GameScreen.Battle;
             battle.Begin(Mathf.Clamp(lv, 1, Balance.MaxLevel));
         }
 
         void Toast(string s) { toast = s; toastT = 2.2f; }
 
-        void Update() { if (toastT > 0) toastT -= Time.deltaTime; }
+        void Update()
+        {
+            if (toastT > 0) toastT -= Time.deltaTime;
+            if (screen != GameScreen.Splash) return;
+            splashT += Time.unscaledDeltaTime;
+            // Her karede birkaç görsel yüklenir: ilerleme çubuğu gerçek yüklemeyi gösterir
+            for (int n = 0; n < 2 && loaded < toLoad.Count; n++) { Resources.Load<Texture2D>("Art/" + toLoad[loaded]); loaded++; }
+            if (loaded >= toLoad.Count && splashT > 3.2f && GameServices.Ready)
+            {
+                for (int i = 0; i < frames.Length; i++) frames[i] = null;
+                Resources.UnloadUnusedAssets();
+                Show(GameScreen.Base);
+            }
+        }
+
+        float Progress01 => Mathf.Min(toLoad == null || toLoad.Count == 0 ? 1 : loaded / (float)toLoad.Count, splashT / 3.2f);
 
         void Styles()
         {
@@ -56,36 +93,64 @@ namespace SuruSavasi.Game
 
         void OnGUI()
         {
-            if (screen == GameScreen.Battle || GameServices.Save == null) return;
+            if (screen == GameScreen.Battle) return;
             Styles();
             gs = UnityEngine.Screen.height / 800f;
             VW = UnityEngine.Screen.width / gs;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(gs, gs, 1));
-            float w = Mathf.Min(440, VW - 20), x0 = VW / 2 - w / 2;
+            if (screen == GameScreen.Splash) { SplashScreen(); return; }
+            if (GameServices.Save == null) return;
 
-            // Arka plan: oyuncunun bulunduğu haritanın dokusu, üstüne koyu perde
-            var bg = Art.Background(BattleData.MapOf(Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel)));
-            if (bg != null)
+            if (screen != GameScreen.Base)
             {
-                float th = 800, tw = th * 360f / 480f;
-                for (float bx = VW / 2 - tw / 2 - tw * Mathf.Ceil((VW / 2) / tw); bx < VW; bx += tw) GUI.DrawTexture(new Rect(bx, 0, tw, th), bg.texture);
-                GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.03f, .04f, .08f, .62f), 0, 0);
-            }
-
-            ResourceBar(x0, w);
-            switch (screen)
-            {
-                case GameScreen.Title: TitleScreen(x0, w); break;
-                case GameScreen.Levels: LevelsScreen(x0, w); break;
-                case GameScreen.Heroes: HeroesScreen(x0, w); break;
-                case GameScreen.Weapons: WeaponsScreen(x0, w); break;
-                case GameScreen.Base: BaseScreen.Draw(this, x0, w, label, small, btn, card); break;
+                float w = Mathf.Min(440, VW - 20), x0 = VW / 2 - w / 2;
+                var bg = Art.Background(BattleData.MapOf(Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel)));
+                if (bg != null)
+                {
+                    float th = 800, tw = th * 360f / 480f;
+                    for (float bx = VW / 2 - tw / 2 - tw * Mathf.Ceil((VW / 2) / tw); bx < VW; bx += tw) GUI.DrawTexture(new Rect(bx, 0, tw, th), bg.texture);
+                    GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.03f, .04f, .08f, .62f), 0, 0);
+                }
+                ResourceBar(x0, w);
+                switch (screen)
+                {
+                    case GameScreen.Levels: LevelsScreen(x0, w); break;
+                    case GameScreen.Heroes: HeroesScreen(x0, w); break;
+                    case GameScreen.Weapons: WeaponsScreen(x0, w); break;
+                }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
             {
-                GUI.Box(new Rect(VW / 2 - 170, 720, 340, 44), "");
-                GUI.Label(new Rect(VW / 2 - 160, 720, 320, 44), toast, new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                GUI.Box(new Rect(VW / 2 - 170, 640, 340, 44), "", card);
+                GUI.Label(new Rect(VW / 2 - 160, 640, 320, 44), toast, new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
             }
+        }
+
+        /// <summary>Açılış ekranı: hareketli oyun görseli, yükleme göstergesi, altta sürüm. Buton yoktur.</summary>
+        void SplashScreen()
+        {
+            GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.03f, .03f, .08f), 0, 0);
+            // Görsel ekranı kaplar (yükseklik tam, genişlik ortalanır); kareler arası yumuşak geçiş
+            float iw = Mathf.Max(VW, 800 * 360f / 560f), ih = iw * 560f / 360f, ix = VW / 2 - iw / 2, iy = Mathf.Min(0, 800 - ih);
+            float ft = splashT * 8f; int a = Mathf.FloorToInt(ft) % frames.Length, b = (a + 1) % frames.Length; float k = ft - Mathf.Floor(ft);
+            if (frames[a] != null) GUI.DrawTexture(new Rect(ix, iy, iw, ih), frames[a]);
+            if (frames[b] != null) { GUI.color = new Color(1, 1, 1, k); GUI.DrawTexture(new Rect(ix, iy, iw, ih), frames[b]); GUI.color = Color.white; }
+
+            if (logo != null)
+            {
+                float lw = Mathf.Min(VW - 30, 400), lh = lw * logo.height / logo.width, pop = 1 + .03f * Mathf.Sin(splashT * 2.2f);
+                GUI.DrawTexture(new Rect(VW / 2 - lw * pop / 2, 46 - (lh * pop - lh) / 2, lw * pop, lh * pop), logo);
+            }
+            var c = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(0, 232 + Mathf.Min(VW - 30, 400) * .1f, VW, 24), "<color=#e8dcff>100 BÖLÜM · ZOMBİ SÜRÜSÜNE KARŞI</color>", c);
+
+            // Yükleme göstergesi
+            float bw = Mathf.Min(320, VW - 60), bx0 = VW / 2 - bw / 2, by = 706, p = Mathf.Clamp01(Progress01);
+            GUI.DrawTexture(new Rect(bx0 - 3, by - 3, bw + 6, 20), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .65f), 0, 10);
+            GUI.DrawTexture(new Rect(bx0, by, Mathf.Max(14, bw * p), 14), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1f, .78f, .25f), 0, 7);
+            string dots = new string('.', 1 + Mathf.FloorToInt(splashT * 3) % 3);
+            GUI.Label(new Rect(0, by + 20, VW, 24), $"Yükleniyor{dots}  %{Mathf.RoundToInt(p * 100)}", c);
+            GUI.Label(new Rect(0, 770, VW, 22), $"<color=#ffffff99>Sürüm {Application.version}</color>", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 12 });
         }
 
         public void ShowToast(string s) => Toast(s);
@@ -94,7 +159,7 @@ namespace SuruSavasi.Game
         {
             string s = $"<color=#ffd23f>Altın {Wl.Get(Currency.Gold)}</color>   <color=#cfd8e0>Demir {Wl.Get(Currency.Iron)}</color>   " +
                        $"<color=#8be39d>Yiyecek {Wl.Get(Currency.Food)}</color>   <color=#9fe8ff>Elmas {Wl.Get(Currency.Diamonds)}</color>";
-            GUI.Box(new Rect(x0, 6, w, 34), "");
+            GUI.Box(new Rect(x0, 6, w, 34), "", card);
             GUI.Label(new Rect(x0 + 10, 6, w - 20, 34), s, new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
         }
 
@@ -103,31 +168,9 @@ namespace SuruSavasi.Game
             return GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn);
         }
 
-        void TitleScreen(float x0, float w)
-        {
-            GUI.Label(new Rect(x0 + 2, 92, w, 64), "<color=#00000099>SÜRÜ SAVAŞI</color>", title);
-            GUI.Label(new Rect(x0, 90, w, 64), "SÜRÜ SAVAŞI", title);
-            int lv = Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel);
-            GUI.Label(new Rect(x0, 150, w, 30), $"Toplam yıldız: {Progress.TotalStars(D)}  ·  Harita: {BattleData.Maps[BattleData.MapOf(lv)].nameTr}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
-            float y = 340, bh = 58;
-            var heroSp = Art.Hero(Progress.HeroIndex(D.hero), Mathf.FloorToInt(Time.time * 3) & 1);
-            if (heroSp != null) { var r = heroSp.textureRect; var tx = heroSp.texture; GUI.DrawTextureWithTexCoords(new Rect(VW / 2 - 60, y - 128, 120, 120), tx, new Rect(r.x / tx.width, r.y / tx.height, r.width / tx.width, r.height / tx.height)); }
-            if (GUI.Button(new Rect(x0 + 30, y, w - 60, bh + 10), $"OYNA  (Bölüm {lv})", UiSkin.ButtonGold)) { SoundFx.Play("click"); Play(lv); }
-            y += bh + 26;
-            if (GUI.Button(new Rect(x0 + 30, y, w - 60, bh), "Bölümler", btn)) Show(GameScreen.Levels); y += bh + 12;
-            if (GUI.Button(new Rect(x0 + 30, y, w - 60, bh), "Üs", btn)) Show(GameScreen.Base); y += bh + 12;
-            if (GUI.Button(new Rect(x0 + 30, y, w - 60, bh), "Kahramanlar", btn)) Show(GameScreen.Heroes); y += bh + 12;
-            if (GUI.Button(new Rect(x0 + 30, y, w - 60, bh), "Silahlar", btn)) Show(GameScreen.Weapons); y += bh + 12;
-            var H = Progress.Heroes[Progress.HeroIndex(D.hero)]; var Wp = Progress.Weapons[Progress.WeaponIndex(D.weapon)];
-            GUI.Label(new Rect(x0, y - 4, w, 26), $"Seçili: {H.name} · {Wp.name}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
-            float hw = (w - 70) / 2;
-            if (GUI.Button(new Rect(x0 + 30, y + 24, hw, 40), SoundFx.Muted ? "Ses: Kapalı" : "Ses: Açık", new GUIStyle(btn) { fontSize = 15 })) SoundFx.Muted = !SoundFx.Muted;
-            if (GUI.Button(new Rect(x0 + 40 + hw, y + 24, hw, 40), SoundFx.Vibrate ? "Titreşim: Açık" : "Titreşim: Kapalı", new GUIStyle(btn) { fontSize = 15 })) SoundFx.Vibrate = !SoundFx.Vibrate;
-        }
-
         void LevelsScreen(float x0, float w)
         {
-            if (Back(x0)) { Show(GameScreen.Title); return; }
+            if (Back(x0)) { Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Bölümler</b>", label);
             int cols = 5; float cw = (w - 10) / cols, ch = 64;
             int rows = Mathf.CeilToInt(Balance.MaxLevel / (float)cols);
@@ -153,7 +196,7 @@ namespace SuruSavasi.Game
 
         void HeroesScreen(float x0, float w)
         {
-            if (Back(x0)) { Show(GameScreen.Title); return; }
+            if (Back(x0)) { Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), $"<b>Kahramanlar</b>  (yıldız: {Progress.TotalStars(D)})", label);
             float y = 100;
             for (int i = 0; i < Progress.Heroes.Length; i++)
@@ -193,7 +236,7 @@ namespace SuruSavasi.Game
 
         void WeaponsScreen(float x0, float w)
         {
-            if (Back(x0)) { Show(GameScreen.Title); return; }
+            if (Back(x0)) { Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), $"<b>Silahlar</b>  (Silahhane Sv. {Progress.Level(D, BuildingKind.Armory)})", label);
             float y = 100;
             for (int i = 0; i < Progress.Weapons.Length; i++)
