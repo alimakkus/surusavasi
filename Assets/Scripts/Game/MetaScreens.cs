@@ -125,8 +125,15 @@ namespace SuruSavasi.Game
                 if (tex != null) GUI.DrawTextureWithTexCoords(new Rect(16, y + 10, 112, 112), tex, new Rect(.175f, .3f, .65f, .4333f));
                 GUI.Label(new Rect(140, y + 10, w - 290, 30), $"<b>{th.name}</b>", label);
                 GUI.Label(new Rect(140, y + 42, w - 290, 80), th.desc, small);
-                var r = new Rect(w - 144, y + 40, 132, 52);
-                if (active) GUI.Label(r, "<color=#8be39d><b>Kullanılıyor</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                var r = new Rect(w - 144, y + 70, 132, 50);
+                if (!active)
+                {   // göz: temayı üste canlı uygular
+                    var er = new Rect(w - 144, y + 12, 132, 50);
+                    if (GUI.Button(er, "", UiSkin.Button)) { SoundFx.Play("click"); BaseMapView.StartPreview(th.id); flow.Show(GameScreen.Base); return y; }
+                    if (UiSkin.Eye != null) GUI.DrawTexture(new Rect(er.x + 12, er.y + 9, 32, 32), UiSkin.Eye, ScaleMode.ScaleToFit);
+                    GUI.Label(new Rect(er.x + 46, er.y, er.width - 50, er.height), "<b>Önizle</b>", new GUIStyle(label) { alignment = TextAnchor.MiddleLeft, fontSize = 15 });
+                }
+                if (active) GUI.Label(new Rect(w - 144, y + 40, 132, 52), "<color=#8be39d><b>Kullanılıyor</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
                 else if (owned)
                 {
                     if (GUI.Button(r, "Seç", UiSkin.Button)) { D.theme = th.id; GameServices.Save.Save(); SoundFx.Play("click"); flow.ShowToast($"{th.name} seçildi"); }

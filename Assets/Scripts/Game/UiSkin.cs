@@ -42,6 +42,39 @@ namespace SuruSavasi.Game
             return t;
         }
 
+        static Texture2D eye;
+        /// <summary>Göz simgesi (önizleme düğmesi): beyaz badem göz, mavi iris, parlak nokta.</summary>
+        public static Texture2D Eye
+        {
+            get
+            {
+                if (eye != null) return eye;
+                int s = 96; eye = new Texture2D(s, s, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+                var px = new Color[s * s]; float c = s / 2f;
+                var white = new Color(1, 1, 1); var outline = new Color(.12f, .16f, .26f); var iris = new Color(.25f, .55f, .95f); var pupil = new Color(.06f, .08f, .14f);
+                for (int y = 0; y < s; y++)
+                    for (int x = 0; x < s; x++)
+                    {
+                        float u = (x + .5f - c) / (s * .46f), v = (y + .5f - c) / (s * .46f);
+                        float lid = .58f * (1 - u * u);                 // badem şekli: üst ve alt kapak
+                        float edge = Mathf.Abs(v) - lid;                // <0 içeride
+                        Color col = new Color(0, 0, 0, 0);
+                        if (Mathf.Abs(u) <= 1 && edge < .07f)
+                        {
+                            col = edge > -.02f ? outline : white;
+                            float r = Mathf.Sqrt(u * u + v * v);
+                            if (edge <= -.02f && r < .36f) col = r < .17f ? pupil : (r > .32f ? outline : iris);
+                            float hx = u + .1f, hy = v - .1f;
+                            if (edge <= -.02f && hx * hx + hy * hy < .006f) col = white; // parıltı
+                            col.a = Mathf.Clamp01((.07f - edge) * 40);
+                        }
+                        px[y * s + x] = col;
+                    }
+                eye.SetPixels(px); eye.Apply();
+                return eye;
+            }
+        }
+
         static GUIStyle button, buttonGold, card, label, small, title, big;
         public static GUIStyle Button => Init() ? button : null;
         public static GUIStyle ButtonGold => Init() ? buttonGold : null;

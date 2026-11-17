@@ -121,6 +121,7 @@ namespace SuruSavasi.Game
             Init();
             gameObject.SetActive(true);
             sel = null; popup = Popup.None;
+            if (previewTheme != null) { visW = 9999; camX = CX; camY = CY; previewNight = false; }
             if (cam != null) { cam.transform.position = new Vector3(0, 0, -10); cam.orthographic = true; }
             nextTick = 0;
         }
@@ -129,6 +130,8 @@ namespace SuruSavasi.Game
         {
             foreach (var r in pool) if (r != null) r.gameObject.SetActive(false);
             gameObject.SetActive(false);
+            SoundFx.Ambient(null);
+            if (previewTheme != null) previewTheme = null;
         }
 
         // ---------- Çizim yardımcıları ----------
@@ -330,7 +333,9 @@ namespace SuruSavasi.Game
                 }
             }
             LiveTick(dt);
-            AmbientTick(dt, Themes.Current(D).id);
+            AmbientTick(dt, ThemeId);
+            NightTick(dt);
+            PreviewTick();
 #if UNITY_EDITOR
             // Test kısayolları (sadece Editor): seçili binanın seviyesi PageUp/PageDown veya + / - ile değişir
             if (sel.HasValue)
@@ -383,7 +388,7 @@ namespace SuruSavasi.Game
         void Render()
         {
             used = 0;
-            var theme = Themes.Current(D);
+            var theme = Themes.Get(ThemeId);
             Spr(Art.ThemeGround(theme.id), WW / 2, WH / 2, 0);
             int wallL = Progress.Level(D, BuildingKind.Wall), tier = Mathf.CeilToInt(wallL / 4f);
 
@@ -456,28 +461,29 @@ namespace SuruSavasi.Game
                 if (busy)
                 {
                     float pr = Mathf.Clamp01(1 - BaseLogic.Remaining(D) / Mathf.Max(1, BaseLogic.Duration(D.buildFrom)));
-                    Draw(square, new Color(.03f, .05f, .07f, .85f), p.x, p.y - 48, 64, 9, 700);
-                    Draw(square, Hex("#ffb02e"), p.x - 31 + 31 * pr, p.y - 48, 62 * pr, 7, 701);
-                    Spr(Art.BaseMisc(4), p.x + 34, p.y - 22, 702, 1.6f, false, null, Mathf.Sin(t * 8) * 30);
+                    Draw(square, new Color(.03f, .05f, .07f, .85f), p.x, p.y - 48, 64, 9, 2050);
+                    Draw(square, Hex("#ffb02e"), p.x - 31 + 31 * pr, p.y - 48, 62 * pr, 7, 2051);
+                    Spr(Art.BaseMisc(4), p.x + 34, p.y - 22, 2052, 1.6f, false, null, Mathf.Sin(t * 8) * 30);
                     if (Random.value < Time.deltaTime * 6) Burst(p.x + (Random.value - .5f) * 50, p.y + 6, 1, new[] { new Color(.8f, .75f, .65f, .8f) }, 20, 30);
                 }
                 if (L > 0)
                 {
                     float bx = p.x + 40 * bs, by = p.y - 30 * bs;
-                    Draw(circle, Color.white, bx, by, 23, 23, 703); Draw(circle, Hex("#4b3aa8"), bx, by, 20, 20, 704);
+                    Draw(circle, Color.white, bx, by, 23, 23, 2053); Draw(circle, Hex("#4b3aa8"), bx, by, 20, 20, 2054);
                 }
                 var pk = ProdOf(k);
                 if (pk.HasValue && L > 0 && Pending(k) >= 1 && !busy)
                 {
                     float by2 = p.y - 62 + Mathf.Sin(t * 3 + p.x) * 3; var rc = k == BuildingKind.Mine ? Gold : k == BuildingKind.Quarry ? Iron : Food;
-                    Draw(circle, rc, p.x, by2, 33, 33, 705); Draw(circle, Color.white, p.x, by2, 28, 28, 706); Draw(circle, rc, p.x, by2, 14, 14, 707);
+                    Draw(circle, rc, p.x, by2, 33, 33, 2055); Draw(circle, Color.white, p.x, by2, 28, 28, 2056); Draw(circle, rc, p.x, by2, 14, 14, 2057);
                 }
             }
 
+            NightDraw();
             AmbientDraw();
-            foreach (var p in parts) { var c = p.c; c.a *= Mathf.Clamp01(p.life / p.max); Draw(circle, c, p.x, p.y, p.size, p.size, 800); }
+            foreach (var p in parts) { var c = p.c; c.a *= Mathf.Clamp01(p.life / p.max); Draw(circle, c, p.x, p.y, p.size, p.size, 2100); }
             // Bulut gölgeleri
-            for (int cl = 0; cl < 4; cl++) Draw(circle, new Color(.04f, .08f, .12f, .07f), ((t * 9 + cl * 290) % 1100) - 150, CY - 420 + cl * 280, 180, 70, 810);
+            for (int cl = 0; cl < 4; cl++) Draw(circle, new Color(.04f, .08f, .12f, .07f), ((t * 9 + cl * 290) % 1100) - 150, CY - 420 + cl * 280, 180, 70, 2110);
 
             for (int i = used; i < pool.Count; i++) if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
         }
@@ -549,6 +555,10 @@ namespace SuruSavasi.Game
             foreach (var e in events) if (e.chest) Outlined(ToGui(e.x, e.y - 24), "Dokun!", Gold, tiny);
             foreach (var f in floats) { var c = f.c; c.a = Mathf.Clamp01(f.life * 1.5f); Outlined(ToGui(f.x, f.y), f.text, c, center, 260); }
 
+            if (previewTheme != null) { PreviewGui(); WorldInput(false); return; }
+#if UNITY_EDITOR
+            if (nightDebug > 0) Outlined(new Vector2(VW / 2, 100), $"TEST: {NightDebugNames[nightDebug]} (N)", Hex("#ff9a3a"), tiny, 260);
+#endif
             bool modal = popup != Popup.None;
             if (!modal && sel.HasValue) SelectionMenu(sel.Value);
 #if UNITY_EDITOR
@@ -651,7 +661,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 250 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 310 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -664,7 +674,8 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);
                 if (GUI.Button(new Rect(x + 20, y + 64, w - 40, 50), SoundFx.Muted ? "Ses: Kapalı" : "Ses: Açık", btn)) SoundFx.Muted = !SoundFx.Muted;
                 if (GUI.Button(new Rect(x + 20, y + 124, w - 40, 50), SoundFx.Vibrate ? "Titreşim: Açık" : "Titreşim: Kapalı", btn)) SoundFx.Vibrate = !SoundFx.Vibrate;
-                GUI.Label(new Rect(x, y + 190, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                if (GUI.Button(new Rect(x + 20, y + 184, w - 40, 50), NightEnabled ? "Gece görünümü: Saate göre" : "Gece görünümü: Kapalı", btn)) NightEnabled = !NightEnabled;
+                GUI.Label(new Rect(x, y + 250, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
                 return;
             }
 
@@ -779,6 +790,7 @@ namespace SuruSavasi.Game
 
         void Tap(float lx, float ly)
         {
+            if (previewTheme != null) return;
             if (EventTap(lx, ly)) return;
             // Üretim balonu
             foreach (var kv in Pos)

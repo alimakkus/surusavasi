@@ -122,20 +122,20 @@ namespace SuruSavasi.Game
                 {
                     case 1:
                         c.a *= .75f + .25f * Mathf.Sin(a.ph * 18 + a.rot);
-                        Draw(circle, new Color(c.r, c.g * .7f, c.b, c.a * .35f), a.x, a.y, a.size * 3, a.size * 3, 789);
-                        Draw(circle, c, a.x, a.y, a.size, a.size, 790); break;
-                    case 2: c.a *= Mathf.Clamp01(a.life / a.max * 1.4f); Draw(circle, c, a.x, a.y, a.size, a.size * .8f, 788); break;
-                    case 3: Draw(square, c, a.x, a.y, a.size, a.size * .5f, 790, a.rot); break;
-                    case 4: Draw(square, c, a.x, a.y, a.size, 2.4f, 790); break;
+                        Draw(circle, new Color(c.r, c.g * .7f, c.b, c.a * .35f), a.x, a.y, a.size * 3, a.size * 3, 2001);
+                        Draw(circle, c, a.x, a.y, a.size, a.size, 2002); break;
+                    case 2: c.a *= Mathf.Clamp01(a.life / a.max * 1.4f); Draw(circle, c, a.x, a.y, a.size, a.size * .8f, 2000); break;
+                    case 3: Draw(square, c, a.x, a.y, a.size, a.size * .5f, 2002, a.rot); break;
+                    case 4: Draw(square, c, a.x, a.y, a.size, 2.4f, 2002); break;
                     case 5:
                         float flap = .25f + .75f * Mathf.Abs(Mathf.Sin(a.ph * 14));
-                        Draw(circle, c, a.x - a.size * .45f * flap, a.y, a.size * flap, a.size, 790);
-                        Draw(circle, c, a.x + a.size * .45f * flap, a.y, a.size * flap, a.size, 790);
-                        Draw(square, new Color(.2f, .15f, .1f, c.a), a.x, a.y, 1.2f, a.size * .8f, 791); break;
+                        Draw(circle, c, a.x - a.size * .45f * flap, a.y, a.size * flap, a.size, 2002);
+                        Draw(circle, c, a.x + a.size * .45f * flap, a.y, a.size * flap, a.size, 2002);
+                        Draw(square, new Color(.2f, .15f, .1f, c.a), a.x, a.y, 1.2f, a.size * .8f, 2003); break;
                     case 0: // kar tanesi: beyaz zeminde de görünsün diye mavimsi gölge
-                        Draw(circle, new Color(.35f, .5f, .7f, c.a * .45f), a.x + 1, a.y + 1.5f, a.size * 1.25f, a.size * 1.25f, 789);
-                        Draw(circle, c, a.x, a.y, a.size, a.size, 790); break;
-                    default: Draw(circle, c, a.x, a.y, a.size, a.size, 790); break;
+                        Draw(circle, new Color(.35f, .5f, .7f, c.a * .45f), a.x + 1, a.y + 1.5f, a.size * 1.25f, a.size * 1.25f, 2001);
+                        Draw(circle, c, a.x, a.y, a.size, a.size, 2002); break;
+                    default: Draw(circle, c, a.x, a.y, a.size, a.size, 2002); break;
                 }
             }
         }

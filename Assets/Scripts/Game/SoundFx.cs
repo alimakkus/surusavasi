@@ -37,6 +37,8 @@ namespace SuruSavasi.Game
         {
             src = gameObject.AddComponent<AudioSource>();
             src.playOnAwake = false;
+            amb = gameObject.AddComponent<AudioSource>();
+            amb.playOnAwake = false; amb.loop = true; amb.volume = 0;
             if (FindObjectOfType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
             Build();
         }
@@ -54,6 +56,126 @@ namespace SuruSavasi.Game
             if (Gap.TryGetValue(name, out var g) && I.last.TryGetValue(name, out var l) && now - l < g) return;
             I.last[name] = now;
             if (I.clips.TryGetValue(name, out var c)) I.src.PlayOneShot(c);
+        }
+
+        // ---------- Ortam sesi (tema) ----------
+        const int ASR = 22050;
+        const float AmbVolume = .55f;
+        AudioSource amb;
+        string ambWant, ambNow;
+        readonly Dictionary<string, AudioClip> ambClips = new Dictionary<string, AudioClip>();
+
+        /// <summary>Üs teması için döngülü ortam sesi. null: sus. Geçişler yumuşak (ses azalıp artar).</summary>
+        public static void Ambient(string key) { if (I != null) I.ambWant = key; }
+
+        void Update()
+        {
+            if (amb == null) return;
+            float target = Muted || ambWant == null ? 0 : AmbVolume;
+            if (ambNow != ambWant)
+            {   // önce eski ses kısılır, sonra yenisi başlar
+                amb.volume = Mathf.MoveTowards(amb.volume, 0, Time.unscaledDeltaTime * 1.5f);
+                if (amb.volume <= 0.001f)
+                {
+                    ambNow = ambWant; amb.Stop();
+                    if (ambNow != null) { amb.clip = AmbClip(ambNow); if (amb.clip != null) amb.Play(); }
+                }
+                return;
+            }
+            amb.volume = Mathf.MoveTowards(amb.volume, target, Time.unscaledDeltaTime * .8f);
+        }
+
+        AudioClip AmbClip(string key)
+        {
+            if (ambClips.TryGetValue(key, out var c)) return c;
+            const float len = 12f, fade = 1.5f;
+            int n = (int)((len + fade) * ASR);
+            var d = new float[n];
+            var r = new System.Random(key.GetHashCode());
+            float Rnd() => (float)r.NextDouble();
+            // Rüzgâr: süzülmüş gürültü, yavaş değişen şiddet ve renk
+            void Wind(float vol, float lo, float hi, float gust)
+            {
+                float y1 = 0, y2 = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    float t = i / (float)ASR;
+                    float g = .55f + .45f * Mathf.Sin(t * .9f + Mathf.Sin(t * .37f) * 2) * gust;
+                    float a = 1 - Mathf.Exp(-6.2832f * Mathf.Lerp(lo, hi, g) / ASR);
+                    y1 += a * (Rnd() * 2 - 1 - y1); y2 += a * (y1 - y2);
+                    d[i] += y2 * vol * g * 6f;
+                }
+            }
+            void Chirp(float at, float f1, float f2, float dur, float vol)
+            {
+                int s0 = (int)(at * ASR), m = (int)(dur * ASR); double ph = 0;
+                for (int i = 0; i < m && s0 + i < n; i++)
+                {
+                    float k = i / (float)m; ph += Mathf.Lerp(f1, f2, k) / ASR;
+                    d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * Mathf.Sin(k * Mathf.PI);
+                }
+            }
+            void Burst(float at, float dur, float vol, float freq)
+            {
+                int s0 = (int)(at * ASR), m = (int)(dur * ASR); float a = 1 - Mathf.Exp(-6.2832f * freq / ASR), y = 0, prev = 0;
+                for (int i = 0; i < m && s0 + i < n; i++)
+                {
+                    float k = i / (float)m; y += a * (Rnd() * 2 - 1 - y);
+                    float hp = y - prev; prev = y; // yüksek geçiren: hışırtı
+                    d[s0 + i] += hp * vol * 8f * Mathf.Sin(k * Mathf.PI);
+                }
+            }
+            void Blup(float at, float vol)
+            {
+                int s0 = (int)(at * ASR), m = (int)(.18f * ASR); double ph = 0;
+                for (int i = 0; i < m && s0 + i < n; i++)
+                {
+                    float k = i / (float)m; ph += Mathf.Lerp(150, 55, k) / ASR;
+                    d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * (1 - k) * Mathf.Min(1, k * 20);
+                }
+            }
+            switch (key)
+            {
+                case "winter":
+                    Wind(.09f, 120, 520, 1);
+                    for (float t = 0; t < len; t += 2.5f + Rnd() * 2) Chirp(t, 620 + Rnd() * 160, 760 + Rnd() * 200, 1.2f + Rnd(), .012f); // ıslık
+                    break;
+                case "lava":
+                    Wind(.16f, 30, 90, .6f);              // derin uğultu
+                    for (float t = 0; t < len; t += .5f + Rnd() * 1.3f) Blup(t, .07f + Rnd() * .05f);
+                    for (float t = 0; t < len; t += .05f + Rnd() * .25f) Burst(t, .006f + Rnd() * .01f, .25f + Rnd() * .2f, 5000); // çıtırtı
+                    break;
+                case "autumn":
+                    Wind(.06f, 150, 600, .8f);
+                    for (float t = 0; t < len; t += .6f + Rnd() * 1.4f) Burst(t, .3f + Rnd() * .6f, .05f + Rnd() * .04f, 3500); // yaprak hışırtısı
+                    break;
+                case "desert":
+                    Wind(.12f, 200, 900, 1);
+                    for (float t = 0; t < len; t += 1.5f + Rnd() * 2) Burst(t, 1.2f + Rnd(), .04f, 6000); // kum
+                    break;
+                case "green_night":
+                    Wind(.025f, 80, 260, .5f);
+                    for (float t = 0; t < len; t += .9f + Rnd() * .6f)          // cırcır böceği
+                        for (int j = 0; j < 4; j++) Chirp(t + j * .045f, 4300, 4400, .03f, .02f);
+                    break;
+                default: // yeşil vadi gündüz: hafif esinti + kuşlar
+                    Wind(.035f, 100, 380, .7f);
+                    for (float t = .3f; t < len; t += 1.2f + Rnd() * 2.2f)
+                    {
+                        float f = 2600 + Rnd() * 1800; int cnt = 2 + r.Next(4); bool up = Rnd() < .5f;
+                        for (int j = 0; j < cnt; j++) Chirp(t + j * .13f, up ? f : f * 1.3f, up ? f * 1.35f : f, .07f + Rnd() * .05f, .035f);
+                    }
+                    break;
+            }
+            // Döngü dikişi: sondaki fazlalık başa karıştırılır
+            int L = (int)(len * ASR), F = n - L;
+            var outD = new float[L];
+            for (int i = 0; i < L; i++) outD[i] = d[i];
+            for (int i = 0; i < F; i++) { float k = i / (float)F; outD[i] = d[i] * k + d[L + i] * (1 - k); }
+            for (int i = 0; i < L; i++) outD[i] = Mathf.Clamp(outD[i], -1, 1);
+            c = AudioClip.Create("amb_" + key, L, 1, ASR, false); c.SetData(outD, 0);
+            ambClips[key] = c;
+            return c;
         }
 
         // ---------- Sentez ----------
