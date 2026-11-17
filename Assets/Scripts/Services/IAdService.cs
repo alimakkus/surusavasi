@@ -10,6 +10,7 @@ namespace SuruSavasi.Services
         public const string SecondChance = "second_chance";
         public const string DoubleReward = "double_reward";
         public const string LevelEnd = "level_end"; // aralık (interstitial) reklamı
+        public const string DefenseRefresh = "defense_refresh";
     }
 
     public interface IAdService

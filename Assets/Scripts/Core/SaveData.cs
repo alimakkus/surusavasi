@@ -38,6 +38,11 @@ namespace SuruSavasi.Core
         // Üs teması (elmasla satılan çevre görünümü)
         public string theme = "green";
         public List<string> ownedThemes = new List<string> { "green" };
+
+        // Hikâye görevleri
+        public int storyIndex;
+        public List<string> questKeys = new List<string>(), storyBase = new List<string>();
+        public List<int> questVals = new List<int>(), storyBaseVals = new List<int>();
     }
 
     [Serializable]
@@ -84,6 +89,10 @@ namespace SuruSavasi.Core
             if (d.ownedThemes == null) d.ownedThemes = new List<string>();
             if (!d.ownedThemes.Contains("green")) d.ownedThemes.Add("green");
             if (!d.ownedThemes.Contains(d.theme)) d.theme = "green";
+            if (d.questKeys == null) d.questKeys = new List<string>();
+            if (d.questVals == null) d.questVals = new List<int>();
+            if (d.storyBase == null) d.storyBase = new List<string>();
+            if (d.storyBaseVals == null) d.storyBaseVals = new List<int>();
         }
 
         public static void Save(SaveData data)

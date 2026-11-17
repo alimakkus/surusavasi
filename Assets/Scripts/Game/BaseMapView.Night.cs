@@ -18,6 +18,9 @@ namespace SuruSavasi.Game
         }
 
         float nightNow, duskNow;
+        bool raidAnnounced;
+        /// <summary>Gece baskını: gece görünümü açık ve hava kararmışken.</summary>
+        bool NightRaid => nightNow > .7f && previewTheme == null;
 #if UNITY_EDITOR
         int nightDebug; // Editor testi: N tuşu → 0 saate göre, 1 gündüz, 2 akşam, 3 gece
         static readonly string[] NightDebugNames = { "saate göre", "gündüz", "akşam", "gece" };
