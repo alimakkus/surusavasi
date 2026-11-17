@@ -17,7 +17,8 @@ namespace SuruSavasi.Core
         public int Cost(int baseCost, int level) =>
             Mathf.CeilToInt(baseCost * Mathf.Pow(1f + (growth - 1f) * 0.45f, level));
 
-        public static int BuildSeconds(int level) => Mathf.RoundToInt(8f * Mathf.Pow(1.3f, level));
+        /// <summary>İnşaat süresi: ilk seviyeler saniyeler, 10. seviye ~35 dk, 15. seviye ~5,5 saat, 19→20 ~2,5 gün.</summary>
+        public static int BuildSeconds(int level) => Mathf.RoundToInt(30f * Mathf.Pow(1.6f, level));
         public static int RequiredStars(int level) => level < 2 ? 0 : (level - 1) * 6;
         public static int Tier(int level) => Mathf.CeilToInt(level / 4f);
 

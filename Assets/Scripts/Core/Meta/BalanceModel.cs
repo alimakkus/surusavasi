@@ -80,7 +80,7 @@ namespace SuruSavasi.Core.Meta
             public float sessionMinutes = 20;      // oturum uzunluğu
             public float breakHours = 4;           // oturumlar arası çevrimdışı süre
             public bool watchDoubleAds = false;    // ödülü 2 katına çıkaran reklamı izler mi
-            public int maxAttempts = 12;           // bir bölümde vazgeçmeden önce deneme
+            public int maxAttempts = 80;           // bir bölümde vazgeçmeden önce deneme
             public int seed = 1;
         }
 
