@@ -13,6 +13,9 @@ namespace SuruSavasi.Core
         public long lastTick;       // UTC saniye, çevrimdışı üretim için
         public long defenseReadyAt; // savunma modu bekleme süresi
         public string language = "tr";
+        public bool noAds;              // reklamsız paket ya da başlangıç paketi alındı
+        public bool starterPackBought;
+        public long monthlyCardUntil;   // aylık kart bitiş zamanı (UTC saniye)
     }
 
     public static class SaveSystem
