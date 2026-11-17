@@ -34,7 +34,7 @@ namespace SuruSavasi.Core.Meta
 
         public static BuildingDef Def(BuildingKind k) { foreach (var d in Defs) if (d.kind == k) return d; return Defs[0]; }
 
-        public static int Cost(int baseCost, float g, int L) => baseCost <= 0 ? 0 : (int)Math.Ceiling(baseCost * Math.Pow(1 + (g - 1) * .45, L));
+        public static int Cost(int baseCost, float g, int L) => baseCost <= 0 ? 0 : (int)Math.Ceiling(baseCost * Math.Pow(1 + (g - 1) * .65, L));
         public static int CostGold(BuildingKind k, int L) { var d = Def(k); return Cost(d.gold, d.g, L); }
         public static int CostIron(BuildingKind k, int L) { var d = Def(k); return Cost(d.iron, d.g, L); }
         public static int CostFood(BuildingKind k, int L) { var d = Def(k); return Cost(d.food, d.g, L); }

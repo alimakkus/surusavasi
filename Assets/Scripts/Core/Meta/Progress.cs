@@ -64,10 +64,10 @@ namespace SuruSavasi.Core.Meta
         public static int HeroLevel(SaveData d, int i) => d.heroLevels != null && i < d.heroLevels.Length ? Math.Max(1, d.heroLevels[i]) : 1;
         public static int WeaponLevel(SaveData d, int i) => d.weaponLevels != null && i < d.weaponLevels.Length ? d.weaponLevels[i] : 0;
 
-        public static int HeroCostGold(int L) => (int)Math.Ceiling(100 * Math.Pow(1.6, L - 1));
+        public static int HeroCostGold(int L) => (int)Math.Ceiling(100 * Math.Pow(1.9, L - 1));
         public static int HeroCostGems(int L) => L;
-        public static int WeaponCostGold(int L) => (int)Math.Ceiling(70 * Math.Pow(1.7, L));
-        public static int WeaponCostIron(int L) => (int)Math.Ceiling(40 * Math.Pow(1.7, L));
+        public static int WeaponCostGold(int L) => (int)Math.Ceiling(90 * Math.Pow(2.2, L));
+        public static int WeaponCostIron(int L) => (int)Math.Ceiling(60 * Math.Pow(2.2, L));
 
         /// <summary>Kayıttan savaş çarpanlarını hesaplar.</summary>
         public static BattleMods BuildMods(SaveData d)
