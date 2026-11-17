@@ -15,7 +15,7 @@ namespace SuruSavasi.Core.Meta
         {
             new ThemeDef { id = "green", name = "Yeşil Vadi", desc = "Çiçekli çayırlar ve meşe ağaçları", price = 0, trees = new[] { 0, 0, 2, 1 } },
             new ThemeDef { id = "winter", name = "Kış Kalesi", desc = "Karla kaplı topraklar ve çam ağaçları", price = 300, trees = new[] { 10, 10, 9 } },
-            new ThemeDef { id = "desert", name = "Çöl Vahası", desc = "Kum tepeleri ve palmiyeler", price = 300, trees = new[] { 6, 5, 6 } },
+            new ThemeDef { id = "desert", name = "Çöl Vahası", desc = "Kum tepeleri ve kaktüsler", price = 300, trees = new[] { 6, 5, 6 } },
             new ThemeDef { id = "autumn", name = "Sonbahar", desc = "Kızıl yapraklar ve altın ışık", price = 500, trees = new[] { 20, 21, 20, 3 } },
             new ThemeDef { id = "lava", name = "Volkan", desc = "Kor çatlakları ve kül rengi toprak", price = 800, trees = new[] { 13, 13, 12 } },
         };
