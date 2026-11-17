@@ -92,16 +92,25 @@ namespace SuruSavasi.Core.Battle
         public static float MapScale(int map) => 0.86f + 0.0145f * map;
     }
 
-    /// <summary>Kahraman ve bina etkileri. Varsayılan: Ayaz, tabanca, bina yok.</summary>
+    /// <summary>Kahraman, silah ve bina etkileri. Varsayılan: Ayaz, tabanca, bina yok. Progress.BuildMods doldurur.</summary>
     public class BattleMods
     {
-        public float skillMul = 1.5f;      // Ayaz: 1,5 sn ateş gücü
-        public float skillCd = 0.85f;      // Ayaz: %15 hızlı dolar
+        public string heroId = "ayaz", weaponId = "pistol", weaponColor = "#ffe27a";
+        public float skillMul = 1.5f;      // yetenek hasarı (ateş gücünün kaç saniyesi)
+        public float skillCd = 0.85f;      // yetenek bekleme çarpanı
         public float fireMul = 1f;         // ateş aralığı çarpanı (küçük = hızlı)
         public float guard = 1f;           // alınan hasar çarpanı
-        public float dmgMul = 1f;          // silah, kahraman seviyesi, cephane binası
+        public float dmgMul = 1f;          // mermi hasarı çarpanı
         public float startMul = 1f;        // kışla
         public int startBonus = 0;
         public float heroHpMul = 1f;       // çiftlik ve hastane
+        public float regen = 0f;           // saniyede kahraman canı yenilenmesi (oran)
+        public float heal = 0f;            // Kaya: yetenekte asker geri getirme
+        public float buffs = 0f;           // Mira: yetenekte çift+hızlı ateş süresi
+        public float rapidOnSkill = 0f;    // Ayaz 5. seviye
+        public int pierce = 0;             // Delici tüfek
+        public float bulletLife = 9f, bulletVy = -520f;
+        public bool blast;                 // Roketatar
+        public float goldMul = 1f, marketMul = 1f; // ödül çarpanları
     }
 }

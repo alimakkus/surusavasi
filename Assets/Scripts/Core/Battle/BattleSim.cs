@@ -5,7 +5,7 @@ namespace SuruSavasi.Core.Battle
 {
     public enum BattleState { Play, Boss, Won, Lost }
 
-    public class Bullet { public float x, y, vx, vy, dmg, life; public bool blast; }
+    public class Bullet { public float x, y, vx, vy, dmg, life; public bool blast; public int pierce; public List<BattleObj> hits; }
     public class EnemyBullet { public float x, y, vx, vy, dmg; public string color; }
     public class FloatText { public float x, y, life; public string text, color; }
 
@@ -151,7 +151,10 @@ namespace SuruSavasi.Core.Battle
         {
             if (!SkillReady) return;
             cd = SkillCdMax; Emit("skill", x, Field.SQY);
-            float dmg = Balance.DpsOf(n, lv) * mods.skillMul * mods.dmgMul * (1 + .3f * assist);
+            float dmg = Balance.DpsOf(n, lv) * mods.skillMul * (1 + .3f * assist);
+            if (mods.rapidOnSkill > 0) buffRapid = Math.Max(buffRapid, mods.rapidOnSkill);
+            if (mods.heal > 0) { float hn = (float)Math.Ceiling(n * mods.heal); n += hn; if (n > peak) peak = n; AddFloat(x, Field.SQY - 50, "+" + hn, "#8be39d"); }
+            if (mods.buffs > 0) { buffDouble = Math.Max(buffDouble, mods.buffs); buffRapid = Math.Max(buffRapid, mods.buffs); }
             foreach (var o in objs.ToArray())
             {
                 if (o.done) continue;
@@ -208,6 +211,7 @@ namespace SuruSavasi.Core.Battle
         public void Step(float dt)
         {
             t += dt;
+            if (Live && mods.regen > 0 && hhp > 0 && hhp < HeroMax) hhp = Math.Min(HeroMax, hhp + HeroMax * mods.regen * dt);
             if (cd > 0) { cd = Math.Max(0, cd - dt); if (cd == 0 && Live) AddFloat(x, Field.SQY - 70, "YETENEK HAZIR", "#c9b8ff"); }
             buffDouble = Math.Max(0, buffDouble - dt); buffRapid = Math.Max(0, buffRapid - dt); buffBlast = Math.Max(0, buffBlast - dt);
 
@@ -275,14 +279,14 @@ namespace SuruSavasi.Core.Battle
                     fireT = 0;
                     if (anyTarget && n >= 1)
                     {
-                        bool dbl = buffDouble > 0, blast = buffBlast > 0;
+                        bool dbl = buffDouble > 0, blast = buffBlast > 0 || mods.blast;
                         int nb = Math.Min(10, 1 + (int)Math.Floor(n / 5));
                         float each = n * Balance.DmgPer(lv) * mods.dmgMul / nb * (dbl ? .8f : 1) * (1 + .3f * assist);
                         for (int j = 0; j < nb; j++)
                             for (int dd = 0; dd < (dbl ? 2 : 1); dd++)
                             {
                                 float bx = x + (Rand - .5f) * rad * 1.4f + (dbl ? (dd == 1 ? 4 : -4) : 0);
-                                bullets.Add(new Bullet { x = bx, y = Field.SQY - 14 - dd * 6, vy = -520, dmg = each, blast = blast, life = 9 });
+                                bullets.Add(new Bullet { x = bx, y = Field.SQY - 14 - dd * 6, vy = mods.bulletVy, dmg = each, blast = blast, life = mods.bulletLife, pierce = mods.pierce });
                             }
                         Emit("shot", x, Field.SQY);
                     }
@@ -314,17 +318,24 @@ namespace SuruSavasi.Core.Battle
                     {
                         for (int k = 0; k < objs.Count && !gone; k++)
                         {
-                            var o2 = objs[k]; if (o2.done) continue;
+                            var o2 = objs[k]; if (o2.done || (bu.hits != null && bu.hits.Contains(o2))) continue;
                             float sy2 = Osy(o2);
                             if (o2.kind == ObjKind.Enemy)
                             {
                                 var T2 = o2.type; float hh2 = 15 * Sc(T2) * (T2.big ? 1 : 1.4f);
                                 if (sy2 > -10 && Math.Abs(bu.x - o2.x) < Hw(T2) && bu.y < sy2 + hh2 * .6f && bu.y > sy2 - hh2 * 1.7f)
-                                { Hurt(o2, sy2, bu.dmg); Emit("hit", bu.x, bu.y); if (bu.blast) Explode(bu.x, bu.y, bu.dmg, o2); gone = true; }
+                                {
+                                    Hurt(o2, sy2, bu.dmg); Emit("hit", bu.x, bu.y); if (bu.blast) Explode(bu.x, bu.y, bu.dmg, o2);
+                                    if (bu.pierce > 0) { bu.pierce--; (bu.hits ??= new List<BattleObj>()).Add(o2); } else gone = true;
+                                }
                             }
                             else if (o2.kind == ObjKind.Barrel || o2.kind == ObjKind.Power)
                             {
-                                if (sy2 > -5 && Math.Abs(bu.x - o2.x) < 32 && bu.y < sy2 + 16 && bu.y > sy2 - 26) { HitBarrel(o2, bu.dmg); gone = true; }
+                                if (sy2 > -5 && Math.Abs(bu.x - o2.x) < 32 && bu.y < sy2 + 16 && bu.y > sy2 - 26)
+                                {
+                                    HitBarrel(o2, bu.dmg);
+                                    if (bu.pierce > 0) { bu.pierce--; (bu.hits ??= new List<BattleObj>()).Add(o2); } else gone = true;
+                                }
                             }
                             else if (o2.kind == ObjKind.Board)
                             {

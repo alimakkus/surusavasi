@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using SuruSavasi.Core;
 using SuruSavasi.Core.Battle;
+using SuruSavasi.Core.Meta;
 using SuruSavasi.Services;
 using UnityEngine;
 
@@ -23,9 +24,15 @@ namespace SuruSavasi.Game
         bool rewardGiven, doubled;
         int completedThisSession;
         readonly Dictionary<string, Color> colors = new Dictionary<string, Color>();
+        bool ready;
 
-        void Start()
+        /// <summary>Menüye dön butonuna basılınca çağrılır (GameFlow bağlar).</summary>
+        public System.Action onMenu;
+
+        void Init()
         {
+            if (ready) return;
+            ready = true;
             cam = Camera.main;
             if (cam == null) { var go = new GameObject("Main Camera"); cam = go.AddComponent<Camera>(); go.tag = "MainCamera"; }
             cam.orthographic = true;
@@ -37,17 +44,30 @@ namespace SuruSavasi.Game
             spriteMat = sh != null ? new Material(sh) : null;
             square = MakeSquare();
             circle = MakeCircle(64);
+        }
 
-            int lv = 1;
-            if (GameServices.Save != null) lv = Mathf.Clamp(GameServices.Save.Data.unlocked, 1, Balance.MaxLevel);
+        public void Begin(int lv)
+        {
+            Init();
+            gameObject.SetActive(true);
             StartLevel(lv);
         }
+
+        public void Stop()
+        {
+            sim = null;
+            foreach (var r in pool) if (r != null) r.gameObject.SetActive(false);
+            gameObject.SetActive(false);
+        }
+
+        void GoMenu() { Stop(); onMenu?.Invoke(); }
 
         void StartLevel(int lv)
         {
             level = lv;
             Fails.TryGetValue(lv, out int f);
-            sim = new BattleSim(lv, new BattleMods(), f);
+            var mods = GameServices.Save != null ? Progress.BuildMods(GameServices.Save.Data) : new BattleMods();
+            sim = new BattleSim(lv, mods, f);
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", lv } });
         }
@@ -111,7 +131,7 @@ namespace SuruSavasi.Game
 
         void Update()
         {
-            if (sim == null) return;
+            if (sim == null || cam == null) return;
             // Telefon dikeyken 360 genişlik sığsın
             float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
             cam.orthographicSize = Mathf.Max(2.8f, 1.8f / Mathf.Max(.01f, aspect));
@@ -215,7 +235,7 @@ namespace SuruSavasi.Game
                 Draw(circle, C("#e9edf5"), sim.x, Field.SQY - 12, 12, 12, 34);
             }
 
-            foreach (var b in sim.bullets) Draw(circle, sim.buffBlast > 0 ? C("#ff9a3a") : C("#ffe27a"), b.x, b.y, 6, 9, 35);
+            foreach (var b in sim.bullets) Draw(circle, sim.buffBlast > 0 ? C("#ff9a3a") : C(sim.mods.weaponColor), b.x, b.y, 6, 9, 35);
             foreach (var e in sim.eb) Draw(circle, C(e.color), e.x, e.y, 10, 10, 36);
 
             for (int i = used; i < pool.Count; i++) if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
@@ -246,9 +266,9 @@ namespace SuruSavasi.Game
             int idx = level - 1;
             bool first = d.stars[idx] == 0;
             float mu = (first ? 1f : .4f) * (.7f + .15f * sim.stars);
-            rwGold = Mathf.RoundToInt((30 + 6 * level) * mu);
-            rwIron = Mathf.RoundToInt((14 + 3 * level) * mu);
-            rwFood = Mathf.RoundToInt((18 + 4 * level) * mu);
+            rwGold = Mathf.RoundToInt((30 + 6 * level) * mu * sim.mods.goldMul);
+            rwIron = Mathf.RoundToInt((14 + 3 * level) * mu * sim.mods.marketMul);
+            rwFood = Mathf.RoundToInt((18 + 4 * level) * mu * sim.mods.marketMul);
             rwGems = first ? sim.stars + (level % 10 == 0 ? 5 : 0) : 0;
             d.stars[idx] = Mathf.Max(d.stars[idx], sim.stars);
             if (level < Balance.MaxLevel) d.unlocked = Mathf.Max(d.unlocked, level + 1);
@@ -316,6 +336,7 @@ namespace SuruSavasi.Game
             // Üst bilgi
             var M = BattleData.Maps[sim.map];
             Text(new Vector2(VW / 2, 22), $"Bölüm {level} · {M.nameTr}", Color.white, label, 400);
+            Text(new Vector2(VW / 2, 106), Progress.Heroes[Progress.HeroIndex(sim.mods.heroId)].name + " · " + Progress.Weapons[Progress.WeaponIndex(sim.mods.weaponId)].name, new Color(1, 1, 1, .6f), label, 400);
             float hpF = sim.hhp / Mathf.Max(1, sim.HeroMax);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .6f), 0, 0);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200 * hpF, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#8be39d"), 0, 0);
@@ -330,6 +351,8 @@ namespace SuruSavasi.Game
             }
             if (sim.t < 2.6f && sim.Live)
                 Text(new Vector2(VW / 2, 300), $"BÖLÜM {level}", Color.white, big, 400);
+
+            if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), "Menü", btn)) { GoMenu(); return; }
 
             // Yetenek butonu
             if (sim.Live)
@@ -361,7 +384,8 @@ namespace SuruSavasi.Game
                     StartLevel(level + 1);
                 }
                 by += 60;
-                if (GUI.Button(new Rect(px + 20, by, pw - 40, 50), "Tekrar oyna", btn)) StartLevel(level);
+                if (GUI.Button(new Rect(px + 20, by, (pw - 50) / 2, 50), "Tekrar oyna", btn)) StartLevel(level);
+                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Menü", btn)) GoMenu();
             }
             else
             {
@@ -370,19 +394,9 @@ namespace SuruSavasi.Game
                 if (sim.CanRevive && GUI.Button(new Rect(px + 20, by, pw - 40, 56), "İkinci şans: reklam izle", btn))
                     Shop.WatchAd(AdPlacement.SecondChance, () => sim.Revive());
                 by += 70;
-                if (GUI.Button(new Rect(px + 20, by, pw - 40, 50), "Tekrar dene", btn)) StartLevel(level);
+                if (GUI.Button(new Rect(px + 20, by, (pw - 50) / 2, 50), "Tekrar dene", btn)) StartLevel(level);
+                if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Menü", btn)) GoMenu();
             }
-        }
-    }
-
-    /// <summary>Sahnede savaş yoksa oyun başlarken otomatik ekler: boş sahnede Play'e basınca oyun açılır.</summary>
-    public static class GameBoot
-    {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Boot()
-        {
-            if (Object.FindObjectOfType<BattleView>() != null) return;
-            new GameObject("Battle").AddComponent<BattleView>();
         }
     }
 }
