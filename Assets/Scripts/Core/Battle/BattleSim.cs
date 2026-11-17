@@ -394,7 +394,7 @@ namespace SuruSavasi.Core.Battle
                             float mhp = Math.Max(4, (float)Math.Ceiling(Balance.DpsOf(.33f * L.efin, lv) * Balance.Tw(lv) * .5f * L.hard));
                             for (int s2 = -1; s2 <= 1; s2 += 2)
                                 objs.Add(new BattleObj { kind = ObjKind.Enemy, type = BattleData.Types["walker"], x = boss.x + s2 * 70, wy = boss.y + 40 - scroll,
-                                    max = mhp, hp = mhp, chip = mhp, contact = Math.Max(1, (float)Math.Ceiling(L.efin * .04f * Math.Sqrt(L.hard))), seed = s2 + 3 });
+                                    max = mhp, hp = mhp, chip = mhp, contact = Math.Max(1, (float)Math.Ceiling(L.efin * .04f * Math.Pow(L.hard, .25))), seed = s2 + 3 });
                         }
                     }
                 }

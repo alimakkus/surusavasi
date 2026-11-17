@@ -90,7 +90,7 @@ namespace SuruSavasi.Core.Battle
                     float lvMul = 1f + .05f * lv;
                     if (kind == ObjKind.Barrel) o.v = Math.Max(2, (float)Math.Ceiling(rg.Range(i == 0 ? 3 : 4, i == 0 ? 6 : 12) * lvMul * Field.BARV));
                     else if (kind == ObjKind.Power) o.v = Math.Max(2, (float)Math.Ceiling(rg.Range(4, 12) * lvMul * .5f * Field.BARV));
-                    else if (kind == ObjKind.Board) o.v = (float)Math.Ceiling(rg.Range(3, 9) * (1 + .03 * lv) * Math.Sqrt(H));
+                    else if (kind == ObjKind.Board) o.v = (float)Math.Ceiling(rg.Range(3, 9) * (1 + .03 * lv) * Math.Pow(H, .12));
                     else
                     {
                         var T = BattleData.Types[PickType()];
@@ -98,7 +98,7 @@ namespace SuruSavasi.Core.Battle
                         o.type = T;
                         o.max = o.hp = Math.Max(4, (float)Math.Ceiling(DpsOf(E, lv) * Balance.Tw(lv) * T.mul * (.92 + rg.Next() * .16) * H));
                         o.chip = o.hp;
-                        o.contact = Math.Max(1, (float)Math.Ceiling(E * T.dmg * Math.Sqrt(H)));
+                        o.contact = Math.Max(1, (float)Math.Ceiling(E * T.dmg * Math.Pow(H, .25)));
                     }
                     if (kind == ObjKind.Barrel || kind == ObjKind.Power)
                     {
