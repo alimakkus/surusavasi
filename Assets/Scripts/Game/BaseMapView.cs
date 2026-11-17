@@ -11,7 +11,7 @@ namespace SuruSavasi.Game
     /// devriye atan askerler, toplanacak üretim balonları, dokununca açılan altıgen menü ve yükseltme penceresi.
     /// Yuvarlak köy: ortada Karargâh, çevresinde 8 bina, en dışta oval sur ve kapı. Çevre seçilen temaya göre değişir.
     /// Koordinatlar oyun pikseli (100 = 1 dünya birimi), y aşağı doğru. Dünya 800 x 1200, köy merkezi (400, 600).</summary>
-    public class BaseMapView : MonoBehaviour
+    public partial class BaseMapView : MonoBehaviour
     {
         public const float WW = 800, WH = 1200, CX = 400, CY = 600;
         public const float WallRX = 250, WallRY = 215, RingRX = 175, RingRY = 150; // Tools/artgen/gen_ground.py ile aynı
@@ -330,6 +330,7 @@ namespace SuruSavasi.Game
                 }
             }
             LiveTick(dt);
+            AmbientTick(dt, Themes.Current(D).id);
 #if UNITY_EDITOR
             // Test kısayolları (sadece Editor): seçili binanın seviyesi PageUp/PageDown veya + / - ile değişir
             if (sel.HasValue)
@@ -473,6 +474,7 @@ namespace SuruSavasi.Game
                 }
             }
 
+            AmbientDraw();
             foreach (var p in parts) { var c = p.c; c.a *= Mathf.Clamp01(p.life / p.max); Draw(circle, c, p.x, p.y, p.size, p.size, 800); }
             // Bulut gölgeleri
             for (int cl = 0; cl < 4; cl++) Draw(circle, new Color(.04f, .08f, .12f, .07f), ((t * 9 + cl * 290) % 1100) - 150, CY - 420 + cl * 280, 180, 70, 810);
