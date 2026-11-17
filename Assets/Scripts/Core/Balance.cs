@@ -24,7 +24,9 @@ namespace SuruSavasi.Core
         public static float BaseDifficulty(int lv) => 3f * Mathf.Pow(1.048f, Mathf.Clamp(lv, 1, MaxLevel));
 
         /// <summary>Patron ve elit can çarpanı (bölüm sonu düşmanı).</summary>
-        public const float FinalHp = .5f;
+        public const float FinalHp = .32f;
+        /// <summary>Patron bölümleri (10, 20 …) için ayrıca can çarpanı.</summary>
+        public const float BossHp = .7f;
 
         /// <summary>Oran = kalan asker / (0.33 * son düşman gücü). 1 ve üstü 3 yıldız, 0.5 ve üstü 2 yıldız.</summary>
         public static int Stars(float ratio) => ratio >= 1f ? 3 : ratio >= 0.5f ? 2 : 1;
