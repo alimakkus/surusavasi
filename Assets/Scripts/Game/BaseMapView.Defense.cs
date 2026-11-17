@@ -12,6 +12,7 @@ namespace SuruSavasi.Game
         int defPick = -1;
         bool defShowTiers, defRewardGiven;
         LevelReward defRw;
+        GearItem defDrop;
         const float DefSpawn = 330;
 
         float GateY => Pos[BuildingKind.Wall].y;
@@ -56,7 +57,12 @@ namespace SuruSavasi.Game
                 defRewardGiven = true; defRw = def.Reward(D);
                 Wl.Add(Currency.Gold, defRw.gold, "defense"); Wl.Add(Currency.Iron, defRw.iron, "defense"); Wl.Add(Currency.Food, defRw.food, "defense");
                 if (defRw.gems > 0) Wl.Add(Currency.Diamonds, defRw.gems, "defense");
-                if (def.state == DefenseSim.St.Won) Quests.Add(D, "defense");
+                if (def.state == DefenseSim.St.Won)
+                {
+                    Quests.Add(D, "defense");
+                    defDrop = Gear.Roll(D, new System.Random(), def.tier); Gear.AddToBag(D, defDrop);
+                }
+                else defDrop = null;
                 GameServices.Save.Save();
                 GameServices.Analytics?.LogEvent("defense_end", new System.Collections.Generic.Dictionary<string, object> { { "tier", def.tier }, { "win", def.state == DefenseSim.St.Won }, { "wave", def.wave } });
             }
@@ -190,6 +196,7 @@ namespace SuruSavasi.Game
             if (defRw.iron > 0) rw += $"\n<color=#cfd8e0>+{defRw.iron} demir</color>";
             if (defRw.food > 0) rw += $"\n<color=#8be39d>+{defRw.food} yiyecek</color>";
             if (defRw.gems > 0) rw += $"\n<color=#9fe8ff>+{defRw.gems} elmas</color>";
+            if (defDrop != null) rw += $"\n<color={Gear.RarityColors[defDrop.rarity]}><b>{Gear.Name(defDrop)}</b></color>";
             GUI.Label(new Rect(x, y + 92, w, 140), rw, new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontSize = 18 });
             if (GUI.Button(new Rect(x + 20, y + h - 70, w - 40, 54), "Tamam", UiSkin.ButtonGold)) { def = null; defPick = -1; visW = 540; camX = CX; camY = CY + 30; SoundFx.Play("click"); }
         }

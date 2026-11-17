@@ -61,7 +61,7 @@ namespace SuruSavasi.Game
         float evTimer = 8, nextTick;
 
         // Seçim ve pencereler
-        enum Popup { None, Upgrade, Info, Trade, Settings, Defense }
+        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train }
         BuildingKind? sel;
         Popup popup;
         Rect popupRect;
@@ -341,6 +341,8 @@ namespace SuruSavasi.Game
             {
                 nextTick = Time.unscaledTime + .5f;
                 BaseLogic.TickProduction(D);
+                int tb = D.troops; Troops.Tick(D, BaseLogic.Now);
+                if (D.troops > tb && D.trainQueue == 0) { var bp = Pos[BuildingKind.Barracks]; AddFloat(bp.x, bp.y - 70, "Askerler hazır!", Food); SoundFx.Play("pickup"); GameServices.Save.Save(); }
                 var done = BaseLogic.Complete(D);
                 if (done.HasValue)
                 {
@@ -441,6 +443,17 @@ namespace SuruSavasi.Game
                 }
             float gy = Pos[BuildingKind.Wall].y + 22;
             Spr(Art.Soldier(0), CX - 62, gy, 100 + (int)gy, .85f); Spr(Art.Soldier(2), CX + 62, gy, 100 + (int)gy, .85f, true);
+
+            // Eğitimli askerler Kışla'nın önünde sıra olur
+            if (D.troops > 0 && def == null)
+            {
+                var bp = Pos[BuildingKind.Barracks]; int nshow = Mathf.Min(12, D.troops);
+                for (int i = 0; i < nshow; i++)
+                {
+                    float sx = bp.x - 78 + (i % 4) * 13, sy = bp.y - 22 + (i / 4) * 12 + (i % 4) * 2;
+                    Spr(Art.Soldier(i), sx, sy, 100 + (int)sy, .7f, true);
+                }
+            }
 
             // İşçiler
             foreach (var w in workers)
@@ -715,7 +728,7 @@ namespace SuruSavasi.Game
             string third = null, glyph = null;
             if (ProdOf(k).HasValue && Progress.Level(D, k) > 0) { third = "Topla"; glyph = "+"; }
             else if (k == BuildingKind.Market && Progress.Level(D, k) > 0) { third = "Takas"; glyph = "$"; }
-            else if (k == BuildingKind.Barracks) { third = "Kahraman"; glyph = "★"; }
+            else if (k == BuildingKind.Barracks && Progress.Level(D, k) > 0) { third = "Eğit"; glyph = "⚔"; }
             else if (k == BuildingKind.Armory) { third = "Silah"; glyph = "★"; }
             else if (k == BuildingKind.Headquarters) { third = "Tema"; glyph = "◆"; }
 
@@ -733,6 +746,7 @@ namespace SuruSavasi.Game
                 if (third == "Topla") CollectOne(k);
                 else if (third == "Takas") { popKind = k; popup = Popup.Trade; }
                 else if (third == "Kahraman") flow.Show(GameScreen.Heroes);
+                else if (third == "Eğit") { popKind = k; popup = Popup.Train; }
                 else if (third == "Tema") { MetaScreens.shopTab = 2; flow.Show(GameScreen.Shop); }
                 else flow.Show(GameScreen.Weapons);
             }
@@ -742,7 +756,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -751,6 +765,7 @@ namespace SuruSavasi.Game
             var mid = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
 
             if (popup == Popup.Defense) { DefenseTierPopup(x, y, w, h, head); return; }
+            if (popup == Popup.Train) { TrainPopup(x, y, w, h, head); return; }
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);

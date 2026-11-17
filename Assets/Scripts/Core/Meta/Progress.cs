@@ -81,7 +81,7 @@ namespace SuruSavasi.Core.Meta
             float hmul = 1 + .03f * (hl - 1), wmul = 1 + .08f * WeaponLevel(d, wi);
             float armory = 1 + .05f * Eff(d, BuildingKind.Armory);
 
-            return new BattleMods
+            var mods = new BattleMods
             {
                 heroId = H.id,
                 weaponId = W.id,
@@ -102,6 +102,8 @@ namespace SuruSavasi.Core.Meta
                 goldMul = 1 + .04f * Eff(d, BuildingKind.Mine),
                 marketMul = 1 + .01f * Eff(d, BuildingKind.Market),
             };
+            Gear.Apply(d, mods);
+            return mods;
         }
     }
 }

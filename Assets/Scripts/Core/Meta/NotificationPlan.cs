@@ -26,6 +26,9 @@ namespace SuruSavasi.Core.Meta
             void Fill(float pend, float rate) { if (rate > 0) mins = Math.Min(mins, (rate * BaseLogic.CapMinutes - pend) / rate); }
             Fill(d.pendGold, BaseLogic.RateGold(d)); Fill(d.pendIron, BaseLogic.RateIron(d)); Fill(d.pendFood, BaseLogic.RateFood(d));
             if (mins < double.MaxValue && mins > 1) Add(2, "Depolar doldu", "Üretim duruyor! Toplamazsan kaynak boşa gider.", now.AddMinutes(mins));
+            // Asker eğitimi bitti
+            if (d.trainQueue > 0)
+                Add(7, "Askerler hazır", $"Kışla'da {d.troops + d.trainQueue} asker savaşa hazır.", DateTimeOffset.FromUnixTimeMilliseconds(BaseLogic.Now).LocalDateTime.AddSeconds(Troops.RemainingSeconds(d, BaseLogic.Now)));
             // Savunma hazır
             if (d.defenseReadyAt > 0) Add(3, "Zombiler kapıda!", "Üs savunması yeniden hazır. Kuleleri kur, ödülü kap.", DateTimeOffset.FromUnixTimeMilliseconds(d.defenseReadyAt).LocalDateTime);
             // Günlük giriş ödülü: yarın sabah 10:00
