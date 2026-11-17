@@ -48,7 +48,7 @@ namespace SuruSavasi.Game
 
             var store = GameServices.Store;
             float y0 = 146, ch = 86;
-            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, 1100));
+            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, shopTab == 2 ? 40 + Themes.All.Length * 142 : 1100));
             float y = 0;
 
             if (shopTab == 0)

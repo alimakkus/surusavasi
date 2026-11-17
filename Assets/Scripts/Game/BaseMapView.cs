@@ -39,7 +39,7 @@ namespace SuruSavasi.Game
         Material mat;
         readonly List<SpriteRenderer> pool = new List<SpriteRenderer>();
         int used;
-        float camX = CX, camY = CY + 30, visW = 460, visH = 820, t;
+        float camX = CX, camY = CY + 30, visW = 540, visH = 820, t;
         bool pinching; float pinchDist;
         readonly List<Vector2> wallSegs = new List<Vector2>(), wallTowers = new List<Vector2>();
         readonly List<Vector3> trees = new List<Vector3>(); // x, y, ölçek
@@ -122,7 +122,6 @@ namespace SuruSavasi.Game
             gameObject.SetActive(true);
             sel = null; popup = Popup.None;
             if (cam != null) { cam.transform.position = new Vector3(0, 0, -10); cam.orthographic = true; }
-            camX = CX; camY = CY + 30; visW = 460;
             nextTick = 0;
         }
 
