@@ -42,8 +42,26 @@ namespace SuruSavasi.Core.Meta
         public static int ReqStars(int L) => BuildingData.RequiredStars(L);
 
         public static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        public static bool Building(SaveData d) => d.buildKind >= 0;
-        public static float Remaining(SaveData d) => Building(d) ? Math.Max(0, (d.buildEnd - Now) / 1000f) : 0;
+        // ---------- İnşaatçılar (1 bedava, 2. elmasla) ----------
+        public const int MaxBuilders = 2, SecondBuilderGems = 350;
+        public static int Slots(SaveData d) => Math.Max(1, Math.Min(MaxBuilders, d.builders));
+        public static int SlotKind(SaveData d, int s) => s == 0 ? d.buildKind : d.build2Kind;
+        public static int SlotFrom(SaveData d, int s) => s == 0 ? d.buildFrom : d.build2From;
+        public static long SlotEnd(SaveData d, int s) => s == 0 ? d.buildEnd : d.build2End;
+        public static void SetSlot(SaveData d, int s, int kind, int from, long end)
+        {
+            if (s == 0) { d.buildKind = kind; d.buildFrom = from; d.buildEnd = end; }
+            else { d.build2Kind = kind; d.build2From = from; d.build2End = end; }
+        }
+        public static void ClearSlot(SaveData d, int s) => SetSlot(d, s, -1, 0, 0);
+        /// <summary>Bu binayı inşa eden inşaatçı (yoksa -1).</summary>
+        public static int SlotOf(SaveData d, BuildingKind k) { for (int s = 0; s < MaxBuilders; s++) if (SlotKind(d, s) == (int)k) return s; return -1; }
+        public static int FreeSlot(SaveData d) { for (int s = 0; s < Slots(d); s++) if (SlotKind(d, s) < 0) return s; return -1; }
+        public static int BusyCount(SaveData d) { int n = 0; for (int s = 0; s < MaxBuilders; s++) if (SlotKind(d, s) >= 0) n++; return n; }
+        public static bool Building(SaveData d) => BusyCount(d) > 0;
+        public static bool Busy(SaveData d, BuildingKind k) => SlotOf(d, k) >= 0;
+        public static float RemainingSlot(SaveData d, int s) => s < 0 || SlotKind(d, s) < 0 ? 0 : Math.Max(0, (SlotEnd(d, s) - Now) / 1000f);
+        public static float Remaining(SaveData d, BuildingKind k) => RemainingSlot(d, SlotOf(d, k));
 
         public enum UpResult { Ok, MaxLevel, Busy, Stars, Resources, NeedHq }
 
@@ -52,39 +70,44 @@ namespace SuruSavasi.Core.Meta
             int L = Progress.Level(d, k);
             if (L >= Progress.MaxLevel(k)) return UpResult.MaxLevel;
             if (L >= Progress.LevelCap(d, k)) return UpResult.NeedHq;
-            if (Building(d)) return UpResult.Busy;
+            if (Busy(d, k) || FreeSlot(d) < 0) return UpResult.Busy;
             if (Progress.TotalStars(d) < ReqStars(L)) return UpResult.Stars;
             if (d.gold < CostGold(k, L) || d.iron < CostIron(k, L) || d.food < CostFood(k, L)) return UpResult.Resources;
             return UpResult.Ok;
         }
 
-        /// <summary>İnşaatı başlatır, kaynakları düşer. Harcama Wallet üzerinden yapılmalı: spend(c, amount).</summary>
+        /// <summary>İnşaatı boş inşaatçıyla başlatır, kaynakları düşer. Harcama Wallet üzerinden yapılmalı: spend(c, amount).</summary>
         public static bool Start(SaveData d, BuildingKind k, Func<string, int, bool> spend)
         {
             if (Check(d, k) != UpResult.Ok) return false;
-            int L = Progress.Level(d, k);
+            int L = Progress.Level(d, k), s = FreeSlot(d);
             TickProduction(d);
             if (!spend("gold", CostGold(k, L)) || !spend("iron", CostIron(k, L)) || !spend("food", CostFood(k, L))) return false;
-            d.buildKind = (int)k; d.buildFrom = L; d.buildEnd = Now + Duration(L) * 1000L;
+            SetSlot(d, s, (int)k, L, Now + Duration(L) * 1000L);
             return true;
         }
 
-        /// <summary>Süresi biten inşaatı tamamlar. Tamamlanan binayı döner, yoksa null.</summary>
-        public static BuildingKind? Complete(SaveData d)
+        /// <summary>Süresi biten bir inşaatı tamamlar. Tamamlanan binayı döner, yoksa null.</summary>
+        public static BuildingKind? Complete(SaveData d) => CompleteAt(d, Now, true);
+        public static BuildingKind? CompleteAt(SaveData d, long nowMs, bool tickProduction)
         {
-            if (!Building(d) || Now < d.buildEnd) return null;
-            TickProduction(d);
-            var k = (BuildingKind)d.buildKind;
-            d.buildings[d.buildKind] = d.buildFrom + 1;
-            d.buildKind = -1;
-            return k;
+            for (int s = 0; s < MaxBuilders; s++)
+            {
+                int kind = SlotKind(d, s);
+                if (kind < 0 || nowMs < SlotEnd(d, s)) continue;
+                if (tickProduction) TickProduction(d);
+                d.buildings[kind] = SlotFrom(d, s) + 1;
+                ClearSlot(d, s);
+                return (BuildingKind)kind;
+            }
+            return null;
         }
 
         /// <summary>Hızlandırma bedeli (elmas): son 15 saniye bedava, sonra kalan her dakika 1 elmas.</summary>
-        public static int SpeedCost(SaveData d) { float rem = Remaining(d); return rem <= 15 ? 0 : (int)Math.Ceiling(rem / 60); }
-        public static void FinishNow(SaveData d) { if (Building(d)) d.buildEnd = Now; }
-        /// <summary>Ödüllü reklam: inşaatı 5 dakika kısaltır.</summary>
-        public static void Shorten(SaveData d, int seconds) { if (Building(d)) d.buildEnd -= seconds * 1000L; }
+        public static int SpeedCost(SaveData d, BuildingKind k) { float rem = Remaining(d, k); return rem <= 15 ? 0 : (int)Math.Ceiling(rem / 60); }
+        public static void FinishNow(SaveData d, BuildingKind k) { int s = SlotOf(d, k); if (s >= 0) SetSlot(d, s, SlotKind(d, s), SlotFrom(d, s), Now); }
+        /// <summary>Ödüllü reklam: inşaatı kısaltır.</summary>
+        public static void Shorten(SaveData d, BuildingKind k, int seconds) { int s = SlotOf(d, k); if (s >= 0) SetSlot(d, s, SlotKind(d, s), SlotFrom(d, s), SlotEnd(d, s) - seconds * 1000L); }
 
         // ---------- Üretim ----------
         public static float RateGold(SaveData d) => 1f * Progress.Eff(d, BuildingKind.Mine);

@@ -61,7 +61,7 @@ namespace SuruSavasi.Game
         float evTimer = 8, nextTick;
 
         // Seçim ve pencereler
-        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train }
+        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train, Builder }
         BuildingKind? sel;
         Popup popup;
         Rect popupRect;
@@ -203,20 +203,20 @@ namespace SuruSavasi.Game
 
         void LiveTick(float dt)
         {
-            int want = Mathf.Min(6, 2 + SumLevels() / 8);
+            int want = Mathf.Max(2 * BaseLogic.Slots(D), Mathf.Min(6, 2 + SumLevels() / 8));
             while (workers.Count < want) { var w = new Worker { ph = Random.value * 6 }; Retarget(w); workers.Add(w); }
 
-            // İnşaat varsa ilk iki işçi oraya gider ve bitene kadar çalışır
-            bool building = BaseLogic.Building(D);
+            // Her inşaatçının inşaatına iki işçi gider ve bitene kadar çalışır
             for (int i = 0; i < workers.Count; i++)
             {
                 var w = workers[i];
-                bool shouldBuild = building && i < 2;
-                if (shouldBuild && (!w.builder || w.kind != D.buildKind))
+                int slot = i / 2, sk = slot < BaseLogic.MaxBuilders ? BaseLogic.SlotKind(D, slot) : -1;
+                bool shouldBuild = sk >= 0;
+                if (shouldBuild && (!w.builder || w.kind != sk))
                 {
-                    var p = Pos[(BuildingKind)D.buildKind];
-                    w.builder = true; w.kind = D.buildKind; w.wait = 0; w.carry = false;
-                    w.tx = p.x + (i == 0 ? -30 : 30); w.ty = p.y + 22;
+                    var p = Pos[(BuildingKind)sk];
+                    w.builder = true; w.kind = sk; w.wait = 0; w.carry = false;
+                    w.tx = p.x + (i % 2 == 0 ? -30 : 30); w.ty = p.y + 22;
                 }
                 else if (!shouldBuild && w.builder) { w.wait = 0; Retarget(w); }
 
@@ -484,7 +484,7 @@ namespace SuruSavasi.Game
                 var k = kv.Key; var p = kv.Value; int L = Progress.Level(D, k);
                 float bs = BScale(k);
                 pop.TryGetValue(k, out float pp); float sc = (1 + pp * .16f) * bs; int ord = 100 + (int)p.y;
-                bool busy = BaseLogic.Building(D) && D.buildKind == (int)k;
+                bool busy = BaseLogic.Busy(D, k);
                 if (sel == k) Draw(circle, new Color(1, .82f, .25f, .45f + .2f * Mathf.Sin(t * 6)), p.x, p.y + 10, 112 * bs, 34 * bs, 5);
                 if (k == BuildingKind.Wall) Spr(Art.WallGate(tier), p.x, p.y, ord, sc);
                 else if (L == 0) Spr(Art.BaseMisc(busy ? 1 : 0), p.x, p.y, ord, bs);
@@ -493,7 +493,8 @@ namespace SuruSavasi.Game
 
                 if (busy)
                 {
-                    float pr = Mathf.Clamp01(1 - BaseLogic.Remaining(D) / Mathf.Max(1, BaseLogic.Duration(D.buildFrom)));
+                    int bslot = BaseLogic.SlotOf(D, k);
+                    float pr = Mathf.Clamp01(1 - BaseLogic.Remaining(D, k) / Mathf.Max(1, BaseLogic.Duration(BaseLogic.SlotFrom(D, bslot))));
                     Draw(square, new Color(.03f, .05f, .07f, .85f), p.x, p.y - 48, 64, 9, 2050);
                     Draw(square, Hex("#ffb02e"), p.x - 31 + 31 * pr, p.y - 48, 62 * pr, 7, 2051);
                     Spr(Art.BaseMisc(4), p.x + 34, p.y - 22, 2052, 1.6f, false, null, Mathf.Sin(t * 8) * 30);
@@ -577,11 +578,11 @@ namespace SuruSavasi.Game
             foreach (var kv in Pos)
             {
                 var k = kv.Key; var p = kv.Value; int L = Progress.Level(D, k);
-                bool busy = BaseLogic.Building(D) && D.buildKind == (int)k;
+                bool busy = BaseLogic.Busy(D, k);
                 float bs = BScale(k);
                 if (sel != k) Outlined(ToGui(p.x, p.y + 32 * bs), BaseLogic.Def(k).name, Color.white, tiny);
                 if (L > 0) Outlined(ToGui(p.x + 40 * bs, p.y - 30 * bs), L.ToString(), Color.white, tiny, 40);
-                if (busy) Outlined(ToGui(p.x, p.y - 62), Fmt(BaseLogic.Remaining(D)), Color.white, center);
+                if (busy) Outlined(ToGui(p.x, p.y - 62), Fmt(BaseLogic.Remaining(D, k)), Color.white, center);
                 else if (sel != k && BaseLogic.Check(D, k) == BaseLogic.UpResult.Ok) Outlined(ToGui(p.x - 42, p.y - 8 + Mathf.Sin(t * 5 + p.x) * 3), "▲", Hex("#5be06a"), big, 40);
                 if (ProdOf(k).HasValue && L > 0 && Pending(k) >= 1 && !busy)
                     Outlined(ToGui(p.x + 34, p.y - 62 + Mathf.Sin(t * 3 + p.x) * 3), Mathf.FloorToInt(Pending(k)).ToString(), Color.white, tiny, 60);
@@ -654,6 +655,27 @@ namespace SuruSavasi.Game
             }
         }
 
+        /// <summary>İkinci inşaatçı satın alma penceresi.</summary>
+        void BuilderPopup(float x, float y, float w, float h, GUIStyle head)
+        {
+            GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "İkinci İnşaatçı", head);
+            GUI.Label(new Rect(x + 16, y + 56, w - 32, 120),
+                "Aynı anda iki binayı yükselt! İkinci inşaatçı kalıcıdır ve üssünün gelişimini neredeyse iki katına çıkarır.\n\n<color=#8be39d>• İki inşaat aynı anda\n• Kalıcı, bir kez alınır</color>", new GUIStyle(label) { wordWrap = true });
+            int price = BaseLogic.SecondBuilderGems; bool can = Wl.Get(Currency.Diamonds) >= price;
+            if (GUI.Button(new Rect(x + 20, y + h - 132, w - 40, 56), $"Satın al: {price} elmas", UiSkin.ButtonGold))
+            {
+                if (Wl.Spend(Currency.Diamonds, price, "second_builder"))
+                {
+                    D.builders = 2; GameServices.Save.Save(); SoundFx.Play("power"); popup = Popup.None;
+                    var hp = Pos[BuildingKind.Headquarters]; AddFloat(hp.x, hp.y - 90, "Yeni inşaatçı geldi!", Gold);
+                    Burst(hp.x, hp.y - 60, 30, new[] { Gold, Color.white }, 140, 70);
+                    GameServices.Analytics?.LogEvent("builder_buy", new Dictionary<string, object> { { "builders", 2 } });
+                }
+                else { popup = Popup.None; MetaScreens.shopTab = 0; flow.Show(GameScreen.Shop); flow.ShowToast($"{price} elmas gerekli"); }
+            }
+            if (!can) GUI.Label(new Rect(x, y + h - 70, w, 26), $"Elmasın: {Wl.Get(Currency.Diamonds)} · eksik kalırsa mağazaya gidersin", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+        }
+
         void Focus(BuildingKind k) { sel = k; var p = Pos[k]; camX = p.x; camY = p.y + 40; }
 
         void Hud()
@@ -665,9 +687,20 @@ namespace SuruSavasi.Game
                 new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             // İnşaatçı durumu
-            string bs = BaseLogic.Building(D) ? $"İnşaat: {BaseLogic.Def((BuildingKind)D.buildKind).name} {Fmt(BaseLogic.Remaining(D))}" : "İnşaatçı boşta";
-            if (GUI.Button(new Rect(x0, 48, 210, 34), bs, new GUIStyle(btn) { fontSize = 13 }) && BaseLogic.Building(D))
-            { popKind = (BuildingKind)D.buildKind; popup = Popup.Upgrade; SoundFx.Play("click"); }
+            // İnşaatçılar: her biri için küçük bir düğme; ikincisi kilitliyse satın alma
+            var bstyle = new GUIStyle(btn) { fontSize = 11, padding = new RectOffset(2, 2, 1, 1) };
+            for (int b = 0; b < BaseLogic.MaxBuilders; b++)
+            {
+                var br = new Rect(x0 + b * 106, 48, 102, 34);
+                if (b >= BaseLogic.Slots(D))
+                {
+                    if (GUI.Button(br, $"+ İnşaatçı\n<size=10>{BaseLogic.SecondBuilderGems} elmas</size>", new GUIStyle(UiSkin.ButtonGold) { fontSize = 11, padding = new RectOffset(2, 2, 1, 1) })) { popup = Popup.Builder; SoundFx.Play("click"); }
+                    continue;
+                }
+                int sk = BaseLogic.SlotKind(D, b);
+                string txt = sk >= 0 ? $"{BaseLogic.Def((BuildingKind)sk).name}\n<size=10>{Fmt(BaseLogic.RemainingSlot(D, b))}</size>" : $"İnşaatçı {b + 1}\n<size=10><color=#8be39d>Boşta</color></size>";
+                if (GUI.Button(br, txt, bstyle) && sk >= 0) { popKind = (BuildingKind)sk; popup = Popup.Upgrade; SoundFx.Play("click"); }
+            }
             GUI.Label(new Rect(x0 + 216, 48, 60, 34), $"<color=#ffd23f>★ {Progress.TotalStars(D)}</color>", new GUIStyle(label) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = 15 });
             var tb = new GUIStyle(btn) { fontSize = 13, padding = new RectOffset(2, 2, 2, 2) };
             bool ready = Daily.Ready(D);
@@ -700,7 +733,7 @@ namespace SuruSavasi.Game
         {
             int L = Mathf.Clamp(Progress.Level(D, k) + delta, k == BuildingKind.Headquarters ? 1 : 0, Progress.MaxLevel(k));
             D.buildings[(int)k] = L;
-            if (BaseLogic.Building(D) && D.buildKind == (int)k) D.buildKind = -1;
+            int dslot = BaseLogic.SlotOf(D, k); if (dslot >= 0) BaseLogic.ClearSlot(D, dslot);
             GameServices.Save.Save();
             pop[k] = 1;
             var p = Pos[k];
@@ -756,7 +789,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -766,6 +799,7 @@ namespace SuruSavasi.Game
 
             if (popup == Popup.Defense) { DefenseTierPopup(x, y, w, h, head); return; }
             if (popup == Popup.Train) { TrainPopup(x, y, w, h, head); return; }
+            if (popup == Popup.Builder) { BuilderPopup(x, y, w, h, head); return; }
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);
@@ -811,19 +845,19 @@ namespace SuruSavasi.Game
             }
 
             // Yükseltme
-            bool busyThis = BaseLogic.Building(D) && D.buildKind == (int)k;
+            bool busyThis = BaseLogic.Busy(D, k);
             if (busyThis)
             {
-                float rem = BaseLogic.Remaining(D); int scost = BaseLogic.SpeedCost(D);
-                GUI.Label(new Rect(x, y + 130, w, 30), $"Seviye {D.buildFrom + 1} inşa ediliyor", mid);
+                float rem = BaseLogic.Remaining(D, k); int scost = BaseLogic.SpeedCost(D, k);
+                GUI.Label(new Rect(x, y + 130, w, 30), $"Seviye {BaseLogic.SlotFrom(D, BaseLogic.SlotOf(D, k)) + 1} inşa ediliyor", mid);
                 GUI.Label(new Rect(x, y + 164, w, 44), $"<size=34><b><color=#ffd23f>{Fmt(rem)}</color></b></size>", mid);
                 if (GUI.Button(new Rect(x + 20, y + 230, w - 40, 54), scost == 0 ? "Hemen bitir (bedava)" : $"Hemen bitir: {scost} elmas", btn))
                 {
-                    if (scost == 0 || Wl.Spend(Currency.Diamonds, scost, "speed_up")) { BaseLogic.FinishNow(D); nextTick = 0; popup = Popup.None; }
+                    if (scost == 0 || Wl.Spend(Currency.Diamonds, scost, "speed_up")) { BaseLogic.FinishNow(D, k); nextTick = 0; popup = Popup.None; }
                     else flow.ShowToast("Yeterli elmas yok");
                 }
                 if (GUI.Button(new Rect(x + 20, y + 294, w - 40, 54), "▶ Reklam izle: 5 dakika kısalt", UiSkin.ButtonGold))
-                    Shop.WatchAd(AdPlacement.SpeedUpBuild, () => { BaseLogic.Shorten(D, 300); nextTick = 0; GameServices.Save.Save(); }, () => flow.ShowToast("Reklam hazır değil"));
+                    Shop.WatchAd(AdPlacement.SpeedUpBuild, () => { BaseLogic.Shorten(D, k, 300); nextTick = 0; GameServices.Save.Save(); }, () => flow.ShowToast("Reklam hazır değil"));
                 return;
             }
             if (L >= Progress.MaxLevel(k)) { GUI.Label(new Rect(x, y + 180, w, 40), "<color=#8be39d><b>En üst seviye</b></color>", mid); return; }
@@ -847,7 +881,7 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(x + 20, ry, w - 40, 26), Fmt(BaseLogic.Duration(L)), new GUIStyle(label) { alignment = TextAnchor.MiddleRight });
 
             var chk = BaseLogic.Check(D, k);
-            string bt = chk == BaseLogic.UpResult.Ok ? (L == 0 ? "KUR" : "YÜKSELT") : chk == BaseLogic.UpResult.Busy ? "İnşaatçı meşgul" : chk == BaseLogic.UpResult.Stars ? $"{rs} yıldız gerekli"
+            string bt = chk == BaseLogic.UpResult.Ok ? (L == 0 ? "KUR" : "YÜKSELT") : chk == BaseLogic.UpResult.Busy ? (BaseLogic.Slots(D) > 1 ? "İnşaatçılar meşgul" : "İnşaatçı meşgul") : chk == BaseLogic.UpResult.Stars ? $"{rs} yıldız gerekli"
                 : chk == BaseLogic.UpResult.NeedHq ? $"Karargâh Sv. {(L + 2) / 2} gerekli" : "Kaynak yetersiz";
             GUI.enabled = chk == BaseLogic.UpResult.Ok;
             if (GUI.Button(new Rect(x + 20, y + h - 72, w - 40, 56), bt, UiSkin.ButtonGold))
@@ -859,6 +893,9 @@ namespace SuruSavasi.Game
                 }
             }
             GUI.enabled = true;
+            // İnşaatçı meşgulse ikinci inşaatçıyı öner
+            if (chk == BaseLogic.UpResult.Busy && BaseLogic.Slots(D) < BaseLogic.MaxBuilders)
+                if (GUI.Button(new Rect(x + 20, y + h - 112, w - 40, 36), $"+ İkinci inşaatçı al ({BaseLogic.SecondBuilderGems} elmas)", new GUIStyle(btn) { fontSize = 14 })) popup = Popup.Builder;
         }
 
         // Haritaya dokunma ve kaydırma. Butonlar olayı önce tüketir, kalan olaylar haritaya gider.

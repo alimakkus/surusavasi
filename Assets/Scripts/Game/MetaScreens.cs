@@ -84,6 +84,20 @@ namespace SuruSavasi.Game
             else if (shopTab == 2) y = ThemeTab(flow, y, w);
             else
             {
+                // İkinci inşaatçı (kalıcı)
+                if (BaseLogic.Slots(D) < BaseLogic.MaxBuilders)
+                {
+                    GUI.Box(new Rect(0, y, w, 84), "", card);
+                    GUI.DrawTexture(new Rect(4, y + 4, 6, 76), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, .82f, .25f), 0, 3);
+                    GUI.Label(new Rect(18, y + 6, w - 180, 30), "<b>İkinci İnşaatçı</b>", label);
+                    GUI.Label(new Rect(18, y + 36, w - 180, 44), "Aynı anda iki bina yükselt. Kalıcı.", small);
+                    if (GUI.Button(new Rect(w - 150, y + 16, 136, 52), $"{BaseLogic.SecondBuilderGems} elmas", UiSkin.ButtonGold))
+                    {
+                        if (Wl.Spend(Currency.Diamonds, BaseLogic.SecondBuilderGems, "second_builder")) { D.builders = 2; GameServices.Save.Save(); SoundFx.Play("power"); flow.ShowToast("Yeni inşaatçı geldi!"); }
+                        else flow.ShowToast("Yeterli elmas yok");
+                    }
+                    y += 94;
+                }
                 int lv = Mathf.Clamp(D.unlocked, 1, 100);
                 (string name, Currency c, int amount, int cost)[] packs =
                 {

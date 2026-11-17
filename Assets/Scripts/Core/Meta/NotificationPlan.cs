@@ -15,10 +15,11 @@ namespace SuruSavasi.Core.Meta
             void Add(int id, string title, string body, DateTime when) { if (when > now.AddSeconds(30)) L.Add(new PlannedNote { id = id, title = title, body = body, when = Quiet(when) }); }
 
             // İnşaat bitti
-            if (d.buildKind >= 0)
+            for (int s = 0; s < BaseLogic.MaxBuilders; s++)
             {
-                var end = DateTimeOffset.FromUnixTimeMilliseconds(d.buildEnd).LocalDateTime;
-                Add(1, "İnşaat tamamlandı!", $"{BaseLogic.Def((BuildingKind)d.buildKind).name} {d.buildFrom + 1}. seviyeye ulaştı. İnşaatçın yeni iş bekliyor.", end);
+                int kind = BaseLogic.SlotKind(d, s); if (kind < 0) continue;
+                var end = DateTimeOffset.FromUnixTimeMilliseconds(BaseLogic.SlotEnd(d, s)).LocalDateTime;
+                Add(1 + s * 10, "İnşaat tamamlandı!", $"{BaseLogic.Def((BuildingKind)kind).name} {BaseLogic.SlotFrom(d, s) + 1}. seviyeye ulaştı. İnşaatçın yeni iş bekliyor.", end);
             }
             // Depolar doldu (en erken dolan kaynak)
             BaseLogic.TickProduction(d);

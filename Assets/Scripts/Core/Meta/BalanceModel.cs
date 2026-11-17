@@ -82,11 +82,12 @@ namespace SuruSavasi.Core.Meta
             public bool watchDoubleAds = false;    // ödülü 2 katına çıkaran reklamı izler mi
             public int maxAttempts = 80;           // bir bölümde vazgeçmeden önce deneme
             public int seed = 1;
+            public int builders = 1;               // 2: ikinci inşaatçıyı almış oyuncu
         }
 
         public static List<Row> Run(Options o)
         {
-            var d = new SaveData(); SaveSystem.Migrate(d);
+            var d = new SaveData(); SaveSystem.Migrate(d); d.builders = o.builders;
             var rows = new List<Row>();
             double clock = 0;          // oyun içi geçen gerçek süre (sn)
             double sessionLeft = o.sessionMinutes * 60;
@@ -101,7 +102,7 @@ namespace SuruSavasi.Core.Meta
                 d.pendIron = Math.Min(BaseLogic.RateIron(d) * BaseLogic.CapMinutes, d.pendIron + BaseLogic.RateIron(d) * mins);
                 d.pendFood = Math.Min(BaseLogic.RateFood(d) * BaseLogic.CapMinutes, d.pendFood + BaseLogic.RateFood(d) * mins);
                 // inşaat bitişi
-                if (d.buildKind >= 0 && clock * 1000 >= d.buildEnd) { d.buildings[d.buildKind] = d.buildFrom + 1; d.buildKind = -1; }
+                while (BaseLogic.CompleteAt(d, (long)(clock * 1000), false) != null) { }
             }
             void Collect()
             {
@@ -121,13 +122,13 @@ namespace SuruSavasi.Core.Meta
                 Collect();
                 // Pazar takası: en çok olan kaynaktan en az olana (oyuncu bunu yapar)
                 // Bina: inşaatçı boşsa en ucuz yükseltilebilir bina (Karargâh sınıra takılınca önce o)
-                if (d.buildKind < 0)
+                while (BaseLogic.FreeSlot(d) >= 0)
                 {
                     BuildingKind? pick = null; int bestCost = int.MaxValue;
                     foreach (var def in BaseLogic.Defs)
                     {
                         var k = def.kind; int L = Progress.Level(d, k);
-                        if (L >= Progress.MaxLevel(k) || Progress.TotalStars(d) < BaseLogic.ReqStars(L)) continue;
+                        if (L >= Progress.MaxLevel(k) || Progress.TotalStars(d) < BaseLogic.ReqStars(L) || BaseLogic.Busy(d, k)) continue;
                         if (k != BuildingKind.Headquarters && L >= Progress.LevelCap(d, k)) continue;
                         int cost = BaseLogic.CostGold(k, L) + BaseLogic.CostIron(k, L) + BaseLogic.CostFood(k, L);
                         if (k == BuildingKind.Headquarters) cost = (int)(cost * .7f); // oyuncu Karargâh'ı öne alır
@@ -139,9 +140,11 @@ namespace SuruSavasi.Core.Meta
                         if (d.gold >= BaseLogic.CostGold(k, L) && d.iron >= BaseLogic.CostIron(k, L) && d.food >= BaseLogic.CostFood(k, L))
                         {
                             Spend("gold", BaseLogic.CostGold(k, L)); Spend("iron", BaseLogic.CostIron(k, L)); Spend("food", BaseLogic.CostFood(k, L));
-                            d.buildKind = (int)k; d.buildFrom = L; d.buildEnd = (long)(clock * 1000) + BaseLogic.Duration(L) * 1000L;
+                            BaseLogic.SetSlot(d, BaseLogic.FreeSlot(d), (int)k, L, (long)(clock * 1000) + BaseLogic.Duration(L) * 1000L);
                         }
+                        else break;
                     }
+                    else break;
                 }
                 // Kahraman (altın + elmas)
                 int hi = Progress.HeroIndex(d.hero), hl = Progress.HeroLevel(d, hi);

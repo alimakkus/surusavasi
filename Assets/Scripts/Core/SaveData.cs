@@ -24,6 +24,9 @@ namespace SuruSavasi.Core
         public int buildKind = -1;      // inşaattaki bina (-1 = yok)
         public int buildFrom;
         public long buildEnd;           // UTC milisaniye
+        public int builders = 1;        // inşaatçı sayısı (2. elmasla alınır)
+        public int build2Kind = -1, build2From;
+        public long build2End;
         public float pendGold, pendIron, pendFood; // toplanmayı bekleyen üretim
         public long lastProd;           // UTC milisaniye
 
@@ -98,6 +101,7 @@ namespace SuruSavasi.Core
             if (d.ownedThemes == null) d.ownedThemes = new List<string>();
             if (!d.ownedThemes.Contains("green")) d.ownedThemes.Add("green");
             if (!d.ownedThemes.Contains(d.theme)) d.theme = "green";
+            if (d.builders < 1) { d.builders = 1; d.build2Kind = -1; }
             if (d.gear == null) d.gear = new List<Meta.GearItem>();
             if (d.equipped == null || d.equipped.Length < 3) d.equipped = new int[3];
             if (d.questKeys == null) d.questKeys = new List<string>();

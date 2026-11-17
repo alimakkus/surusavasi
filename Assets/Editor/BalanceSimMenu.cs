@@ -75,6 +75,7 @@ namespace SuruSavasi.EditorTools
                     ("iyi", new BalanceModel.Options { skill = 1f }),
                     ("ortalama", new BalanceModel.Options { skill = .7f }),
                     ("reklamci", new BalanceModel.Options { skill = .7f, watchDoubleAds = true }),
+                    ("iki_insaatci", new BalanceModel.Options { skill = .7f, builders = 2 }),
                 };
                 for (int i = 0; i < profiles.Length; i++)
                 {
