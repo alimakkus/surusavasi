@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -141,6 +141,7 @@ namespace SuruSavasi.Game
                     case GameScreen.Weapons: WeaponsScreen(x0, w); break;
                     case GameScreen.Shop: MetaScreens.Shop(this, x0, w); break;
                     case GameScreen.Daily: MetaScreens.DailyScreen(this, x0, w); break;
+                    case GameScreen.Gear: GearScreen.Draw(this, x0, w); break;
                 }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
@@ -221,7 +222,8 @@ namespace SuruSavasi.Game
         void HeroesScreen(float x0, float w)
         {
             if (Back(x0)) { Show(GameScreen.Base); return; }
-            GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), $"<b>Kahramanlar</b>  (yıldız: {Progress.TotalStars(D)})", label);
+            GUI.Label(new Rect(x0 + 100, 48, w - 220, 40), $"<b>Kahramanlar</b>  (★ {Progress.TotalStars(D)})", label);
+            if (GUI.Button(new Rect(x0 + w - 116, 48, 116, 40), "Ekipman", UiSkin.ButtonGold)) { SoundFx.Play("click"); Show(GameScreen.Gear); return; }
             float y = 100;
             for (int i = 0; i < Progress.Heroes.Length; i++)
             {

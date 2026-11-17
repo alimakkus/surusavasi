@@ -39,6 +39,15 @@ namespace SuruSavasi.Core
         public string theme = "green";
         public List<string> ownedThemes = new List<string> { "green" };
 
+        // Kışla: asker eğitimi
+        public int troops, trainQueue;
+        public long trainEnd;
+
+        // Kahraman ekipmanı
+        public List<Meta.GearItem> gear = new List<Meta.GearItem>();
+        public int[] equipped = new int[3];  // Silah, Zırh, Muska (eşya kimliği, 0 = boş)
+        public int gearSeq, shards;
+
         // Hikâye görevleri
         public int storyIndex;
         public List<string> questKeys = new List<string>(), storyBase = new List<string>();
@@ -89,6 +98,8 @@ namespace SuruSavasi.Core
             if (d.ownedThemes == null) d.ownedThemes = new List<string>();
             if (!d.ownedThemes.Contains("green")) d.ownedThemes.Add("green");
             if (!d.ownedThemes.Contains(d.theme)) d.theme = "green";
+            if (d.gear == null) d.gear = new List<Meta.GearItem>();
+            if (d.equipped == null || d.equipped.Length < 3) d.equipped = new int[3];
             if (d.questKeys == null) d.questKeys = new List<string>();
             if (d.questVals == null) d.questVals = new List<int>();
             if (d.storyBase == null) d.storyBase = new List<string>();

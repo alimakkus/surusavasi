@@ -75,8 +75,11 @@ namespace SuruSavasi.Game
             level = lv;
             Fails.TryGetValue(lv, out int f);
             var mods = GameServices.Save != null ? Progress.BuildMods(GameServices.Save.Data) : new BattleMods();
+            int trained = 0;
+            if (GameServices.Save != null) { Troops.Tick(GameServices.Save.Data, BaseLogic.Now); trained = Troops.TakeForBattle(GameServices.Save.Data); mods.startBonus += trained; GameServices.Save.Save(); }
             sim = new BattleSim(lv, mods, f);
             sim.Fx += OnFx;
+            if (trained > 0) sim.AddFloat(Field.W / 2, Field.SQY - 90, $"+{trained} eğitimli asker", "#8be39d");
             parts.Clear(); decals.Clear(); shake = 0; flash = 0;
             heroIndex = Progress.HeroIndex(mods.heroId);
             rewardText = ""; rewardGiven = false; doubled = false;
@@ -353,6 +356,7 @@ namespace SuruSavasi.Game
         }
 
         int rwGold, rwIron, rwFood, rwGems;
+        string dropText = "";
         void GrantRewards()
         {
             if (rewardGiven || GameServices.Save == null) return;
@@ -362,13 +366,19 @@ namespace SuruSavasi.Game
             bool first = d.stars[idx] == 0;
             var rw = Rewards.ForLevel(level, sim.stars, first, sim.mods, Daily.CurrentEvent());
             rwGold = rw.gold; rwIron = rw.iron; rwFood = rw.food; rwGems = rw.gems;
+            dropText = "";
+            if (sim.state == BattleState.Won)
+            {
+                var drop = Gear.BattleDrop(d, level, new System.Random());
+                if (drop != null) dropText = $"\n<color={Gear.RarityColors[drop.rarity]}><b>Yeni ekipman: {Gear.Name(drop)} ({Gear.RarityNames[drop.rarity]})</b></color>";
+            }
             d.stars[idx] = Mathf.Max(d.stars[idx], sim.stars);
             if (level < Balance.MaxLevel) d.unlocked = Mathf.Max(d.unlocked, level + 1);
             var w = GameServices.Wallet;
             w.Add(Currency.Gold, rwGold, "level"); w.Add(Currency.Iron, rwIron, "level"); w.Add(Currency.Food, rwFood, "level");
             if (rwGems > 0) w.Add(Currency.Diamonds, rwGems, "level");
             GameServices.Save.Save();
-            rewardText = $"+{rwGold} altın  +{rwIron} demir  +{rwFood} yiyecek" + (rwGems > 0 ? $"  +{rwGems} elmas" : "") + (first ? "" : "  (tekrar)");
+            rewardText = $"+{rwGold} altın  +{rwIron} demir  +{rwFood} yiyecek" + (rwGems > 0 ? $"  +{rwGems} elmas" : "") + (first ? "" : "  (tekrar)") + dropText;
         }
 
         void DoubleRewards()
@@ -378,7 +388,7 @@ namespace SuruSavasi.Game
                 doubled = true;
                 var w = GameServices.Wallet;
                 w.Add(Currency.Gold, rwGold, "ad_double"); w.Add(Currency.Iron, rwIron, "ad_double"); w.Add(Currency.Food, rwFood, "ad_double");
-                rewardText = $"+{rwGold * 2} altın  +{rwIron * 2} demir  +{rwFood * 2} yiyecek" + (rwGems > 0 ? $"  +{rwGems} elmas" : "") + "  (2 kat)";
+                rewardText = $"+{rwGold * 2} altın  +{rwIron * 2} demir  +{rwFood * 2} yiyecek" + (rwGems > 0 ? $"  +{rwGems} elmas" : "") + "  (2 kat)" + dropText;
             });
         }
 
