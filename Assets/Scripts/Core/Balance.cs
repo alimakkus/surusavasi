@@ -13,6 +13,7 @@ namespace SuruSavasi.Core
         public static int StartSoldiers(int lv) => Mathf.CeilToInt(10f * (1f + 0.05f * lv));
         public static float EnemyRef(int lv, int i) => StartSoldiers(lv) + i * 0.6f * Cbv(lv);
         public static float DpsOf(float e, int lv) => e * DmgPer(lv) / Fire;
+        public static float Tw(int lv) => 0.45f + lv * 0.004f;
         public static float TimeToKill0(int lv) => 6f + lv * 0.04f;
         public static float SquadTime(int lv) => 22f - lv * 0.06f;
         public static int RowsOf(int lv) => 8 + lv / 8;

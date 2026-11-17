@@ -8,6 +8,7 @@ namespace SuruSavasi.Core
     public class SaveData
     {
         public int gold, iron, food, diamonds;
+        public int unlocked = 1;        // açılmış en yüksek bölüm
         public int[] stars = new int[Balance.MaxLevel];
         public List<int> buildingLevels = new List<int>();
         public long lastTick;       // UTC saniye, çevrimdışı üretim için
