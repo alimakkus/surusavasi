@@ -57,7 +57,7 @@ namespace SuruSavasi.Core.Meta
             }
         }
 
-        public static int UpgradeShards(GearItem g) => (int)Math.Ceiling(4 * g.lvl * (1 + g.rarity));
+        public static int UpgradeShards(GearItem g) => 4 * g.lvl * (1 + g.rarity);
         public static int UpgradeGold(GearItem g) => (int)Math.Ceiling(150 * Math.Pow(1.6, g.lvl - 1) * (1 + g.rarity * .5));
         public static int DismantleShards(GearItem g) => (1 + g.rarity * 3) * 2 + (g.lvl - 1) * 2;
 
