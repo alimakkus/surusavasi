@@ -1,0 +1,4 @@
+iyi: son bölüm 100, toplam 17 saat. B10=0,1sa B25=0,3sa B50=4,7sa B75=13,1sa B100=17,5sa 
+ortalama: son bölüm 100, toplam 17 saat. B10=0,1sa B25=0,3sa B50=4,7sa B75=13,0sa B100=17,5sa 
+reklamci: son bölüm 100, toplam 17 saat. B10=0,1sa B25=0,3sa B50=4,7sa B75=13,0sa B100=17,5sa 
+Süre: 9 sn. Klasör: C:\Users\Legendary\Documents\GitHub\surusavasi\Balance
