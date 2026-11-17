@@ -461,15 +461,15 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(x0 + w - 120, 48, 120, 34), $"<color=#ffd23f>★ {Progress.TotalStars(D)}</color>", new GUIStyle(label) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold });
 
             // Alt menü
-            float bh = 64, by = 800 - bh - 8, side = (w - 150 - 32) / 4;
+            float bh = 64, by = 800 - bh - 8, mid = 124, side = (w - mid - 32) / 4;
             GUI.Box(new Rect(x0 - 4, by - 8, w + 8, bh + 16), "", card);
-            var sb = new GUIStyle(btn) { fontSize = 13 };
+            var sb = new GUIStyle(btn) { fontSize = 12, padding = new RectOffset(2, 2, 2, 2) };
             if (GUI.Button(new Rect(x0 + 4, by, side, bh), "Bölümler", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Levels); }
             if (GUI.Button(new Rect(x0 + 10 + side, by, side, bh), "Kahraman", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Heroes); }
             int lv = Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel);
-            if (GUI.Button(new Rect(x0 + 16 + side * 2, by - 6, 150, bh + 12), $"SAVAŞ\n<size=13>Bölüm {lv}</size>", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Play(lv); }
-            if (GUI.Button(new Rect(x0 + 172 + side * 2, by, side, bh), "Silah", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Weapons); }
-            if (GUI.Button(new Rect(x0 + 178 + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
+            if (GUI.Button(new Rect(x0 + 16 + side * 2, by - 6, mid, bh + 12), $"SAVAŞ\n<size=13>Bölüm {lv}</size>", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Play(lv); }
+            if (GUI.Button(new Rect(x0 + 22 + mid + side * 2, by, side, bh), "Silah", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Weapons); }
+            if (GUI.Button(new Rect(x0 + 28 + mid + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
         }
 
         void SelectionMenu(BuildingKind k)
