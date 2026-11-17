@@ -41,8 +41,8 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Mağaza</b>", label);
 
             float tw = (w - 10) / 2;
-            if (GUI.Toggle(new Rect(x0, 96, tw, 40), shopTab == 0, "Elmas", btn)) shopTab = 0;
-            if (GUI.Toggle(new Rect(x0 + tw + 10, 96, tw, 40), shopTab == 1, "Kaynak", btn)) shopTab = 1;
+            if (GUI.Button(new Rect(x0, 96, tw, 40), "Elmas", shopTab == 0 ? UiSkin.ButtonGold : btn)) shopTab = 0;
+            if (GUI.Button(new Rect(x0 + tw + 10, 96, tw, 40), "Kaynak", shopTab == 1 ? UiSkin.ButtonGold : btn)) shopTab = 1;
 
             var store = GameServices.Store;
             float y0 = 146, ch = 86;
