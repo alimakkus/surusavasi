@@ -59,7 +59,7 @@ namespace SuruSavasi.Game
             void Glow(float x, float y, float w, float h, float a, float core)
             {
                 float f = .88f + .12f * Mathf.Sin(t * 9 + x * .37f + y * .11f);
-                Draw(circle, new Color(1, .68f, .28f, a * n * f), x, y, w * f, h * f, 1993);
+                Draw(glow, new Color(1, .68f, .28f, a * n * f), x, y, w * f, h * f, 1993);
                 if (core > 0) Draw(circle, new Color(1, .9f, .55f, .95f * n), x, y, core, core, 1994);
             }
 
@@ -69,17 +69,17 @@ namespace SuruSavasi.Game
                 var k = kv.Key; var p = kv.Value;
                 if (k == BuildingKind.Wall || Progress.Level(D, k) <= 0) continue;
                 float bs = BScale(k);
-                Glow(p.x, p.y - 22 * bs, 120 * bs, 76 * bs, k == BuildingKind.Headquarters ? .36f : .28f, 0);
+                Glow(p.x, p.y - 22 * bs, 150 * bs, 100 * bs, k == BuildingKind.Headquarters ? .55f : .45f, 0);
             }
             // Sur meşaleleri, kuleler, kapı
-            for (int i = 0; i < wallSegs.Count; i += 3) Glow(wallSegs[i].x, wallSegs[i].y - 26, 30, 30, .4f, 4);
-            foreach (var p in wallTowers) Glow(p.x, p.y - 46, 54, 54, .5f, 6);
+            for (int i = 0; i < wallSegs.Count; i += 3) Glow(wallSegs[i].x, wallSegs[i].y - 26, 34, 34, .6f, 3.5f);
+            foreach (var p in wallTowers) Glow(p.x, p.y - 46, 60, 60, .75f, 5);
             float gy = Pos[BuildingKind.Wall].y;
-            Glow(CX - 46, gy - 34, 46, 46, .5f, 5); Glow(CX + 46, gy - 34, 46, 46, .5f, 5);
+            Glow(CX - 46, gy - 34, 52, 52, .75f, 4.5f); Glow(CX + 46, gy - 34, 52, 52, .75f, 4.5f);
 
             // Kamp ateşi (talim alanının yanında)
             float fx = CX + 70, fy = CY + 112;
-            Glow(fx, fy - 6, 110, 80, .45f, 0);
+            Glow(fx, fy - 6, 130, 96, .7f, 0);
             Draw(square, new Color(.35f, .2f, .1f, n), fx, fy + 2, 18, 4, 1995, 20);
             Draw(square, new Color(.35f, .2f, .1f, n), fx, fy + 2, 18, 4, 1995, -20);
             for (int i = 0; i < 3; i++)
