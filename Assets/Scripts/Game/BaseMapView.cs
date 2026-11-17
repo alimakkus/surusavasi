@@ -35,7 +35,7 @@ namespace SuruSavasi.Game
 
         public GameFlow flow;
         Camera cam;
-        Sprite square, circle;
+        Sprite square, circle, glow;
         Material mat;
         readonly List<SpriteRenderer> pool = new List<SpriteRenderer>();
         int used;
@@ -80,6 +80,11 @@ namespace SuruSavasi.Game
             for (int y = 0; y < s; y++) for (int x = 0; x < s; x++) { float d = Mathf.Sqrt((x + .5f - 32) * (x + .5f - 32) + (y + .5f - 32) * (y + .5f - 32)); cp[y * s + x] = new Color(1, 1, 1, Mathf.Clamp01(32 - d)); }
             ct.SetPixels(cp); ct.Apply();
             circle = Sprite.Create(ct, new Rect(0, 0, s, s), new Vector2(.5f, .5f), s);
+            // Yumuşak ışık hâlesi (gece ışıkları için)
+            var gt = new Texture2D(s, s); var gp = new Color[s * s];
+            for (int y = 0; y < s; y++) for (int x = 0; x < s; x++) { float d = Mathf.Sqrt((x + .5f - 32) * (x + .5f - 32) + (y + .5f - 32) * (y + .5f - 32)) / 32f; float a = Mathf.Clamp01(1 - d); gp[y * s + x] = new Color(1, 1, 1, a * a * (3 - 2 * a)); }
+            gt.SetPixels(gp); gt.Apply();
+            glow = Sprite.Create(gt, new Rect(0, 0, s, s), new Vector2(.5f, .5f), s);
             BuildScenery();
         }
 
@@ -393,10 +398,12 @@ namespace SuruSavasi.Game
             int wallL = Progress.Level(D, BuildingKind.Wall), tier = Mathf.CeilToInt(wallL / 4f);
 
             // Çevredeki ağaçlar (sadece ekrandakiler)
-            var tree = Art.Tree(theme.treeMap);
-            foreach (var tr in trees)
+            for (int i = 0; i < trees.Count; i++)
+            {
+                var tr = trees[i];
                 if (Mathf.Abs(tr.x - camX) < visW / 2 + 70 && Mathf.Abs(tr.y - camY) < visH / 2 + 140)
-                    Spr(tree, tr.x, tr.y, 100 + (int)tr.y, tr.z);
+                    Spr(Art.Tree(theme.trees[(i * 7 + 3) % theme.trees.Length]), tr.x, tr.y, 100 + (int)tr.y, tr.z);
+            }
 
             // Sur: parçalar, kuleler
             var seg = Art.WallSeg(tier); var tow = Art.WallTower(tier);
