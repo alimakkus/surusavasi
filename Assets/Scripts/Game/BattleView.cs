@@ -422,13 +422,12 @@ namespace SuruSavasi.Game
             // Üst bilgi
             var M = BattleData.Maps[sim.map];
             Text(new Vector2(VW / 2, 22), $"Bölüm {level} · {M.nameTr}", Color.white, label, 400);
-            Text(new Vector2(VW / 2, 106), Progress.Heroes[Progress.HeroIndex(sim.mods.heroId)].name + " · " + Progress.Weapons[Progress.WeaponIndex(sim.mods.weaponId)].name, new Color(1, 1, 1, .6f), label, 400);
             float hpF = sim.hhp / Mathf.Max(1, sim.HeroMax);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .6f), 0, 0);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200 * hpF, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#8be39d"), 0, 0);
             if (GameServices.Wallet != null)
                 Text(new Vector2(VW - 90, 22), "Elmas: " + GameServices.Wallet.Get(Currency.Diamonds), C("#9fe8ff"), label, 170);
-            if (sim.boss != null)
+            if (sim.boss != null && sim.Live)
             {
                 var B = sim.boss;
                 Text(new Vector2(VW / 2, 66), (B.isBoss ? "PATRON: " : "") + B.name, C("#ffd23f"), label, 400);
