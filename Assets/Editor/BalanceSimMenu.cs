@@ -21,6 +21,18 @@ namespace SuruSavasi.EditorTools
             Debug.Log($"[Denge] Güç payı yazıldı ({(System.DateTime.Now - t0).TotalSeconds:0} sn)");
         }
 
+        [MenuItem("Sürü Savaşı/Zorluk Kalibrasyonu")]
+        public static void Calibrate()
+        {
+            var dir = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Balance");
+            Directory.CreateDirectory(dir);
+            var t0 = System.DateTime.Now;
+            EditorUtility.DisplayProgressBar("Denge", "Zorluk kalibre ediliyor", .5f);
+            try { File.WriteAllText(Path.Combine(dir, "kalibrasyon.csv"), BalanceModel.Calibrate()); }
+            finally { EditorUtility.ClearProgressBar(); }
+            Debug.Log($"[Denge] Kalibrasyon yazıldı ({(System.DateTime.Now - t0).TotalSeconds:0} sn)");
+        }
+
         [MenuItem("Sürü Savaşı/Denge Simülasyonu")]
         public static void Run()
         {

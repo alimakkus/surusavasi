@@ -210,8 +210,8 @@ namespace SuruSavasi.Core.Meta
         /// <summary>Oyuncunun bu güçle kaldırabileceği en yüksek ek zorluk çarpanı (3 denemenin 2'si kazanılır).</summary>
         public static float Headroom(int lv, BattleMods mods, float skill = 1f)
         {
-            float lo = .1f, hi = 200f;
-            for (int it = 0; it < 9; it++)
+            float lo = .05f, hi = 20000f;
+            for (int it = 0; it < 12; it++)
             {
                 float mid = (float)Math.Sqrt(lo * hi); int w = 0;
                 for (int s = 0; s < 3; s++) if (AutoPilot.Play(lv, mods, 0, 500 + s * 17 + lv, skill, mid).win) w++;
@@ -247,6 +247,33 @@ namespace SuruSavasi.Core.Meta
                 foreach (var p in prof) sb.Append(";" + Headroom(lv, Progress.BuildMods(p.d)).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
                 sb.AppendLine();
             }
+            return sb.ToString();
+        }
+
+        /// <summary>Hedef ilerleme: bölüm lv'ye gelen oyuncunun beklenen yükseltmeleri.</summary>
+        public static SaveData Target(int lv)
+        {
+            int bld = Math.Min(20, (int)Math.Round(lv / 5.5f));
+            return Upgraded(bld, Math.Max(1, (bld + 1) / 2), Math.Min(10, 1 + lv / 11), Math.Min(5, lv / 18));
+        }
+
+        /// <summary>Hedef oyuncunun güç payından zorluk tablosunu çıkarır (her 5 bölümde bir).
+        /// Pay: ilk bölümlerde bol, sonra 2 kat (insan oyuncu bottan zayıf olduğu için).</summary>
+        public static string Calibrate()
+        {
+            var sb = new StringBuilder("bolum;hedef_bina;hedef_pay;yukseltmesiz_pay;zorluk\n");
+            var pts = new List<int> { 1 }; for (int l = 5; l <= 100; l += 5) pts.Add(l);
+            var tbl = new List<float>(); float prev = 1;
+            foreach (int lv in pts)
+            {
+                float hT = Headroom(lv, Progress.BuildMods(Target(lv)));
+                float h0 = Headroom(lv, Progress.BuildMods(NewSave()));
+                float margin = lv <= 5 ? 4f : lv <= 15 ? 2.6f : 2.1f;
+                float D = Math.Max(prev, Math.Max(1, hT / margin)); prev = D; tbl.Add(D);
+                sb.AppendLine($"{lv};{Math.Round(lv / 5.5f)};{hT:0.0};{h0:0.0};{D:0.00}");
+            }
+            sb.Append("TABLO: ");
+            foreach (var v in tbl) sb.Append(v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "f, ");
             return sb.ToString();
         }
 
