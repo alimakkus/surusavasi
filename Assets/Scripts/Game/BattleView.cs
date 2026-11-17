@@ -126,6 +126,12 @@ namespace SuruSavasi.Game
                 float k = (Input.GetKey(KeyCode.LeftArrow) ? -1 : 0) + (Input.GetKey(KeyCode.RightArrow) ? 1 : 0);
                 if (k != 0) sim.tx = Mathf.Clamp(sim.x + k * 60, 0, Field.W);
                 if (Input.GetKeyDown(KeyCode.Space)) sim.UseSkill();
+#if UNITY_EDITOR
+                // Test kısayolları (sadece Editor'de): K = yenil, PageUp/PageDown = bölüm değiştir
+                if (Input.GetKeyDown(KeyCode.K)) sim.DamageSquad(sim.n + 999);
+                if (Input.GetKeyDown(KeyCode.PageUp)) { StartLevel(Mathf.Min(Balance.MaxLevel, level + 1)); return; }
+                if (Input.GetKeyDown(KeyCode.PageDown)) { StartLevel(Mathf.Max(1, level - 1)); return; }
+#endif
                 sim.Step(Mathf.Min(Time.deltaTime, .05f));
                 if (!sim.Live) OnBattleEnd();
             }
@@ -184,7 +190,7 @@ namespace SuruSavasi.Game
                 }
             }
 
-            if (sim.boss != null)
+            if (sim.boss != null && sim.state != BattleState.Won)
             {
                 var B = sim.boss; float bs = 26 * B.sc;
                 Draw(circle, B.flash > 0 ? Color.white : C("#3c3c44"), B.x, B.y, bs * 1.2f, bs, 20);
