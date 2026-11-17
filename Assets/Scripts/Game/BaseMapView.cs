@@ -742,7 +742,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 310 : popup == Popup.Defense ? 340 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -757,7 +757,8 @@ namespace SuruSavasi.Game
                 if (GUI.Button(new Rect(x + 20, y + 64, w - 40, 50), SoundFx.Muted ? "Ses: Kapalı" : "Ses: Açık", btn)) SoundFx.Muted = !SoundFx.Muted;
                 if (GUI.Button(new Rect(x + 20, y + 124, w - 40, 50), SoundFx.Vibrate ? "Titreşim: Açık" : "Titreşim: Kapalı", btn)) SoundFx.Vibrate = !SoundFx.Vibrate;
                 if (GUI.Button(new Rect(x + 20, y + 184, w - 40, 50), NightEnabled ? "Gece görünümü: Saate göre" : "Gece görünümü: Kapalı", btn)) NightEnabled = !NightEnabled;
-                GUI.Label(new Rect(x, y + 250, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                if (GUI.Button(new Rect(x + 20, y + 244, w - 40, 50), NotificationsFactory.Enabled ? "Bildirimler: Açık" : "Bildirimler: Kapalı", btn)) NotificationsFactory.Enabled = !NotificationsFactory.Enabled;
+                GUI.Label(new Rect(x, y + 310, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
                 return;
             }
 

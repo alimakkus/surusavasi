@@ -16,6 +16,7 @@ namespace SuruSavasi.Services
         public static IAdService Ads { get; private set; }
         public static IAnalytics Analytics { get; private set; }
         public static IConsent Consent { get; private set; }
+        public static INotifications Notifications { get; private set; }
         public static bool Ready { get; private set; }
 
         public static StoreTarget CurrentTarget()
@@ -43,6 +44,7 @@ namespace SuruSavasi.Services
             Save = new LocalSaveService();
             Wallet = new Wallet(Save);
             Consent = new LocalConsent();
+            Notifications = NotificationsFactory.Create();
             Platform.ServiceFactory.Create(Target, out var store, out var ads, out var analytics);
             Store = store; Ads = ads; Analytics = analytics;
 
@@ -52,6 +54,7 @@ namespace SuruSavasi.Services
                 Ads.InterstitialsDisabled = Save.Data.noAds;
                 Ads.Initialize(Consent.PersonalizedAds, ok => { });
                 Store.Initialize(Catalog.All, ok => { });
+                Notifications.Init();
                 Ready = true;
                 Debug.Log($"[Services] Hazır. Mağaza: {Store.Name}, Reklam: {Ads.Name}");
             }));

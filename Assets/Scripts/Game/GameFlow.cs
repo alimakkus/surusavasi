@@ -68,6 +68,26 @@ namespace SuruSavasi.Game
 
         void Toast(string s) { toast = s; toastT = 2.2f; }
 
+        // ---------- Bildirimler: arka plana geçince planla, geri gelince sil ----------
+        void OnApplicationPause(bool paused) { if (paused) PlanNotifications(); else GameServices.Notifications?.CancelAll(); }
+        void OnApplicationQuit() => PlanNotifications();
+        void Start() => GameServices.Notifications?.CancelAll();
+
+        void PlanNotifications()
+        {
+            var n = GameServices.Notifications;
+            if (n == null || GameServices.Save == null || !GameServices.Ready) return;
+            n.CancelAll();
+            if (!NotificationsFactory.Enabled) return;
+            foreach (var p in NotificationPlan.Make(D, System.DateTime.Now)) n.Schedule(p.id, p.title, p.body, p.when);
+            GameServices.Save.Save();
+        }
+
+#if UNITY_EDITOR
+        // Editor testi: B tuşu bildirim planını konsola yazar
+        void LateUpdate() { if (Input.GetKeyDown(KeyCode.B)) PlanNotifications(); }
+#endif
+
         void Update()
         {
             if (toastT > 0) toastT -= Time.deltaTime;
