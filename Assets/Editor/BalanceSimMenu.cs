@@ -33,6 +33,31 @@ namespace SuruSavasi.EditorTools
             Debug.Log($"[Denge] Kalibrasyon yazıldı ({(System.DateTime.Now - t0).TotalSeconds:0} sn)");
         }
 
+        [MenuItem("Sürü Savaşı/Bölüm Düzeltme")]
+        public static void Tune()
+        {
+            var t0 = System.DateTime.Now;
+            float[] f;
+            try { f = BalanceModel.LevelFactors(p => EditorUtility.DisplayProgressBar("Denge", "Bölümler ölçülüyor", p)); }
+            finally { EditorUtility.ClearProgressBar(); }
+            var sb = new StringBuilder();
+            sb.AppendLine("namespace SuruSavasi.Core");
+            sb.AppendLine("{");
+            sb.AppendLine("    /// <summary>Bölüm başına zorluk düzeltmesi (1 = değişiklik yok). Sürü Savaşı > Bölüm Düzeltme menüsü bu dosyayı yeniden yazar:");
+            sb.AppendLine("    /// botla her bölümün kendi zorluğunu ölçer, komşularından çok zor/kolay olanları dengeler.</summary>");
+            sb.AppendLine("    public static class LevelTuning");
+            sb.AppendLine("    {");
+            sb.AppendLine("        public static float Factor(int lv) => lv >= 1 && lv <= T.Length ? T[lv - 1] : 1f;");
+            sb.Append("        static readonly float[] T = new float[100] { ");
+            for (int i = 0; i < f.Length; i++) sb.Append((i > 0 ? ", " : "") + f[i].ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "f");
+            sb.AppendLine(" };");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+            File.WriteAllText(Path.Combine(Application.dataPath, "Scripts/Core/LevelTuning.cs"), sb.ToString());
+            AssetDatabase.Refresh();
+            Debug.Log($"[Denge] Bölüm düzeltme tablosu yazıldı ({(System.DateTime.Now - t0).TotalSeconds:0} sn)");
+        }
+
         [MenuItem("Sürü Savaşı/Denge Simülasyonu")]
         public static void Run()
         {

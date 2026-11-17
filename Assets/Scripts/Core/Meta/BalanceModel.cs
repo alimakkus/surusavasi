@@ -208,10 +208,10 @@ namespace SuruSavasi.Core.Meta
         }
 
         /// <summary>Oyuncunun bu güçle kaldırabileceği en yüksek ek zorluk çarpanı (3 denemenin 2'si kazanılır).</summary>
-        public static float Headroom(int lv, BattleMods mods, float skill = 1f)
+        public static float Headroom(int lv, BattleMods mods, float skill = 1f, int iters = 12)
         {
             float lo = .05f, hi = 20000f;
-            for (int it = 0; it < 12; it++)
+            for (int it = 0; it < iters; it++)
             {
                 float mid = (float)Math.Sqrt(lo * hi); int w = 0;
                 for (int s = 0; s < 3; s++) if (AutoPilot.Play(lv, mods, 0, 500 + s * 17 + lv, skill, mid).win) w++;
@@ -275,6 +275,32 @@ namespace SuruSavasi.Core.Meta
             sb.Append("TABLO: ");
             foreach (var v in tbl) sb.Append(v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "f, ");
             return sb.ToString();
+        }
+
+        /// <summary>Her bölümün kendine özgü zorluğunu sabit bir oyuncuyla ölçer; komşu ortalamasından sapmayı düzeltme çarpanına çevirir.
+        /// Dönen dizi LevelTuning tablosudur.</summary>
+        public static float[] LevelFactors(Action<float> progress = null)
+        {
+            int N = Balance.MaxLevel; var lh = new double[N];
+            for (int lv = 1; lv <= N; lv++)
+            {
+                progress?.Invoke(lv / (float)N);
+                var d = Target(lv);
+                float h = Headroom(lv, Progress.BuildMods(d), 1f, 8) * LevelTuning.Factor(lv); // mevcut düzeltmeyi geri al
+                lh[lv - 1] = Math.Log(Math.Max(.01, h));
+            }
+            var f = new float[N];
+            for (int i = 0; i < N; i++)
+            {
+                // komşu ortalaması (±5 bölüm, kendisi hariç), patron bölümleri kendi aralarında
+                double sum = 0; int c = 0;
+                for (int j = Math.Max(0, i - 5); j <= Math.Min(N - 1, i + 5); j++)
+                    if (j != i && ((j + 1) % 10 == 0) == ((i + 1) % 10 == 0)) { sum += lh[j]; c++; }
+                if ((i + 1) % 10 == 0) { sum = 0; c = 0; for (int j = Math.Max(9, i - 20); j <= Math.Min(N - 1, i + 20); j += 10) if (j != i) { sum += lh[j]; c++; } }
+                double avg = c > 0 ? sum / c : lh[i];
+                f[i] = (float)Math.Min(2.5, Math.Max(.4, Math.Exp(lh[i] - avg)));
+            }
+            return f;
         }
 
         static SaveData NewSave() { var d = new SaveData(); SaveSystem.Migrate(d); return d; }

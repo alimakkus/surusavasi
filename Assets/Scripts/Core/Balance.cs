@@ -20,7 +20,8 @@ namespace SuruSavasi.Core
 
         /// <summary>Zorluk eğrisi: düşman canı (×H), temas hasarı ve tabelalar (×√H). Oyuncunun yükseltmelerle büyüyen
         /// gücünü takip eder; yükseltme yapmayan oyuncu zamanla takılır. Denge simülasyonuyla ayarlanır.</summary>
-        public static float Difficulty(int lv) => 3f * Mathf.Pow(1.04f, Mathf.Clamp(lv, 1, MaxLevel));
+        public static float Difficulty(int lv) => BaseDifficulty(lv) * LevelTuning.Factor(lv);
+        public static float BaseDifficulty(int lv) => 3f * Mathf.Pow(1.048f, Mathf.Clamp(lv, 1, MaxLevel));
 
         /// <summary>Patron ve elit can çarpanı (bölüm sonu düşmanı).</summary>
         public const float FinalHp = .5f;
