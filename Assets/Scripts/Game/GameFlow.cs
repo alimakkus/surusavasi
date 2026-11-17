@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -80,6 +80,8 @@ namespace SuruSavasi.Game
                 for (int i = 0; i < frames.Length; i++) frames[i] = null;
                 Resources.UnloadUnusedAssets();
                 Show(GameScreen.Base);
+                // Giriş ödülü bekliyorsa oyuncuyu Günlük ekranı karşılar
+                if (Daily.CanLogin(D)) Show(GameScreen.Daily);
             }
         }
 
@@ -117,6 +119,8 @@ namespace SuruSavasi.Game
                     case GameScreen.Levels: LevelsScreen(x0, w); break;
                     case GameScreen.Heroes: HeroesScreen(x0, w); break;
                     case GameScreen.Weapons: WeaponsScreen(x0, w); break;
+                    case GameScreen.Shop: MetaScreens.Shop(this, x0, w); break;
+                    case GameScreen.Daily: MetaScreens.DailyScreen(this, x0, w); break;
                 }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))

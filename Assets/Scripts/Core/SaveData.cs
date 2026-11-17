@@ -26,11 +26,29 @@ namespace SuruSavasi.Core
         public long buildEnd;           // UTC milisaniye
         public float pendGold, pendIron, pendFood; // toplanmayı bekleyen üretim
         public long lastProd;           // UTC milisaniye
+
+        // Günlük sistem
+        public DailyState daily = new DailyState();
         public long defenseReadyAt; // savunma modu bekleme süresi
         public string language = "tr";
         public bool noAds;              // reklamsız paket ya da başlangıç paketi alındı
         public bool starterPackBought;
         public long monthlyCardUntil;   // aylık kart bitiş zamanı (UTC saniye)
+    }
+
+    [Serializable]
+    public class QuestState { public string id; public int p; public bool c; }
+
+    [Serializable]
+    public class DailyState
+    {
+        public int date;            // görevlerin üretildiği gün (yyyymmdd)
+        public List<QuestState> quests = new List<QuestState>();
+        public int streak;          // giriş serisi (1-7)
+        public int last;            // son giriş ödülü alınan gün
+        public bool bonus;          // üç görev bonusu alındı mı
+        public int adsToday;        // bugün izlenen bedava elmas reklamı
+        public int monthlyClaim;    // aylık kart son alım günü
     }
 
     public static class SaveSystem

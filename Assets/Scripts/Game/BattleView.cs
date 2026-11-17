@@ -152,6 +152,14 @@ namespace SuruSavasi.Game
 
         void OnFx(string k, float x, float y)
         {
+            if (GameServices.Save != null)
+            {
+                var sd = GameServices.Save.Data;
+                if (k == "kill" || k == "bigkill") Daily.Add(sd, "kills");
+                else if (k == "barrel") Daily.Add(sd, "barrels");
+                else if (k == "power") Daily.Add(sd, "power");
+                else if (k == "skill") Daily.Add(sd, "skill");
+            }
             switch (k)
             {
                 case "shot": SoundFx.Play(sim.mods.weaponId == "pistol" ? "shot" : "shot_" + sim.mods.weaponId); Burst(x, Field.SQY - 16, 2, new[] { "#fff6c2", "#ffd23f" }, 25, 40); break;
@@ -333,6 +341,7 @@ namespace SuruSavasi.Game
             {
                 Fails[level] = 0;
                 completedThisSession++;
+                if (GameServices.Save != null) { Daily.Add(GameServices.Save.Data, "clear"); if (sim.stars == 3) Daily.Add(GameServices.Save.Data, "stars3"); }
                 GrantRewards();
             }
             else
@@ -352,10 +361,11 @@ namespace SuruSavasi.Game
             int idx = level - 1;
             bool first = d.stars[idx] == 0;
             float mu = (first ? 1f : .4f) * (.7f + .15f * sim.stars);
-            rwGold = Mathf.RoundToInt((30 + 6 * level) * mu * sim.mods.goldMul);
-            rwIron = Mathf.RoundToInt((14 + 3 * level) * mu * sim.mods.marketMul);
-            rwFood = Mathf.RoundToInt((18 + 4 * level) * mu * sim.mods.marketMul);
-            rwGems = first ? sim.stars + (level % 10 == 0 ? 5 : 0) : 0;
+            var ev = Daily.CurrentEvent();
+            rwGold = Mathf.RoundToInt((30 + 6 * level) * mu * sim.mods.goldMul * ev.all * ev.gold);
+            rwIron = Mathf.RoundToInt((14 + 3 * level) * mu * sim.mods.marketMul * ev.all * ev.iron);
+            rwFood = Mathf.RoundToInt((18 + 4 * level) * mu * sim.mods.marketMul * ev.all);
+            rwGems = first ? Mathf.RoundToInt((sim.stars + (level % 10 == 0 ? 5 : 0)) * ev.gem) : 0;
             d.stars[idx] = Mathf.Max(d.stars[idx], sim.stars);
             if (level < Balance.MaxLevel) d.unlocked = Mathf.Max(d.unlocked, level + 1);
             var w = GameServices.Wallet;

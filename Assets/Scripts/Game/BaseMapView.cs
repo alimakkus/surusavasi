@@ -241,7 +241,7 @@ namespace SuruSavasi.Game
             else { q = Mathf.FloorToInt(D.pendFood); D.pendFood -= q; cur = Currency.Food; nm = "yiyecek"; col = Food; }
             var p = Pos[k];
             if (q < 1) { AddFloat(p.x, p.y - 50, "Henüz birikmedi", Color.white); return; }
-            Wl.Add(cur, q, "production"); GameServices.Save.Save();
+            Wl.Add(cur, q, "production"); Daily.Add(D, "gather"); GameServices.Save.Save();
             SoundFx.Play("pickup"); AddFloat(p.x, p.y - 60, $"+{q} {nm}", col); Burst(p.x, p.y - 50, 14, new[] { col, Color.white }, 90, 50);
         }
 
@@ -458,7 +458,12 @@ namespace SuruSavasi.Game
             string bs = BaseLogic.Building(D) ? $"İnşaat: {BaseLogic.Def((BuildingKind)D.buildKind).name} {Fmt(BaseLogic.Remaining(D))}" : "İnşaatçı boşta";
             if (GUI.Button(new Rect(x0, 48, 210, 34), bs, new GUIStyle(btn) { fontSize = 13 }) && BaseLogic.Building(D))
             { popKind = (BuildingKind)D.buildKind; popup = Popup.Upgrade; SoundFx.Play("click"); }
-            GUI.Label(new Rect(x0 + w - 120, 48, 120, 34), $"<color=#ffd23f>★ {Progress.TotalStars(D)}</color>", new GUIStyle(label) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold });
+            GUI.Label(new Rect(x0 + 216, 48, 60, 34), $"<color=#ffd23f>★ {Progress.TotalStars(D)}</color>", new GUIStyle(label) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = 15 });
+            var tb = new GUIStyle(btn) { fontSize = 13, padding = new RectOffset(2, 2, 2, 2) };
+            bool ready = Daily.Ready(D);
+            if (GUI.Button(new Rect(x0 + w - 164, 48, 78, 34), "Günlük", tb)) { SoundFx.Play("click"); flow.Show(GameScreen.Daily); }
+            if (ready) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 96 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
+            if (GUI.Button(new Rect(x0 + w - 80, 48, 80, 34), "Mağaza", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Show(GameScreen.Shop); }
 
             // Alt menü
             float bh = 64, by = 800 - bh - 8, mid = 124, side = (w - mid - 32) / 4;
@@ -597,7 +602,7 @@ namespace SuruSavasi.Game
             {
                 if (BaseLogic.Start(D, k, Spend))
                 {
-                    GameServices.Save.Save(); SoundFx.Play("board"); popup = Popup.None; sel = null; nextTick = 0;
+                    Daily.Add(D, "upgrade"); GameServices.Save.Save(); SoundFx.Play("board"); popup = Popup.None; sel = null; nextTick = 0;
                     GameServices.Analytics?.LogEvent(AnalyticsEvent.BuildingUpgrade, new Dictionary<string, object> { { "building", k.ToString() }, { "to", L + 1 } });
                 }
             }
