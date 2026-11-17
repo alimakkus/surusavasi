@@ -22,6 +22,8 @@ namespace SuruSavasi.Core.Battle
     public class FinalFoe
     {
         public bool boss;
+        public int bossIndex;     // patron sırası (0-9)
+        public string typeId;     // elit ise düşman türü
         public string name;
         public string color;
         public float sc, hp;
@@ -111,12 +113,13 @@ namespace SuruSavasi.Core.Battle
             if (isBoss)
             {
                 int bi = Math.Min(BattleData.BossNames.Length - 1, lv / 10 - 1);
-                L.fin = new FinalFoe { boss = true, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * .8f) };
+                L.fin = new FinalFoe { boss = true, bossIndex = bi, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * .8f) };
             }
             else
             {
-                var et = BattleData.Types[avail[(int)Math.Floor(rg.Next() * avail.Count)]];
-                L.fin = new FinalFoe { boss = false, name = "Elit " + et.nameTr, color = et.skin ?? BattleData.Maps[map].enemySkin, sc = 2.6f, hp = (float)Math.Ceiling(bas * .8f) };
+                var eid = avail[(int)Math.Floor(rg.Next() * avail.Count)];
+                var et = BattleData.Types[eid];
+                L.fin = new FinalFoe { boss = false, typeId = eid, name = "Elit " + et.nameTr, color = et.skin ?? BattleData.Maps[map].enemySkin, sc = 2.6f, hp = (float)Math.Ceiling(bas * .8f) };
             }
             var fresh = BattleData.Order.FirstOrDefault(k => BattleData.Types[k].unlock == lv);
             L.fresh = fresh != null ? BattleData.Types[fresh].nameTr : null;
