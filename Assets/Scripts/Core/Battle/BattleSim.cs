@@ -12,8 +12,9 @@ namespace SuruSavasi.Core.Battle
     public class BossState
     {
         public float x, y, hp, max, chip, sc, flash, sum, shootT = 1.5f, acc, accT;
-        public string color, name;
+        public string color, name, typeId;
         public bool isBoss;
+        public int bossIndex;
     }
 
     /// <summary>Tek bir bölümün savaş simülasyonu. Çizimden bağımsızdır: Unity sahnesi bunu okuyup çizer.
@@ -369,7 +370,7 @@ namespace SuruSavasi.Core.Battle
                     {
                         var F = L.fin;
                         state = BattleState.Boss;
-                        boss = new BossState { x = Field.W / 2, y = -170, hp = F.hp, max = F.hp, chip = F.hp, sc = F.sc, color = F.color, name = F.name, isBoss = F.boss };
+                        boss = new BossState { x = Field.W / 2, y = -170, hp = F.hp, max = F.hp, chip = F.hp, sc = F.sc, color = F.color, name = F.name, isBoss = F.boss, bossIndex = F.bossIndex, typeId = F.typeId };
                         Emit("bossin", boss.x, 0);
                     }
                 }
