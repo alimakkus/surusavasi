@@ -20,7 +20,16 @@ namespace SuruSavasi.Core
 
         /// <summary>Zorluk eğrisi: düşman canı (×H), temas hasarı ve tabelalar (×√H). Oyuncunun yükseltmelerle büyüyen
         /// gücünü takip eder; yükseltme yapmayan oyuncu zamanla takılır. Denge simülasyonuyla ayarlanır.</summary>
-        public static float Difficulty(int lv) => 1f;
+        public static float Difficulty(int lv)
+        {
+            float f = Mathf.Clamp(lv, 1, MaxLevel) / 5f; int i = Mathf.Min(DiffTable.Length - 2, (int)f);
+            return Mathf.Lerp(DiffTable[i], DiffTable[i + 1], f - i);
+        }
+        // Bölüm 0, 5, 10 ... 100 için zorluk (denge simülasyonundan, yumuşatılmış)
+        static readonly float[] DiffTable = { 3f, 3f, 4f, 4.5f, 5f, 6f, 9f, 13f, 20f, 30f, 45f, 60f, 75f, 85f, 95f, 105f, 115f, 125f, 135f, 145f, 150f, 155f };
+
+        /// <summary>Patron ve elit can çarpanı (bölüm sonu düşmanı).</summary>
+        public const float FinalHp = .5f;
 
         /// <summary>Oran = kalan asker / (0.33 * son düşman gücü). 1 ve üstü 3 yıldız, 0.5 ve üstü 2 yıldız.</summary>
         public static int Stars(float ratio) => ratio >= 1f ? 3 : ratio >= 0.5f ? 2 : 1;

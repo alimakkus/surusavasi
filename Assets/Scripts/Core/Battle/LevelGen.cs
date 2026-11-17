@@ -115,13 +115,13 @@ namespace SuruSavasi.Core.Battle
             if (isBoss)
             {
                 int bi = Math.Min(BattleData.BossNames.Length - 1, lv / 10 - 1);
-                L.fin = new FinalFoe { boss = true, bossIndex = bi, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * .8f) };
+                L.fin = new FinalFoe { boss = true, bossIndex = bi, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * Balance.FinalHp) };
             }
             else
             {
                 var eid = avail[(int)Math.Floor(rg.Next() * avail.Count)];
                 var et = BattleData.Types[eid];
-                L.fin = new FinalFoe { boss = false, typeId = eid, name = "Elit " + et.nameTr, color = et.skin ?? BattleData.Maps[map].enemySkin, sc = 2.6f, hp = (float)Math.Ceiling(bas * .8f) };
+                L.fin = new FinalFoe { boss = false, typeId = eid, name = "Elit " + et.nameTr, color = et.skin ?? BattleData.Maps[map].enemySkin, sc = 2.6f, hp = (float)Math.Ceiling(bas * Balance.FinalHp) };
             }
             var fresh = BattleData.Order.FirstOrDefault(k => BattleData.Types[k].unlock == lv);
             L.fresh = fresh != null ? BattleData.Types[fresh].nameTr : null;
