@@ -360,12 +360,8 @@ namespace SuruSavasi.Game
             var d = GameServices.Save.Data;
             int idx = level - 1;
             bool first = d.stars[idx] == 0;
-            float mu = (first ? 1f : .4f) * (.7f + .15f * sim.stars);
-            var ev = Daily.CurrentEvent();
-            rwGold = Mathf.RoundToInt((30 + 6 * level) * mu * sim.mods.goldMul * ev.all * ev.gold);
-            rwIron = Mathf.RoundToInt((14 + 3 * level) * mu * sim.mods.marketMul * ev.all * ev.iron);
-            rwFood = Mathf.RoundToInt((18 + 4 * level) * mu * sim.mods.marketMul * ev.all);
-            rwGems = first ? Mathf.RoundToInt((sim.stars + (level % 10 == 0 ? 5 : 0)) * ev.gem) : 0;
+            var rw = Rewards.ForLevel(level, sim.stars, first, sim.mods, Daily.CurrentEvent());
+            rwGold = rw.gold; rwIron = rw.iron; rwFood = rw.food; rwGems = rw.gems;
             d.stars[idx] = Mathf.Max(d.stars[idx], sim.stars);
             if (level < Balance.MaxLevel) d.unlocked = Mathf.Max(d.unlocked, level + 1);
             var w = GameServices.Wallet;
