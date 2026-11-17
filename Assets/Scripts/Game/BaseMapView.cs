@@ -283,6 +283,14 @@ namespace SuruSavasi.Game
                 }
             }
             LiveTick(dt);
+#if UNITY_EDITOR
+            // Test kısayolları (sadece Editor): seçili binanın seviyesi PageUp/PageDown veya + / - ile değişir
+            if (sel.HasValue)
+            {
+                if (Input.GetKeyDown(KeyCode.PageUp) || Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals)) DebugSetLevel(sel.Value, +1);
+                if (Input.GetKeyDown(KeyCode.PageDown) || Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus)) DebugSetLevel(sel.Value, -1);
+            }
+#endif
             Render();
         }
 
@@ -442,6 +450,9 @@ namespace SuruSavasi.Game
 
             bool modal = popup != Popup.None;
             if (!modal && sel.HasValue) SelectionMenu(sel.Value);
+#if UNITY_EDITOR
+            if (!modal && sel.HasValue) DebugButtons(sel.Value);
+#endif
             if (!modal) Hud();
             if (modal) DrawPopup();
             WorldInput(modal);
@@ -477,6 +488,31 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0 + 22 + mid + side * 2, by, side, bh), "Silah", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Weapons); }
             if (GUI.Button(new Rect(x0 + 28 + mid + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
         }
+
+#if UNITY_EDITOR
+        /// <summary>Sadece Editor: binanın seviyesini anında değiştirir (görselleri denemek için). Kaynak harcamaz.</summary>
+        void DebugSetLevel(BuildingKind k, int delta)
+        {
+            int L = Mathf.Clamp(Progress.Level(D, k) + delta, 0, Progress.BuildingMax);
+            D.buildings[(int)k] = L;
+            if (BaseLogic.Building(D) && D.buildKind == (int)k) D.buildKind = -1;
+            GameServices.Save.Save();
+            pop[k] = 1;
+            var p = Pos[k];
+            AddFloat(p.x, p.y - 70, $"TEST: Sv. {L} · kademe {Art.Tier(Mathf.Max(1, L))}", Hex("#ff9a3a"));
+        }
+
+        void DebugButtons(BuildingKind k)
+        {
+            var p = Pos[k]; var g = ToGui(p.x, p.y - 112);
+            var st = new GUIStyle(btn) { fontSize = 13, padding = new RectOffset(2, 2, 2, 2) };
+            GUI.Label(new Rect(g.x - 90, g.y - 40, 180, 20), "<color=#ff9a3a><b>TEST (sadece Editor)</b></color>", new GUIStyle(tiny) { richText = true });
+            if (GUI.Button(new Rect(g.x - 100, g.y - 18, 46, 32), "−4", st)) DebugSetLevel(k, -4);
+            if (GUI.Button(new Rect(g.x - 50, g.y - 18, 46, 32), "−1", st)) DebugSetLevel(k, -1);
+            if (GUI.Button(new Rect(g.x + 4, g.y - 18, 46, 32), "+1", st)) DebugSetLevel(k, +1);
+            if (GUI.Button(new Rect(g.x + 54, g.y - 18, 46, 32), "+4", st)) DebugSetLevel(k, +4);
+        }
+#endif
 
         void SelectionMenu(BuildingKind k)
         {
