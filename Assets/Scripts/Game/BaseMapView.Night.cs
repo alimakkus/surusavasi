@@ -93,7 +93,7 @@ namespace SuruSavasi.Game
         public static string previewTheme;
         static float previewUntil;
         bool previewNight;
-        const float PreviewSeconds = 12f;
+        const float PreviewSeconds = 15f;
 
         string ThemeId => previewTheme ?? D.theme;
 

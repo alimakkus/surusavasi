@@ -398,10 +398,12 @@ namespace SuruSavasi.Game
             int wallL = Progress.Level(D, BuildingKind.Wall), tier = Mathf.CeilToInt(wallL / 4f);
 
             // Çevredeki ağaçlar (sadece ekrandakiler)
-            var tree = Art.Tree(theme.treeMap);
-            foreach (var tr in trees)
+            for (int i = 0; i < trees.Count; i++)
+            {
+                var tr = trees[i];
                 if (Mathf.Abs(tr.x - camX) < visW / 2 + 70 && Mathf.Abs(tr.y - camY) < visH / 2 + 140)
-                    Spr(tree, tr.x, tr.y, 100 + (int)tr.y, tr.z);
+                    Spr(Art.Tree(theme.trees[(i * 7 + 3) % theme.trees.Length]), tr.x, tr.y, 100 + (int)tr.y, tr.z);
+            }
 
             // Sur: parçalar, kuleler
             var seg = Art.WallSeg(tier); var tow = Art.WallTower(tier);
