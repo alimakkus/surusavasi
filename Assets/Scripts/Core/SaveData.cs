@@ -36,6 +36,8 @@ namespace SuruSavasi.Core
         public string language = "tr";
         public bool noAds;              // reklamsız paket ya da başlangıç paketi alındı
         public bool starterPackBought;
+        public bool founderBought;          // Kurucu Paketi alındı
+        public long founderOfferStart;      // teklifin başladığı an (UTC ms, 0 = henüz açılmadı)
         public long monthlyCardUntil;   // aylık kart bitiş zamanı (UTC saniye)
 
         // Üs teması (elmasla satılan çevre görünümü)

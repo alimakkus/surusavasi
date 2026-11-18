@@ -40,7 +40,7 @@ namespace SuruSavasi.Game
         readonly List<SpriteRenderer> pool = new List<SpriteRenderer>();
         int used;
         float camX = CX, camY = CY + 30, visW = 540, visH = 820, t;
-        bool pinching; float pinchDist;
+        bool pinching; float pinchDist, founderCheckAt;
         readonly List<Vector2> wallSegs = new List<Vector2>(), wallTowers = new List<Vector2>();
         readonly List<Vector3> trees = new List<Vector3>(); // x, y, ölçek
         bool inited;
@@ -61,7 +61,7 @@ namespace SuruSavasi.Game
         float evTimer = 8, nextTick;
 
         // Seçim ve pencereler
-        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train, Builder }
+        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train, Builder, Founder }
         BuildingKind? sel;
         Popup popup;
         Rect popupRect;
@@ -128,6 +128,7 @@ namespace SuruSavasi.Game
             gameObject.SetActive(true);
             sel = null; popup = Popup.None;
             if (previewTheme != null) { visW = 9999; camX = CX; camY = CY; previewNight = false; }
+            founderCheckAt = Time.unscaledTime + 1.2f;
             if (cam != null) { cam.transform.position = new Vector3(0, 0, -10); cam.orthographic = true; }
             nextTick = 0;
         }
@@ -353,6 +354,7 @@ namespace SuruSavasi.Game
             }
             LiveTick(dt);
             DefenseTick(dt);
+            if (founderCheckAt > 0 && Time.unscaledTime > founderCheckAt) { founderCheckAt = 0; FounderCheck(); }
             AmbientTick(dt, ThemeId);
             NightTick(dt);
             PreviewTick();
@@ -710,6 +712,8 @@ namespace SuruSavasi.Game
 
             QuestPanel(x0, 90, Mathf.Min(270, w - 110));
 
+            FounderHudButton(x0);
+
             // Savunma
             long drem = DefenseSim.ReadyIn(D);
             if (GUI.Button(new Rect(x0 + w - 100, 800 - 160, 100, 58), drem > 0 ? $"Savunma\n<size=12>{Fmt(drem / 1000f)}</size>" : "Savunma\n<size=12>Hazır!</size>", drem > 0 ? new GUIStyle(btn) { fontSize = 14 } : new GUIStyle(UiSkin.ButtonGold) { fontSize = 14 }))
@@ -789,7 +793,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 370 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -800,6 +804,7 @@ namespace SuruSavasi.Game
             if (popup == Popup.Defense) { DefenseTierPopup(x, y, w, h, head); return; }
             if (popup == Popup.Train) { TrainPopup(x, y, w, h, head); return; }
             if (popup == Popup.Builder) { BuilderPopup(x, y, w, h, head); return; }
+            if (popup == Popup.Founder) { FounderPopup(x, y, w, h, head); return; }
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);

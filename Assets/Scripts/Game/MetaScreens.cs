@@ -64,6 +64,12 @@ namespace SuruSavasi.Game
                 GUI.enabled = true;
                 y += ch + 10;
 
+                if (Offers.FounderActive(D, BaseLogic.Now))
+                {
+                    int left = Mathf.CeilToInt(Offers.FounderSecondsLeft(D, BaseLogic.Now));
+                    string inside = (D.builders < 2 ? "İkinci inşaatçı" : $"+{Offers.FounderBuilderGems} elmas") + $" + {Offers.FounderGems} elmas + Epik ekipman + {Offers.FounderGold(D)} altın";
+                    y = Product(flow, Catalog.FounderPack, $"Kurucu Paketi  <color=#ff8a80><size=13>{left / 3600}:{left / 60 % 60:00}:{left % 60:00}</size></color>", inside, "shop_founder", y, w, true);
+                }
                 if (!D.starterPackBought) { y = Product(flow, Catalog.StarterPack, "Başlangıç paketi", "500 elmas, reklamsız oyun · tek seferlik", "shop_starter", y, w, true); }
                 y = Product(flow, Catalog.MonthlyCard, "Aylık kart",
                     Daily.MonthlyActive(D) ? $"Aktif · {Daily.MonthlyDaysLeft(D)} gün kaldı" : $"Hemen 300 elmas + 30 gün her gün {Daily.MonthlyDailyGems} elmas", "shop_monthly", y, w, true);
