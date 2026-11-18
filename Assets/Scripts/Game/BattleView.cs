@@ -375,6 +375,22 @@ namespace SuruSavasi.Game
                 dropText += $"\n<size=13><color=#ffb02e>Kumbara: {d.piggy}/{Offers.PiggyCap} elmas</color></size>";
                 var drop = Gear.BattleDrop(d, level, new System.Random());
                 if (drop != null) dropText = $"\n<color={Gear.RarityColors[drop.rarity]}><b>Yeni ekipman: {Gear.Name(drop)} ({Gear.RarityNames[drop.rarity]})</b></color>";
+                // Patron sandığı: patron bölümünde ek altın; öfkelenen patrondan ek Epik şansı; son patron ilk zaferde Efsanevi verir
+                if (level % 10 == 0)
+                {
+                    var rnd = new System.Random();
+                    int chestGold = (int)(rwGold * (first ? 1f : .3f));
+                    rwGold += chestGold;
+                    dropText += $"\n<color=#ffd23f><b>Patron sandığı: +{chestGold} altın</b></color>";
+                    GearItem extra = null;
+                    if (level >= Balance.MaxLevel && first) extra = new GearItem { id = ++d.gearSeq, slot = rnd.Next(3), rarity = 3 };
+                    else if (sim.boss != null && sim.boss.phase > 0 && rnd.NextDouble() < (first ? .5 : .15)) extra = new GearItem { id = ++d.gearSeq, slot = rnd.Next(3), rarity = 2 };
+                    if (extra != null)
+                    {
+                        Gear.AddToBag(d, extra);
+                        dropText += $"\n<color={Gear.RarityColors[extra.rarity]}><b>Patron ganimeti: {Gear.Name(extra)} ({Gear.RarityNames[extra.rarity]})</b></color>";
+                    }
+                }
             }
             d.stars[idx] = Mathf.Max(d.stars[idx], sim.stars);
             if (level < Balance.MaxLevel) d.unlocked = Mathf.Max(d.unlocked, level + 1);
