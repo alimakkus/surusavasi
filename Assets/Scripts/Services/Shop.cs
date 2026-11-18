@@ -34,6 +34,11 @@ namespace SuruSavasi.Services
                 if (GameServices.Ads != null) GameServices.Ads.InterstitialsDisabled = true;
             }
             if (def.id == Catalog.StarterPack) data.starterPackBought = true;
+            if (def.id == Catalog.PiggyBank)
+            {
+                int n = Core.Meta.Offers.PiggyTake(data, Core.Meta.Offers.PiggyCap);
+                if (n > 0) GameServices.Wallet.Add(Currency.Diamonds, n, "purchase:" + def.id);
+            }
             if (def.id == Catalog.FounderPack)
                 LastFounderGear = Core.Meta.Offers.GrantFounder(data, new Random(), (c, n) =>
                     GameServices.Wallet.Add(c == "gold" ? Currency.Gold : Currency.Diamonds, n, "purchase:" + def.id));

@@ -14,6 +14,7 @@ namespace SuruSavasi.Services
         public const string StarterPack = "starter_pack";      // tek seferlik ilk alım teklifi
         public const string MonthlyCard = "monthly_card";      // 30 gün boyunca günlük elmas
         public const string NoAds = "no_ads";                  // aralık reklamlarını kaldırır
+        public const string PiggyBank = "piggy_bank";          // kumbarayı kırar: biriken elmaslar (tekrar alınabilir)
         public const string FounderPack = "founder_pack";      // 72 saatlik kurucu teklifi (inşaatçı + elmas + epik ekipman)
 
         public static readonly IReadOnlyList<ProductDef> All = new List<ProductDef>
@@ -26,6 +27,7 @@ namespace SuruSavasi.Services
             new ProductDef(StarterPack, ProductKind.NonConsumable, 500),
             new ProductDef(MonthlyCard, ProductKind.Consumable, 300),
             new ProductDef(NoAds, ProductKind.NonConsumable, 0),
+            new ProductDef(PiggyBank, ProductKind.Consumable, 0),
             new ProductDef(FounderPack, ProductKind.NonConsumable, Core.Meta.Offers.FounderGems),
         };
 

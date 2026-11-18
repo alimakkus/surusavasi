@@ -75,11 +75,13 @@ namespace SuruSavasi.Game
             level = lv;
             Fails.TryGetValue(lv, out int f);
             var mods = GameServices.Save != null ? Progress.BuildMods(GameServices.Save.Data) : new BattleMods();
-            int trained = 0;
+            int trained = 0; bool boosted = false;
+            if (GameServices.Save != null) boosted = Offers.ApplyBoost(GameServices.Save.Data, mods);
             if (GameServices.Save != null) { Troops.Tick(GameServices.Save.Data, BaseLogic.Now); trained = Troops.TakeForBattle(GameServices.Save.Data); mods.startBonus += trained; GameServices.Save.Save(); }
             sim = new BattleSim(lv, mods, f);
             sim.Fx += OnFx;
             if (trained > 0) sim.AddFloat(Field.W / 2, Field.SQY - 90, $"+{trained} eğitimli asker", "#8be39d");
+            if (boosted) sim.AddFloat(Field.W / 2, Field.SQY - 130, "Güç takviyesi!", "#ffd23f");
             parts.Clear(); decals.Clear(); shake = 0; flash = 0;
             heroIndex = Progress.HeroIndex(mods.heroId);
             rewardText = ""; rewardGiven = false; doubled = false;
@@ -369,6 +371,8 @@ namespace SuruSavasi.Game
             dropText = "";
             if (sim.state == BattleState.Won)
             {
+                Offers.PiggyAdd(d, first);
+                dropText += $"\n<size=13><color=#ffb02e>Kumbara: {d.piggy}/{Offers.PiggyCap} elmas</color></size>";
                 var drop = Gear.BattleDrop(d, level, new System.Random());
                 if (drop != null) dropText = $"\n<color={Gear.RarityColors[drop.rarity]}><b>Yeni ekipman: {Gear.Name(drop)} ({Gear.RarityNames[drop.rarity]})</b></color>";
             }
@@ -469,8 +473,11 @@ namespace SuruSavasi.Game
         void DrawResult(float VW)
         {
             float pw = Mathf.Min(360, VW - 20), px = VW / 2 - pw / 2, py = 230;
-            GUI.Box(new Rect(px, py, pw, 330), "", UiSkin.Card);
             bool won = sim.state == BattleState.Won;
+            var sd = GameServices.Save?.Data;
+            Fails.TryGetValue(level, out int nf);
+            bool boostOffer = !won && sd != null && nf >= Offers.BoostOfferFails && !Offers.BoostActive(sd);
+            GUI.Box(new Rect(px, py, pw, boostOffer ? 470 : 330), "", UiSkin.Card);
             Text(new Vector2(VW / 2, py + 34), won ? $"Bölüm {level} tamam" : "Yenildin", won ? C("#8be39d") : C("#ff8a80"), big, pw);
             if (won)
             {
@@ -497,6 +504,25 @@ namespace SuruSavasi.Game
                 by += 70;
                 if (GUI.Button(new Rect(px + 20, by, (pw - 50) / 2, 50), "Tekrar dene", btn)) StartLevel(level);
                 if (GUI.Button(new Rect(px + 30 + (pw - 50) / 2, by, (pw - 50) / 2, 50), "Üsse dön", btn)) GoMenu();
+                if (boostOffer)
+                {
+                    // Takıldı: güç takviyesi öner (reklamla küçük, elmasla büyük)
+                    by += 64;
+                    Text(new Vector2(VW / 2, by + 8), "Zorlanıyor musun? Güç takviyesi al:", C("#ffd23f"), label, pw);
+                    by += 26;
+                    int adLeft = Offers.AdLeft(sd, "boost");
+                    GUI.enabled = adLeft > 0;
+                    if (GUI.Button(new Rect(px + 20, by, pw - 40, 50), adLeft > 0 ? $"▶ Reklam izle: +%{Offers.AdBoostDmg * 100:0} hasar, +{Offers.AdBoostSoldiers} asker (1 savaş)" : "Bugünkü reklam hakkı bitti", new GUIStyle(UiSkin.ButtonGold) { fontSize = 13 }))
+                        Shop.WatchAd(AdPlacement.PowerBoost, () => { Offers.AdUsed(sd, "boost"); Offers.GiveBoost(sd, Offers.AdBoostDmg, Offers.AdBoostSoldiers, 1); GameServices.Save.Save(); StartLevel(level); });
+                    GUI.enabled = true;
+                    by += 58;
+                    if (GUI.Button(new Rect(px + 20, by, pw - 40, 50), $"{Offers.BoostGems} elmas: +%{Offers.GemBoostDmg * 100:0} hasar, +{Offers.GemBoostSoldiers} asker ({Offers.GemBoostBattles} savaş)", new GUIStyle(btn) { fontSize = 13 }))
+                    {
+                        if (GameServices.Wallet.Spend(Currency.Diamonds, Offers.BoostGems, "power_boost"))
+                        { Offers.GiveBoost(sd, Offers.GemBoostDmg, Offers.GemBoostSoldiers, Offers.GemBoostBattles); GameServices.Save.Save(); StartLevel(level); }
+                        else sim.AddFloat(Field.W / 2, Field.SQY - 60, "Yeterli elmas yok", "#ff8a80");
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,9 @@ namespace SuruSavasi.Services
         public const string DoubleReward = "double_reward";
         public const string LevelEnd = "level_end"; // aralık (interstitial) reklamı
         public const string DefenseRefresh = "defense_refresh";
+        public const string PowerBoost = "power_boost";
+        public const string ResourceHelp = "resource_help";
+        public const string PiggyPeek = "piggy_peek";
     }
 
     public interface IAdService

@@ -898,6 +898,15 @@ namespace SuruSavasi.Game
                 }
             }
             GUI.enabled = true;
+            // Kaynak yetmiyorsa: reklamla eksiğin bir kısmı
+            if (chk == BaseLogic.UpResult.Resources && Offers.AdLeft(D, "res") > 0)
+                if (GUI.Button(new Rect(x + 20, y + h - 112, w - 40, 36), $"▶ Reklam izle: eksik kaynak yardımı ({Offers.AdLeft(D, "res")} hak)", new GUIStyle(UiSkin.ButtonGold) { fontSize = 14 }))
+                    Shop.WatchAd(AdPlacement.ResourceHelp, () =>
+                    {
+                        var (g, i, f) = Offers.ResourceHelp(D, k); Offers.AdUsed(D, "res");
+                        Wl.Add(Currency.Gold, g, "ad_resource"); Wl.Add(Currency.Iron, i, "ad_resource"); Wl.Add(Currency.Food, f, "ad_resource");
+                        GameServices.Save.Save(); flow.ShowToast($"+{g} altın  +{i} demir  +{f} yiyecek");
+                    }, () => flow.ShowToast("Reklam hazır değil"));
             // İnşaatçı meşgulse ikinci inşaatçıyı öner
             if (chk == BaseLogic.UpResult.Busy && BaseLogic.Slots(D) < BaseLogic.MaxBuilders)
                 if (GUI.Button(new Rect(x + 20, y + h - 112, w - 40, 36), $"+ İkinci inşaatçı al ({BaseLogic.SecondBuilderGems} elmas)", new GUIStyle(btn) { fontSize = 14 })) popup = Popup.Builder;

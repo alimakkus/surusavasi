@@ -70,6 +70,25 @@ namespace SuruSavasi.Game
                     string inside = (D.builders < 2 ? "İkinci inşaatçı" : $"+{Offers.FounderBuilderGems} elmas") + $" + {Offers.FounderGems} elmas + Epik ekipman + {Offers.FounderGold(D)} altın";
                     y = Product(flow, Catalog.FounderPack, $"Kurucu Paketi  <color=#ff8a80><size=13>{fl / 3600}:{fl / 60 % 60:00}:{fl % 60:00}</size></color>", inside, "shop_founder", y, w, true);
                 }
+                // Kumbara
+                {
+                    float kh = 130; GUI.Box(new Rect(0, y, w, kh), "", card);
+                    GUI.DrawTexture(new Rect(4, y + 4, 6, kh - 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, .69f, .18f), 0, 3);
+                    GUI.Label(new Rect(18, y + 6, w - 180, 30), $"<b>Kumbara</b>  <color=#9fe8ff>{D.piggy}/{Offers.PiggyCap} elmas</color>", label);
+                    GUI.Label(new Rect(18, y + 36, w - 180, 40), "Her zaferde elmas birikir. Kır, hepsini al!", small);
+                    float pf = D.piggy / (float)Offers.PiggyCap;
+                    GUI.DrawTexture(new Rect(18, y + 76, w - 200, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.05f, .07f, .1f, .9f), 0, 5);
+                    GUI.DrawTexture(new Rect(19, y + 77, Mathf.Max(4, (w - 202) * pf), 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, .69f, .18f), 0, 4);
+                    var pdef = Catalog.Find(Catalog.PiggyBank); bool pready = store != null && store.IsReady && D.piggy >= Offers.PiggyMinOpen;
+                    GUI.enabled = pready;
+                    if (GUI.Button(new Rect(w - 150, y + 10, 136, 50), D.piggy >= Offers.PiggyMinOpen ? (pdef?.localizedPrice ?? "—") : $"En az {Offers.PiggyMinOpen}", UiSkin.ButtonGold))
+                        Services.Shop.Buy(Catalog.PiggyBank, ok => flow.ShowToast(ok ? "Kumbara kırıldı!" : "Satın alma tamamlanmadı"));
+                    GUI.enabled = D.piggy > 0 && Offers.AdLeft(D, "piggy") > 0;
+                    if (GUI.Button(new Rect(w - 150, y + 68, 136, 50), $"▶ Reklam: {Mathf.Min(Offers.PiggyAdTake, D.piggy)} al", new GUIStyle(btn) { fontSize = 14 }))
+                        Services.Shop.WatchAd(AdPlacement.PiggyPeek, () => { Offers.AdUsed(D, "piggy"); int n = Offers.PiggyTake(D, Offers.PiggyAdTake); Grant(0, 0, 0, n, "piggy_ad"); flow.ShowToast($"+{n} elmas"); }, () => flow.ShowToast("Reklam hazır değil"));
+                    GUI.enabled = true;
+                    y += kh + 10;
+                }
                 if (!D.starterPackBought) { y = Product(flow, Catalog.StarterPack, "Başlangıç paketi", "500 elmas, reklamsız oyun · tek seferlik", "shop_starter", y, w, true); }
                 y = Product(flow, Catalog.MonthlyCard, "Aylık kart",
                     Daily.MonthlyActive(D) ? $"Aktif · {Daily.MonthlyDaysLeft(D)} gün kaldı" : $"Hemen 300 elmas + 30 gün her gün {Daily.MonthlyDailyGems} elmas", "shop_monthly", y, w, true);

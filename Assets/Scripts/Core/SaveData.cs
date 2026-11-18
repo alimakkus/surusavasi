@@ -38,6 +38,9 @@ namespace SuruSavasi.Core
         public bool starterPackBought;
         public bool founderBought;          // Kurucu Paketi alındı
         public long founderOfferStart;      // teklifin başladığı an (UTC ms, 0 = henüz açılmadı)
+        public int piggy;                   // kumbarada biriken elmas
+        public int boostBattles, boostSoldiers; public float boostDmg;   // güç takviyesi
+        public string adDay = ""; public int adBoost, adRes, adPiggy;    // günlük reklam hakları
         public long monthlyCardUntil;   // aylık kart bitiş zamanı (UTC saniye)
 
         // Üs teması (elmasla satılan çevre görünümü)
