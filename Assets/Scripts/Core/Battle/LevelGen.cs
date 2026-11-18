@@ -115,7 +115,7 @@ namespace SuruSavasi.Core.Battle
             if (isBoss)
             {
                 int bi = Math.Min(BattleData.BossNames.Length - 1, lv / 10 - 1);
-                L.fin = new FinalFoe { boss = true, bossIndex = bi, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * Balance.FinalHp * Balance.BossHp) };
+                L.fin = new FinalFoe { boss = true, bossIndex = bi, name = BattleData.BossNames[bi], color = BattleData.BossColors[bi], sc = 3.6f + lv / 100f * .8f, hp = (float)Math.Ceiling(bas * Balance.FinalHp * Balance.BossHp * Balance.BossEase(lv)) };
             }
             else
             {

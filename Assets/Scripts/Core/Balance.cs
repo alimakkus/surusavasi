@@ -27,6 +27,8 @@ namespace SuruSavasi.Core
         public const float FinalHp = .32f;
         /// <summary>Patron bölümleri (10, 20 …) için ayrıca can çarpanı.</summary>
         public const float BossHp = .7f;
+        /// <summary>Geç patronlar yumuşatılır: 10. bölümde 1, 100. bölümde 0,55 (öfke aşamasındaki zırh kırılması da hesaba katıldı).</summary>
+        public static float BossEase(int lv) => Mathf.Clamp(1f - .005f * (lv - 10), .55f, 1f);
 
         /// <summary>Oran = kalan asker / (0.33 * son düşman gücü). 1 ve üstü 3 yıldız, 0.5 ve üstü 2 yıldız.</summary>
         public static int Stars(float ratio) => ratio >= 1f ? 3 : ratio >= 0.5f ? 2 : 1;

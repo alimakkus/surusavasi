@@ -11,7 +11,8 @@ namespace SuruSavasi.Core.Battle
 
     public class BossState
     {
-        public float x, y, hp, max, chip, sc, flash, sum, shootT = 1.5f, acc, accT;
+        public float x, y, hp, max, chip, sc, flash, sum, shootT = 1.5f, acc, accT, vuln = 1;
+        public int phase;   // öfke aşaması (0 normal)
         public string color, name, typeId;
         public bool isBoss;
         public int bossIndex;
@@ -135,7 +136,7 @@ namespace SuruSavasi.Core.Battle
                 if (e.done || e.kind != ObjKind.Enemy || e == skip) continue;
                 float y2 = Osy(e); if (Math.Abs(e.x - ex) < 62 && Math.Abs(y2 - ey) < 50) Hurt(e, y2, dmg * .5f);
             }
-            if (boss != null && Math.Abs(boss.x - ex) < 70 + 10 * boss.sc && Math.Abs(boss.y - 10 - ey) < 60 + 12 * boss.sc) { boss.hp -= dmg * .5f; boss.flash = .08f; }
+            if (boss != null && Math.Abs(boss.x - ex) < 70 + 10 * boss.sc && Math.Abs(boss.y - 10 - ey) < 60 + 12 * boss.sc) { boss.hp -= dmg * .5f * boss.vuln; boss.flash = .08f; }
         }
 
         void EnemyShoot(float sx, float sy, float spd, float dm, string col, float spread = 0)
@@ -170,7 +171,7 @@ namespace SuruSavasi.Core.Battle
                     AddFloat(o.x, sy, "Fıçı", "#c9b8ff");
                 }
             }
-            if (boss != null) { boss.hp -= dmg; boss.flash = .15f; AddFloat(boss.x, boss.y - 40, Fmt(dmg), "#c9b8ff"); CheckBossDead(); }
+            if (boss != null) { boss.hp -= dmg * boss.vuln; boss.flash = .15f; AddFloat(boss.x, boss.y - 40, Fmt(dmg), "#c9b8ff"); CheckBossDead(); }
         }
 
         void CheckBossDead()
@@ -349,7 +350,7 @@ namespace SuruSavasi.Core.Battle
                         }
                         if (!gone && boss != null && Math.Abs(bu.x - boss.x) < 12 + 11 * boss.sc && bu.y < boss.y + 8 && bu.y > boss.y - 22 * boss.sc)
                         {
-                            boss.hp -= bu.dmg; boss.flash = .08f; boss.acc += bu.dmg; gone = true; Emit("hit", bu.x, bu.y);
+                            boss.hp -= bu.dmg * boss.vuln; boss.flash = .08f; boss.acc += bu.dmg * boss.vuln; gone = true; Emit("hit", bu.x, bu.y);
                             if (bu.blast) Explode(bu.x, bu.y, bu.dmg, null);
                         }
                     }
@@ -380,15 +381,28 @@ namespace SuruSavasi.Core.Battle
                     else
                     {
                         DamageSquad(Math.Max(.3f, n / Balance.SquadTime(lv) * .55f * mods.guard) * dt);
+                        // Öfke aşamaları: 50. bölümden itibaren patron %50'de öfkelenir (daha hızlı saldırır ama zırhı çatlar);
+                        // 100. bölümün son patronu %25'te son aşamaya geçer.
+                        if (boss.isBoss && lv >= 50)
+                        {
+                            float f = boss.hp / boss.max; int want = f < .25f && lv >= Balance.MaxLevel ? 2 : f < .5f ? 1 : 0;
+                            if (want > boss.phase)
+                            {
+                                boss.phase = want; boss.vuln = want == 2 ? 1.6f : 1.3f;
+                                AddFloat(boss.x, boss.y - 60 * boss.sc * .3f, want == 2 ? "SON AŞAMA! Zırh kırıldı" : "ÖFKELENDİ! Zırhı çatladı", want == 2 ? "#ff5a4d" : "#ffb02e");
+                                Emit("bossin", boss.x, boss.y);
+                            }
+                        }
+                        float rage = boss.phase == 2 ? .55f : boss.phase == 1 ? .75f : 1f;
                         boss.sum += dt; boss.shootT -= dt;
                         if (boss.shootT <= 0)
                         {
-                            boss.shootT = boss.isBoss ? 2.6f : 3.4f;
+                            boss.shootT = (boss.isBoss ? 2.6f : 3.4f) * rage;
                             float bdm = Math.Max(1, (float)Math.Ceiling(n * (boss.isBoss ? .04f : .03f) * mods.guard));
                             for (int sp = boss.isBoss ? -1 : 0; sp <= (boss.isBoss ? 1 : 0); sp++) EnemyShoot(boss.x + sp * 24, boss.y + 10, 150, bdm, "#ff6a5a", sp * 55);
                             Emit("spit", boss.x, boss.y);
                         }
-                        if (boss.isBoss && boss.sum >= 7)
+                        if (boss.isBoss && boss.sum >= 7 * rage)
                         {
                             boss.sum = 0;
                             float mhp = Math.Max(4, (float)Math.Ceiling(Balance.DpsOf(.33f * L.efin, lv) * Balance.Tw(lv) * .5f * L.hard));
