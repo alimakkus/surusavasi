@@ -100,9 +100,17 @@ namespace SuruSavasi.Game
                 for (int i = 0; i < frames.Length; i++) frames[i] = null;
                 Resources.UnloadUnusedAssets();
                 Show(GameScreen.Base);
+                // İlk açılış: önce gizlilik onayı (üs ekranında), sonra günlük ödül
+                if (ConsentScreen.Needed) LocalConsent.Answered += AfterConsent;
                 // Giriş ödülü bekliyorsa oyuncuyu Günlük ekranı karşılar
-                if (Daily.CanLogin(D)) Show(GameScreen.Daily);
+                else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
             }
+        }
+
+        void AfterConsent()
+        {
+            LocalConsent.Answered -= AfterConsent;
+            if (screen == GameScreen.Base && Daily.CanLogin(D)) Show(GameScreen.Daily);
         }
 
         float Progress01 => Mathf.Min(toLoad == null || toLoad.Count == 0 ? 1 : loaded / (float)toLoad.Count, splashT / 3.2f);
