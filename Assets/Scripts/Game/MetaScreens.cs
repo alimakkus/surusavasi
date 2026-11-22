@@ -75,8 +75,8 @@ namespace SuruSavasi.Game
             {
                 int t = Packs.HeroPackTarget(D);
                 var r = new Rect(0, y, w, 150); GUI.Box(r, "", UiSkin.CardGold);
-                var (sh, ss) = Skins.WeeklyDeal();
-                var port = t >= 0 ? Art.HeroPortrait(t, Mathf.FloorToInt(Time.time * 1.6f), 0) : Art.HeroPortrait(sh, Mathf.FloorToInt(Time.time * 1.6f), ss);
+                var (sh, ss) = Packs.HeroPackSkin(D);
+                var port = t >= 0 ? Art.HeroPortrait(t, Mathf.FloorToInt(Time.time * 1.6f), 0) : sh >= 0 ? Art.HeroPortrait(sh, Mathf.FloorToInt(Time.time * 1.6f), ss) : null;
                 GUI.DrawTexture(new Rect(10, y + 10, 120, 130), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .18f, .06f, .9f), 0, 10);
                 if (port != null) GUI.DrawTexture(new Rect(0, y + 6, 140, 140), port, ScaleMode.ScaleToFit);
                 var left = League.Left(now);

@@ -42,12 +42,22 @@ namespace SuruSavasi.Core.Meta
         }
         public static bool HeroPackBought(SaveData d) => d.heroPackWeek == League.WeekKey(DateTime.Now);
 
+        /// <summary>Kahramanlar açıksa pakette verilecek görünüm: haftanın görünümü, o varsa sahip olunmayan ilk görünüm (-1: hepsi var).</summary>
+        public static (int hero, int skin) HeroPackSkin(SaveData d)
+        {
+            var (h, s) = Skins.WeeklyDeal();
+            if (Progress.HeroOpen(d, h) && !Skins.Owned(d, h, s)) return (h, s);
+            for (int i = 0; i < Progress.Heroes.Length; i++) for (int k = 1; k < Skins.Ids.Length; k++)
+                    if (Progress.HeroOpen(d, i) && !Skins.Owned(d, i, k)) return (i, k);
+            return (-1, -1);
+        }
+
         public static string HeroPackDesc(SaveData d)
         {
             int t = HeroPackTarget(d);
             if (t >= 0) return $"{HeroPackShards} {Progress.Heroes[t].name} parçası + {HeroPackGems} elmas";
-            var (h, s) = Skins.WeeklyDeal();
-            return $"{Progress.Heroes[h].name} {Skins.Names[s]} görünümü + {HeroPackGems} elmas";
+            var (h, s) = HeroPackSkin(d);
+            return h >= 0 ? $"{Progress.Heroes[h].name} {Skins.Names[s]} görünümü + {HeroPackGems} elmas" : $"{HeroPackGems * 2} elmas (tüm görünümler sende)";
         }
 
         /// <summary>İçeriği verir (elmas hariç; elmas ürün tanımından gelir). Dönen yazı ekranda gösterilir.</summary>
@@ -56,12 +66,9 @@ namespace SuruSavasi.Core.Meta
             d.heroPackWeek = League.WeekKey(DateTime.Now);
             int t = HeroPackTarget(d);
             if (t >= 0) { HeroShards.Give(d, HeroPackShards, t); return $"+{HeroPackShards} {Progress.Heroes[t].name} parçası"; }
-            var (h, s) = Skins.WeeklyDeal();
-            if (!Skins.Owned(d, h, s)) { Skins.Give(d, h, s); return $"{Progress.Heroes[h].name} {Skins.Names[s]} görünümü"; }
-            // Görünüm de varsa: başka bir eksik görünüm
-            for (int i = 0; i < Progress.Heroes.Length; i++) for (int k = 1; k < Skins.Ids.Length; k++)
-                    if (Progress.HeroOpen(d, i) && !Skins.Owned(d, i, k)) { Skins.Give(d, i, k); return $"{Progress.Heroes[i].name} {Skins.Names[k]} görünümü"; }
-            return "";
+            var (h, s) = HeroPackSkin(d);
+            if (h >= 0) { Skins.Give(d, h, s); return $"{Progress.Heroes[h].name} {Skins.Names[s]} görünümü"; }
+            return "BONUS";   // hepsi varsa: çağıran ek elmas verir
         }
 
         // ---------- Hız paketi ----------

@@ -38,7 +38,11 @@ namespace SuruSavasi.Services
             if (gems > 0) GameServices.Wallet.Add(Currency.Diamonds, gems, "purchase:" + def.id);
             if (IsDiamondPack(def.id)) data.firstPurchaseDone = true;
             LastPackText = "";
-            if (def.id == Catalog.HeroPack) LastPackText = Core.Meta.Packs.GrantHeroPack(data);
+            if (def.id == Catalog.HeroPack)
+            {
+                LastPackText = Core.Meta.Packs.GrantHeroPack(data);
+                if (LastPackText == "BONUS") { GameServices.Wallet.Add(Currency.Diamonds, Core.Meta.Packs.HeroPackGems, "purchase:" + def.id); LastPackText = $"+{Core.Meta.Packs.HeroPackGems} ek elmas"; }
+            }
             if (def.id == Catalog.SpeedPack) { Core.Meta.Packs.GrantSpeedPack(data); LastPackText = $"+{Core.Meta.Packs.SpeedPackTokens} hızlandırıcı"; }
             if (def.id == Catalog.NoAds || def.id == Catalog.StarterPack)
             {
