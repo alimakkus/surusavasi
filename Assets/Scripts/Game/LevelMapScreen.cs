@@ -21,7 +21,7 @@ namespace SuruSavasi.Game
 
         static float TotalH => 10 * BLOCK + BOTTOM;
         static float BlockTop(int c) => TotalH - BOTTOM - (c + 1) * BLOCK;
-        static float NodeY(int lv) { int c = (lv - 1) / 10, k = (lv - 1) % 10; return BlockTop(c) + HEAD + (9 - k) * SP + SP / 2; }
+        static float NodeY(int lv) { int c = (lv - 1) / 10, k = (lv - 1) % 10; return BlockTop(c) + (9 - k) * SP + SP / 2; }
         static float NodeX(int lv, float w) => w / 2 + Mathf.Sin((lv - 1) * .95f) * w * .3f;
 
         public static void Draw(GameFlow flow, float x0, float w)
@@ -73,37 +73,40 @@ namespace SuruSavasi.Game
         static void Backdrop(int c, float bt, float w)
         {
             // Alt yarı: ilk 5 bölümün haritası, üst yarı: sonraki 5'in
-            float mid = BlockTop(c) + HEAD + 5 * SP;
+            // Blok (yukarıdan aşağı): 6-10. seviyeler, 1-5. seviyeler, en altta bölüm başlığı (yol yukarı doğru girer)
+            float mid = bt + 5 * SP;
             for (int half = 0; half < 2; half++)
             {
                 int map = BattleData.MapOf(c * 10 + 1 + half * 5);
-                var r = half == 0 ? new Rect(0, mid, w, BlockTop(c) + BLOCK - mid) : new Rect(0, bt + HEAD - 30, w, mid - (bt + HEAD - 30));
+                var r = half == 0 ? new Rect(0, mid, w, 5 * SP + 15) : new Rect(0, bt - 15, w, 5 * SP + 15);
                 var bg = Art.Background(map);
                 if (bg != null) GUI.DrawTexture(r, bg.texture, ScaleMode.ScaleAndCrop);
                 else GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(BattleData.Maps[map].ground), 0, 0);
                 GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.02f, .03f, .06f, .38f), 0, 0);
                 // Bölge etiketi
-                var tr = new Rect(8, r.y + (half == 0 ? r.height - 30 : 8), 150, 22);
+                var tr = new Rect(8, r.y + r.height - 34, 150, 22);
                 GUI.DrawTexture(tr, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .5f), 0, 11);
                 GUI.Label(new Rect(tr.x + 10, tr.y, tr.width - 12, tr.height), $"<color=#9fe8ff>◆</color> {BattleData.Maps[map].nameTr}", tag);
             }
             // Bölüm başlığı: kurdele + patron
             var d = D;
             bool open = c * 10 + 1 <= d.unlocked;
-            var hr = new Rect(0, bt, w, HEAD - 30);
+            var hr = new Rect(0, bt + 10 * SP + 15, w, HEAD - 30);
+            float hy = hr.y;
             GUI.DrawTexture(hr, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.05f, .04f, .08f, .92f), 0, 0);
+            GUI.DrawTexture(new Rect(0, hr.y, w, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(BattleData.BossColors[c]), 0, 0);
             GUI.DrawTexture(new Rect(0, hr.yMax - 3, w, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(BattleData.BossColors[c]), 0, 0);
             var bs = Art.Boss(c, (int)(Time.time * 2f) + c);
             if (bs != null)
             {
                 var old = GUI.color; if (!open) GUI.color = new Color(0, 0, 0, .85f);
-                DialogBox.DrawSprite(new Rect(w - 120, bt - 18, 116, hr.height + 16), bs);
+                DialogBox.DrawSprite(new Rect(w - 120, hy - 18, 116, hr.height + 16), bs);
                 GUI.color = old;
             }
             int st = 0; for (int i = 0; i < 10; i++) st += d.stars[c * 10 + i];
-            GUI.Label(new Rect(14, bt + 8, w - 140, 26), $"<size=13><color=#ffd23f>BÖLÜM {c + 1}</color></size>", new GUIStyle(UiSkin.Label) { richText = true });
-            GUI.Label(new Rect(14, bt + 30, w - 140, 30), $"<b><size=21>{(open ? Story.ChapterNames[c] : "???")}</size></b>", new GUIStyle(UiSkin.Label) { richText = true });
-            GUI.Label(new Rect(14, bt + 62, w - 140, 22), open ? $"Patron: {BattleData.BossNames[c]}   ·   ★ {st}/30" : $"{c * 10}. seviyeyi geç", new GUIStyle(UiSkin.Small) { richText = true });
+            GUI.Label(new Rect(14, hy + 8, w - 140, 26), $"<size=13><color=#ffd23f>BÖLÜM {c + 1}</color></size>", new GUIStyle(UiSkin.Label) { richText = true });
+            GUI.Label(new Rect(14, hy + 30, w - 140, 30), $"<b><size=21>{(open ? Story.ChapterNames[c] : "???")}</size></b>", new GUIStyle(UiSkin.Label) { richText = true });
+            GUI.Label(new Rect(14, hy + 62, w - 140, 22), open ? $"Patron: {BattleData.BossNames[c]}   ·   ★ {st}/30" : $"{c * 10}. seviyeyi geç", new GUIStyle(UiSkin.Small) { richText = true });
         }
 
         static void Node(GameFlow flow, int lv, float x, float y, int cur)
