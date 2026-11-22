@@ -194,6 +194,48 @@ namespace SuruSavasi.Core.Battle
             Emit("revive", x, Field.SQY);
         }
 
+        /// <summary>Kapı çiftinden geçiş: ordunun bulunduğu yarıdaki kapı uygulanır, ikisi de kapanır.</summary>
+        void PassGate(BattleObj o)
+        {
+            BattleObj pick = null;
+            foreach (var g in objs)
+                if (g.kind == ObjKind.Gate && g.seed == o.seed && !g.done)
+                { g.done = true; if ((g.x < Field.W / 2) == (x < Field.W / 2)) pick = g; }
+            if (pick == null) return;
+            float before = n;
+            switch (pick.gk)
+            {
+                case GateFx.Add: n += pick.v; break;
+                case GateFx.Mul: n = hv0 + (float)Math.Ceiling((n - hv0) * pick.v); break;
+                case GateFx.Dmg: mods.dmgMul *= 1 + pick.v; break;
+                case GateFx.Fire: buffRapid = Math.Max(buffRapid, pick.v); break;
+                case GateFx.Heal: hhp = Math.Min(HeroMax, hhp + HeroMax * pick.v); break;
+                case GateFx.Sub: DamageSquad(Math.Max(1, (float)Math.Ceiling(pick.v * mods.guard))); break;
+                case GateFx.MulDown: DamageSquad(Math.Max(1, (float)Math.Ceiling((n - hv0) * (1 - pick.v)))); break;
+            }
+            if (n > peak) peak = n;
+            string txt = LevelGen.GateText(pick);
+            AddFloat(x, Field.SQY - 60, txt + (n != before && (pick.gk == GateFx.Add || pick.gk == GateFx.Mul) ? $"  ({Fmt(n)})" : ""), LevelGen.GateGood(pick) ? "#8be39d" : "#ff8a80");
+            Emit(LevelGen.GateGood(pick) ? "revive" : "hurt", x, Field.SQY);
+        }
+
+        /// <summary>Bot ve ipuçları için: kapının asker cinsinden yaklaşık değeri.</summary>
+        public float GateWorth(BattleObj o)
+        {
+            float sol = Math.Max(0, n - hv0);
+            switch (o.gk)
+            {
+                case GateFx.Add: return o.v;
+                case GateFx.Mul: return sol * (o.v - 1);
+                case GateFx.Dmg: return n * o.v * .8f;
+                case GateFx.Fire: return n * .25f;
+                case GateFx.Heal: return hhp < HeroMax * .6f ? n * .3f : 1;
+                case GateFx.Sub: return -o.v;
+                case GateFx.MulDown: return -sol * (1 - o.v);
+            }
+            return 0;
+        }
+
         /// <summary>Mod savaşları için dışarıdan bitirme (ör. süre doldu).</summary>
         public void ForceEnd(bool win) { if (Live) Finish(win); }
 
@@ -265,6 +307,10 @@ namespace SuruSavasi.Core.Battle
                             o.done = true; DamageSquad(cdm); AddFloat(o.x, sy - 10, "−" + cdm, "#ff8a80"); Emit("hurt", o.x, sy);
                         }
                         else if (sy > Field.H + 30) o.done = true;
+                    }
+                    else if (o.kind == ObjKind.Gate)
+                    {
+                        if (sy >= Field.SQY - 12) PassGate(o);
                     }
                     else if (o.kind == ObjKind.Board)
                     {

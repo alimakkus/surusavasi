@@ -37,6 +37,7 @@ namespace SuruSavasi.Core.Meta
                         case ObjKind.Barrel: sc += (o.v - o.rel) * w; break;
                         case ObjKind.Power: sc += (o.v - o.rel + 6) * w; break;
                         case ObjKind.Board: sc -= o.v * w * 1.2f; break;
+                        case ObjKind.Gate: sc += s.GateWorth(o) * w * 1.5f; break;
                         case ObjKind.Enemy: sc -= o.contact * w * Math.Min(1, o.hp / Math.Max(1, Balance.DpsOf(s.n, s.lv) * 1.2f)); break;
                     }
                 }

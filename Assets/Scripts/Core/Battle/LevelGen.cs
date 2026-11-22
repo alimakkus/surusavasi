@@ -4,7 +4,10 @@ using System.Linq;
 
 namespace SuruSavasi.Core.Battle
 {
-    public enum ObjKind { Barrel, Power, Board, Enemy }
+    public enum ObjKind { Barrel, Power, Board, Enemy, Gate }
+
+    /// <summary>Kapı etkisi. Kapılar yolu ikiye bölen çiftler halinde gelir; ordu hangi yarıdan geçerse o uygulanır.</summary>
+    public enum GateFx { Add, Mul, Dmg, Fire, Heal, Sub, MulDown }
 
     public class BattleObj
     {
@@ -17,6 +20,7 @@ namespace SuruSavasi.Core.Battle
         public float hp, max, chip, flash, rel;
         public EnemyType type;
         public float contact, acc, accT, shootT = -1f;
+        public GateFx gk;               // kapı: etkisi (v = miktar), seed = çift kimliği
     }
 
     public class FinalFoe
@@ -42,6 +46,53 @@ namespace SuruSavasi.Core.Battle
     /// <summary>Prototipteki buildLevel ile aynı kurallar ve aynı rastgele dizilim.</summary>
     public static class LevelGen
     {
+        /// <summary>Seçim kapıları: 2. bölümden itibaren her bölümde 1-3 çift. Satırların arasına yerleşir;
+        /// mevcut dizilimi bozmamak için ayrı rastgele dizi kullanır.</summary>
+        static void AddGates(LevelLayout L, int lv, int R)
+        {
+            if (lv < 2 || R < 4) return;
+            var g = new Rng(lv * 104729 + 71);
+            int count = lv < 10 ? 1 : lv < 40 ? 2 : 3;
+            float lvMul = 1f + .05f * lv;
+            for (int k = 0; k < count; k++)
+            {
+                int row = Math.Max(1, Math.Min(R - 2, (int)Math.Round((R - 1) * (k + 1f) / (count + 1f))));
+                float wy = -Field.GAP * (row + 1) - Field.GAP / 2;
+                float add = (float)Math.Ceiling(g.Range(7, 13) * lvMul * Field.BARV * 1.4f);
+                GateFx a, b; float va, vb;
+                int pick = g.Range(0, lv >= 15 ? 5 : 4);
+                switch (pick)
+                {
+                    case 0: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.5f; break;               // toplama mı çarpma mı?
+                    case 1: a = GateFx.Add; va = add; b = GateFx.Dmg; vb = .25f; break;               // asker mi güç mü?
+                    case 2: a = GateFx.Mul; va = 1.3f; b = GateFx.Fire; vb = 10f; break;     // kalıcı mı anlık mı?
+                    case 3: a = GateFx.Heal; va = .5f; b = GateFx.Add; vb = (float)Math.Ceiling(add * .8f); break; // can mı asker mi?
+                    case 4: a = GateFx.Sub; va = (float)Math.Ceiling(add * 1.2f); b = GateFx.MulDown; vb = .75f; break; // iki kötüden az kötü
+                    default: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.5f; break;
+                }
+                if (g.Next() < .5) { var t = a; a = b; b = t; var tv = va; va = vb; vb = tv; }
+                int id = 1000 + k;
+                L.objs.Add(new BattleObj { kind = ObjKind.Gate, x = Field.W * .27f, wy = wy, gk = a, v = va, seed = id });
+                L.objs.Add(new BattleObj { kind = ObjKind.Gate, x = Field.W * .73f, wy = wy, gk = b, v = vb, seed = id });
+            }
+        }
+
+        public static string GateText(BattleObj o)
+        {
+            switch (o.gk)
+            {
+                case GateFx.Add: return "+" + o.v;
+                case GateFx.Mul: return "×" + o.v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+                case GateFx.Dmg: return $"Hasar +%{o.v * 100:0}";
+                case GateFx.Fire: return $"Hızlı ateş {o.v:0} sn";
+                case GateFx.Heal: return $"Can +%{o.v * 100:0}";
+                case GateFx.Sub: return "−" + o.v;
+                case GateFx.MulDown: return "×" + o.v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+            }
+            return "";
+        }
+        public static bool GateGood(BattleObj o) => o.gk != GateFx.Sub && o.gk != GateFx.MulDown;
+
         static float DpsOf(float e, int lv) => Balance.DpsOf(e, lv);
 
         public static LevelLayout Build(int lv, float hardMul = 1)
@@ -109,6 +160,7 @@ namespace SuruSavasi.Core.Battle
                 }
             }
 
+            AddGates(L, lv, R);
             L.efin = Balance.EnemyRef(lv, R);
             bool isBoss = lv % 10 == 0;
             float bas = DpsOf(.33f * L.efin, lv) * Balance.TimeToKill0(lv) * H;

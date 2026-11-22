@@ -318,6 +318,21 @@ namespace SuruSavasi.Game
                     case ObjKind.Board:
                         DrawSprite(Art.Prop(4), o.x, sy, 1, ord);
                         break;
+                    case ObjKind.Gate:
+                    {
+                        // Yarı saydam enerji kapısı: ordunun bulunduğu taraf parlar
+                        bool good = LevelGen.GateGood(o), mine = (o.x < Field.W / 2) == (sim.x < Field.W / 2);
+                        var gc = good ? (o.gk == GateFx.Add || o.gk == GateFx.Mul ? C("#3aa0ff") : C("#2fd08a")) : C("#ff4d4d");
+                        float pulse = .5f + .5f * Mathf.Sin(Time.time * 5 + o.x);
+                        gc.a = mine ? .55f + .15f * pulse : .32f;
+                        Draw(square, gc, o.x, sy, Field.W * .46f, 46, 9);
+                        var edge = gc; edge.a = Mathf.Min(1, gc.a + .35f);
+                        Draw(square, edge, o.x, sy - 22, Field.W * .46f, 4, 9);
+                        Draw(square, edge, o.x, sy + 22, Field.W * .46f, 4, 9);
+                        float px = o.x < Field.W / 2 ? o.x - Field.W * .23f : o.x + Field.W * .23f;
+                        Draw(square, C("#e8e8f0"), px, sy, 8, 56, 9);
+                        break;
+                    }
                     default:
                         var T = o.type; float sc = T.sc * sim.mapScale;
                         var es = Art.Enemy(m, T.id, (frame + o.seed) & 1);
@@ -493,6 +508,11 @@ namespace SuruSavasi.Game
                 if (o.kind == ObjKind.Barrel) Text(ToGui(o.x, sy + 7), "+" + Mathf.CeilToInt(o.v - o.rel), Color.white, big);
                 else if (o.kind == ObjKind.Power) Text(ToGui(o.x, sy + 15), o.pk == Power.Double ? "ÇİFT" : o.pk == Power.Rapid ? "HIZ" : "PATLA", Color.white, label);
                 else if (o.kind == ObjKind.Board) Text(ToGui(o.x, sy - 4), "−" + Mathf.CeilToInt(o.v), Color.white, big);
+                else if (o.kind == ObjKind.Gate)
+                {
+                    string gt = LevelGen.GateText(o);
+                    Text(ToGui(o.x, sy), gt, LevelGen.GateGood(o) ? Color.white : C("#ffd0d0"), gt.Length <= 5 ? big : label, 170);
+                }
             }
             foreach (var f in sim.floats) { var c = C(f.color); c.a = Mathf.Clamp01(f.life * 1.5f); Text(ToGui(f.x, f.y), f.text, c, label); }
             if (sim.state != BattleState.Lost) Text(ToGui(sim.x, Field.SQY + 34), BattleSim.Fmt(sim.n), Color.white, big);
