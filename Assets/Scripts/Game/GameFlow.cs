@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents, Skins }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -168,6 +168,7 @@ namespace SuruSavasi.Game
                     case GameScreen.Modes: ModesScreen.Draw(this, x0, w); break;
                     case GameScreen.League: LeagueScreen.Draw(this, x0, w); break;
                     case GameScreen.Talents: TalentScreen.Draw(this, x0, w); break;
+                    case GameScreen.Skins: SkinScreen.Draw(this, x0, w); break;
                 }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
@@ -250,6 +251,8 @@ namespace SuruSavasi.Game
                 }
                 if (!open) GUI.Label(new Rect(pr.x, pr.y + pr.height / 2 - 20, pr.width, 40), "<b>KİLİTLİ</b>", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
                 GUI.Box(new Rect(pr.x + 6, pr.yMax - 34, pr.width - 12, 28), $"Sv. {L}/{Progress.HeroMax}", new GUIStyle(UiSkin.Ribbon) { fontSize = 14 });
+                if (open && GUI.Button(new Rect(pr.x + 6, pr.y + 6, pr.width - 12, 26), $"Görünüm ›  <size=10>{Skins.OwnedCount(D, i)}/4</size>", new GUIStyle(UiSkin.ButtonGray) { fontSize = 12, richText = true }))
+                { SoundFx.Play("click"); SkinScreen.Open(this, i); }
 
                 float tx = x0 + 152, tw = w - 164;
                 GUI.Label(new Rect(tx, y + 8, tw, 28), $"<b><size=20>{H.name}</size></b>  <color=#c9d3e0>{H.role}</color>", label);

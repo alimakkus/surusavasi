@@ -47,18 +47,25 @@ namespace SuruSavasi.Game
         }
         static readonly string[] HeroIds = { "ayaz", "kaya", "mira", "deniz", "cem" };
         /// <summary>Savaştaki kahraman. İlk üçü birim sayfasından, sonradan eklenenler ayrı dosyadan (Art/heroes/unit_<id>_<kare>).</summary>
-        public static Sprite Hero(int heroIndex, int frame) => heroIndex < 3
-            ? Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), heroIndex * 2 + (frame & 1))
-            : Single($"heroes/unit_{HeroIds[Mathf.Clamp(heroIndex, 0, HeroIds.Length - 1)]}_{frame & 1}", 96, 34f / 96f);
-        static readonly Texture2D[] portraits = new Texture2D[10];
-        /// <summary>Kahraman ekranı için büyük görsel (Resources/Art/heroes/hero_<id>_<kare>.png; özel AI görseli gelince aynı adla değiştirilir).</summary>
-        public static Texture2D HeroPortrait(int heroIndex, int frame)
+        public static Sprite Hero(int heroIndex, int frame)
         {
-            var ids = HeroIds;
-            int i = Mathf.Clamp(heroIndex, 0, ids.Length - 1) * 2 + (frame & 1);
-            if (portraits[i] == null) { portraits[i] = Resources.Load<Texture2D>($"Art/heroes/hero_{ids[i / 2]}_{i % 2}"); if (portraits[i] != null) portraits[i].hideFlags = HideFlags.DontUnloadUnusedAsset; }
-            return portraits[i];
+            int sk = SkinOf(heroIndex);
+            string id = HeroIds[Mathf.Clamp(heroIndex, 0, HeroIds.Length - 1)];
+            if (sk > 0) { var s = Single($"heroes/unit_{id}_{SuruSavasi.Core.Meta.Skins.Ids[sk]}_{frame & 1}", 96, 34f / 96f); if (s != null) return s; }
+            return heroIndex < 3 ? Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), heroIndex * 2 + (frame & 1)) : Single($"heroes/unit_{id}_{frame & 1}", 96, 34f / 96f);
         }
+        static int SkinOf(int heroIndex) { var d = SuruSavasi.Services.GameServices.Save?.Data; return d != null ? SuruSavasi.Core.Meta.Skins.Current(d, heroIndex) : 0; }
+        static readonly Dictionary<string, Texture2D> portraits = new Dictionary<string, Texture2D>();
+        /// <summary>Kahraman portresi; skin -1: kuşanılan görünüm.</summary>
+        public static Texture2D HeroPortrait(int heroIndex, int frame, int skin)
+        {
+            if (skin < 0) skin = SkinOf(heroIndex);
+            string id = HeroIds[Mathf.Clamp(heroIndex, 0, HeroIds.Length - 1)];
+            string key = skin > 0 ? $"Art/heroes/hero_{id}_{SuruSavasi.Core.Meta.Skins.Ids[skin]}_{frame & 1}" : $"Art/heroes/hero_{id}_{frame & 1}";
+            if (!portraits.TryGetValue(key, out var t) || t == null) { t = Resources.Load<Texture2D>(key); if (t != null) t.hideFlags = HideFlags.DontUnloadUnusedAsset; portraits[key] = t; }
+            return t;
+        }
+        public static Texture2D HeroPortrait(int heroIndex, int frame) => HeroPortrait(heroIndex, frame, -1);
         public static Sprite Soldier(int k) => Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), 6 + (k & 3));
         /// <summary>0 fıçı, 1 çift ateş, 2 hızlı ateş, 3 patlayıcı, 4 tabela.</summary>
         public static Sprite Prop(int i) => Pick(Sheet("props", 5, 1, 256, .5f, 200), i);

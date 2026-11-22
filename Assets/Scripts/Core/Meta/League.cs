@@ -69,6 +69,10 @@ namespace SuruSavasi.Core.Meta
                 int nt = rank <= Promote ? Math.Min(TierNames.Length - 1, d.leagueTier + 1) : rank > Size - Demote ? Math.Max(0, d.leagueTier - 1) : d.leagueTier;
                 d.leagueResPending = true; d.leagueResRank = rank; d.leagueResTier = d.leagueTier; d.leagueResNew = nt; d.leagueResPts = d.leaguePts;
                 d.leagueTier = nt;
+                // Bayram görünümü: ilk 3 ya da Altın (ve üstü) lige yükselme → seçili kahramana
+                d.leagueResSkin = -1;
+                int hi = Progress.HeroIndex(d.hero);
+                if ((rank <= 3 || (nt > d.leagueResTier && nt >= 2)) && !Skins.Owned(d, hi, 3)) { Skins.Give(d, hi, 3); d.leagueResSkin = hi; }
             }
             else if (d.leagueWeek != 0) d.leagueTier = Math.Max(0, d.leagueTier - 1); // hiç oynamayan düşer
             d.leagueWeek = wk; d.leaguePts = 0;

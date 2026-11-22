@@ -19,6 +19,9 @@ namespace SuruSavasi.Core
         public int[] heroLevels = { 1, 1, 1, 1, 1 }; // ayaz, kaya, mira, deniz, cem
         public int[] heroShards = new int[5];          // parçayla açılan kahramanlar (deniz, cem)
         public int heroOwned;                          // parçayla açılmış kahraman bitleri
+        public int[] heroSkin = new int[5];            // kuşanılan görünüm (0 klasik, 1 altın, 2 gece, 3 bayram)
+        public List<string> ownedSkins = new List<string>();   // "ayaz_gold" gibi
+        public int leagueResSkin = -1;                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
         // Üs: bina seviyeleri BuildingKind sırasıyla

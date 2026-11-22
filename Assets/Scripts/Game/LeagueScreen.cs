@@ -107,6 +107,7 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(r.x + 10, r.y + 144, r.width - 20, 60), $"{League.TierNames[ot]} Ligi'nde <b>{rank}.</b> oldun ({d.leagueResPts} puan)\n{move}", ModeUi.Center);
             var rw = League.RankReward(rank, ot);
             GUI.Label(new Rect(r.x + 10, r.y + 208, r.width - 20, 50), ModeUi.RewardLine(rw) + $"\n<color=#ffb02e>+{(rank <= 3 ? 15 : rank <= 10 ? 10 : 5)} kahraman parçası</color>" + (League.RankGear(rank) ? "\n<color=#c07bff>+ Epik ekipman</color>" : ""), ModeUi.Center);
+            if (d.leagueResSkin >= 0) GUI.Label(new Rect(r.x + 10, r.y + 256, r.width - 20, 22), $"<color=#ff6f91><b>Ödül: {Progress.Heroes[d.leagueResSkin].name} Bayram görünümü!</b></color>", ModeUi.Center);
             if (GUI.Button(new Rect(r.x + 30, r.y + 280, r.width - 60, 64), "SANDIĞI AÇ", UiSkin.ButtonGold))
             {
                 SoundFx.Play(nt > ot ? "promote" : "chest");
