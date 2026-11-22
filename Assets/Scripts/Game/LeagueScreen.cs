@@ -106,11 +106,12 @@ namespace SuruSavasi.Game
             string move = nt > ot ? $"<color=#8be39d>{League.TierNames[nt]} Ligine yükseldin!</color>" : nt < ot ? $"<color=#ff8a80>{League.TierNames[nt]} Ligine düştün</color>" : $"{League.TierNames[nt]} Liginde kaldın";
             GUI.Label(new Rect(r.x + 10, r.y + 144, r.width - 20, 60), $"{League.TierNames[ot]} Ligi'nde <b>{rank}.</b> oldun ({d.leagueResPts} puan)\n{move}", ModeUi.Center);
             var rw = League.RankReward(rank, ot);
-            GUI.Label(new Rect(r.x + 10, r.y + 208, r.width - 20, 50), ModeUi.RewardLine(rw) + (League.RankGear(rank) ? "\n<color=#c07bff>+ Epik ekipman</color>" : ""), ModeUi.Center);
+            GUI.Label(new Rect(r.x + 10, r.y + 208, r.width - 20, 50), ModeUi.RewardLine(rw) + $"\n<color=#ffb02e>+{(rank <= 3 ? 15 : rank <= 10 ? 10 : 5)} kahraman parçası</color>" + (League.RankGear(rank) ? "\n<color=#c07bff>+ Epik ekipman</color>" : ""), ModeUi.Center);
             if (GUI.Button(new Rect(r.x + 30, r.y + 280, r.width - 60, 64), "SANDIĞI AÇ", UiSkin.ButtonGold))
             {
                 SoundFx.Play(nt > ot ? "promote" : "chest");
                 ModeUi.Grant(rw, "league");
+                HeroShards.Give(d, rank <= 3 ? 15 : rank <= 10 ? 10 : 5);
                 if (League.RankGear(rank)) Gear.AddToBag(d, new GearItem { id = ++d.gearSeq, slot = UnityEngine.Random.Range(0, 3), rarity = 2 });
                 d.leagueResPending = false;
                 GameServices.Save.Save();

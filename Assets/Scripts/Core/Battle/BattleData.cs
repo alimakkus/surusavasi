@@ -116,5 +116,9 @@ namespace SuruSavasi.Core.Battle
         public float turretMul = 1f;       // savunma kulesi hasar çarpanı
         public float boardMul = 1f;        // tabelanın götürdüğü asker çarpanı
         public int startTurret;            // Hayatta Kalma'ya hazır kule
+        public float skillTurret;          // Deniz: yetenek bu kadar saniye iki yanda geçici taret kurar
+        public bool dice;                  // Cem: yetenek zar atar (rastgele güç)
+        public float gateBoost;            // Cem: iyi kapıların etkisi artar
+        public float badGateMul = 1f;      // kötü kapıların etkisi çarpanı
     }
 }

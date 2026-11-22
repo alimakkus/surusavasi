@@ -218,14 +218,18 @@ namespace SuruSavasi.Game
 
         void LevelsScreen(float x0, float w) => LevelMapScreen.Draw(this, x0, w);
 
+        Vector2 heroScroll;
         void HeroesScreen(float x0, float w)
         {
             if (Back(x0)) { Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 300, 40), $"<b>Kahramanlar</b>\n<size=12>★ {Progress.TotalStars(D)}</size>", label);
             if (GUI.Button(new Rect(x0 + w - 196, 48, 76, 40), "Silah", UiSkin.Button)) { SoundFx.Play("click"); Show(GameScreen.Weapons); return; }
             if (GUI.Button(new Rect(x0 + w - 116, 48, 116, 40), "Ekipman", UiSkin.ButtonGold)) { SoundFx.Play("click"); Show(GameScreen.Gear); return; }
-            float y = 100;
-            string[] tint = { "#7a5cff", "#ff6a3a", "#2ad6b0" };
+            string[] tint = { "#7a5cff", "#ff6a3a", "#2ad6b0", "#ffb02e", "#3fd16a" };
+            // 5 kahraman: kaydırılabilir liste
+            float sx0 = x0; x0 = 0;
+            heroScroll = GUI.BeginScrollView(new Rect(sx0, 96, w + 16, 700), heroScroll, new Rect(0, 0, w, Progress.Heroes.Length * 224 + 8));
+            float y = 4;
             for (int i = 0; i < Progress.Heroes.Length; i++)
             {
                 var H = Progress.Heroes[i]; int L = Progress.HeroLevel(D, i); bool open = Progress.HeroOpen(D, i), sel = D.hero == H.id;
@@ -252,7 +256,31 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(tx, y + 36, tw, 48), $"<color=#ffd23f><b>{H.skill}:</b></color> {H.skillDesc}", new GUIStyle(small) { fontSize = 13 });
                 GUI.Label(new Rect(tx, y + 84, tw, 40), $"<color=#8be39d>●</color> {H.perk}\n<color=#9fe8ff>●</color> 5. seviye: {H.lv5}", new GUIStyle(small) { fontSize = 12 });
                 float by = y + ch - 62, bw = (tw - 8) / 2;
-                if (!open)
+                if (!open && HeroShards.IsShardHero(i))
+                {
+                    // Parçayla açılır: ilerleme çubuğu + aç / elmasla parça
+                    int sh = D.heroShards[i];
+                    var bar = new Rect(tx, y + 126, tw, 22);
+                    GUI.DrawTexture(bar, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 11);
+                    GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * sh / (float)HeroShards.Need, bar.height), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(tc.r, tc.g, tc.b, .9f), 0, 11);
+                    GUI.Label(bar, $"<b>Parça {sh}/{HeroShards.Need}</b>", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 12 });
+                    if (HeroShards.CanUnlock(D, i))
+                    {
+                        float pu = 1 + .04f * Mathf.Sin(Time.time * 6);
+                        if (GUI.Button(new Rect(tx - (pu - 1) * tw / 2, by, tw * pu, 50), "KAHRAMANI AÇ", UiSkin.ButtonGold))
+                        { HeroShards.Unlock(D, i); GameServices.Save.Save(); SoundFx.Play("promote"); Toast($"{H.name} katıldı!"); }
+                    }
+                    else
+                    {
+                        GUI.Label(new Rect(tx, by - 4, bw, 54), "<size=11>Parçalar: Kule sandıkları, Patron Avı, Hayatta Kalma, lig ve bölüm sandıkları</size>", new GUIStyle(small) { wordWrap = true });
+                        if (GUI.Button(new Rect(tx + bw + 8, by, bw, 50), $"+{HeroShards.PackShards} parça\n<size=11>{HeroShards.PackGems} elmas</size>", new GUIStyle(UiSkin.ButtonGold) { fontSize = 15 }))
+                        {
+                            if (Wl.Spend(Currency.Diamonds, HeroShards.PackGems, "hero_shards:" + H.id)) { HeroShards.Give(D, HeroShards.PackShards, i); GameServices.Save.Save(); SoundFx.Play("coin"); }
+                            else Toast("Yeterli elmas yok");
+                        }
+                    }
+                }
+                else if (!open)
                 {
                     GUI.enabled = false; GUI.Button(new Rect(tx, by, tw, 50), $"{H.reqStars} yıldızla açılır", UiSkin.ButtonGray); GUI.enabled = true;
                 }
@@ -262,7 +290,7 @@ namespace SuruSavasi.Game
                     int tfree = Talents.Free(D, i);
                     var trr = new Rect(tx, y + 124, tw, 26);
                     if (GUI.Button(trr, tfree > 0 ? $"<b>Yetenek Ağacı · {tfree} boş puan</b>" : "Yetenek Ağacı", new GUIStyle(tfree > 0 ? UiSkin.ButtonGreen : UiSkin.Button) { fontSize = 13, richText = true }))
-                    { SoundFx.Play("click"); TalentScreen.Open(this, i); return; }
+                    { SoundFx.Play("click"); TalentScreen.Open(this, i); }
                     if (tfree > 0) { float pu = 1 + .15f * Mathf.Sin(Time.time * 6); GUI.DrawTexture(new Rect(trr.xMax - 8 - 5 * pu, trr.y - 4 - 5 * pu, 12 * pu, 12 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 6 * pu); }
                     GUI.enabled = !sel;
                     if (GUI.Button(new Rect(tx, by, bw, 50), sel ? "Seçili" : "Seç", sel ? UiSkin.ButtonGray : UiSkin.ButtonGreen)) { D.hero = H.id; GameServices.Save.Save(); SoundFx.Play("power"); }
@@ -281,6 +309,7 @@ namespace SuruSavasi.Game
                 }
                 y += 224;
             }
+            GUI.EndScrollView();
         }
 
         void WeaponsScreen(float x0, float w)

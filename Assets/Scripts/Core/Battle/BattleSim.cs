@@ -176,6 +176,39 @@ namespace SuruSavasi.Core.Battle
                 }
             }
             if (boss != null) { boss.hp -= dmg * boss.vuln; boss.flash = .15f; AddFloat(boss.x, boss.y - 40, Fmt(dmg), "#c9b8ff"); CheckBossDead(); }
+            // Deniz: geçici taretler
+            if (mods.skillTurret > 0)
+            {
+                tempTurretT = mods.skillTurret;
+                tempTurretDmg = Math.Max(n * Balance.DmgPer(lv) * mods.dmgMul * .14f, Balance.StartSoldiers(lv) * Balance.DmgPer(lv) * .3f);
+                AddFloat(x, Field.SQY - 90, "TARET KURULDU", "#ffb02e"); Emit("turret", x, Field.SQY);
+            }
+            // Cem: zar
+            if (mods.dice) RollDice();
+        }
+
+        public float tempTurretT, tempTurretDmg;   // Deniz'in geçici taretleri
+        public int lastDice;
+
+        void RollDice()
+        {
+            int r = 1 + (int)(Rand * 6); if (r > 6) r = 6; lastDice = r;
+            string txt;
+            switch (r)
+            {
+                case 1: case 2: { float g = (float)Math.Ceiling(Math.Max(3, (n - hv0) * .2f + hv0 * .3f)); n += g; if (n > peak) peak = n; txt = $"🎲{r}  +{Fmt(g)} ASKER"; break; }
+                case 3: buffDouble = Math.Max(buffDouble, 8); txt = "🎲3  ÇİFT ATEŞ"; break;
+                case 4: buffRapid = Math.Max(buffRapid, 8); txt = "🎲4  HIZLI ATEŞ"; break;
+                case 5: buffBlast = Math.Max(buffBlast, 8); txt = "🎲5  PATLAYICI"; break;
+                default:
+                {
+                    float g = (float)Math.Ceiling(Math.Max(5, (n - hv0) * .3f + hv0 * .3f)); n += g; if (n > peak) peak = n;
+                    buffDouble = Math.Max(buffDouble, 6); buffRapid = Math.Max(buffRapid, 6); buffBlast = Math.Max(buffBlast, 6);
+                    txt = $"🎲6  BÜYÜK İKRAMİYE! +{Fmt(g)}"; break;
+                }
+            }
+            AddFloat(x, Field.SQY - 110, txt.Replace("🎲", "ZAR "), r == 6 ? "#ffd23f" : "#8be39d");
+            Emit(r == 6 ? "jackpot" : "dice", x, Field.SQY);
         }
 
         void CheckBossDead()
@@ -209,13 +242,13 @@ namespace SuruSavasi.Core.Battle
             float before = n;
             switch (pick.gk)
             {
-                case GateFx.Add: n += pick.v; break;
-                case GateFx.Mul: n = hv0 + (float)Math.Ceiling((n - hv0) * pick.v); break;
+                case GateFx.Add: n += (float)Math.Ceiling(pick.v * (1 + mods.gateBoost)); break;
+                case GateFx.Mul: n = hv0 + (float)Math.Ceiling((n - hv0) * ((pick.v - 1) * (1 + mods.gateBoost) + 1)); break;
                 case GateFx.Dmg: mods.dmgMul *= 1 + pick.v; break;
                 case GateFx.Fire: buffRapid = Math.Max(buffRapid, pick.v); break;
                 case GateFx.Heal: hhp = Math.Min(HeroMax, hhp + HeroMax * pick.v); break;
-                case GateFx.Sub: DamageSquad(Math.Max(1, (float)Math.Ceiling(pick.v * mods.guard))); break;
-                case GateFx.MulDown: DamageSquad(Math.Max(1, (float)Math.Ceiling((n - hv0) * (1 - pick.v)))); break;
+                case GateFx.Sub: DamageSquad(Math.Max(1, (float)Math.Ceiling(pick.v * mods.guard * mods.badGateMul))); break;
+                case GateFx.MulDown: DamageSquad(Math.Max(1, (float)Math.Ceiling((n - hv0) * (1 - pick.v) * mods.badGateMul))); break;
             }
             if (n > peak) peak = n;
             string txt = LevelGen.GateText(pick);
@@ -274,6 +307,7 @@ namespace SuruSavasi.Core.Battle
             if (Live && mods.regen > 0 && hhp > 0 && hhp < HeroMax) hhp = Math.Min(HeroMax, hhp + HeroMax * mods.regen * dt);
             if (cd > 0) { cd = Math.Max(0, cd - dt); if (cd == 0 && Live) AddFloat(x, Field.SQY - 70, "YETENEK HAZIR", "#c9b8ff"); }
             buffDouble = Math.Max(0, buffDouble - dt); buffRapid = Math.Max(0, buffRapid - dt); buffBlast = Math.Max(0, buffBlast - dt);
+            tempTurretT = Math.Max(0, tempTurretT - dt);
 
             x += (tx - x) * Math.Min(1, dt * 14);
             float rad = Radius;
@@ -355,6 +389,9 @@ namespace SuruSavasi.Core.Battle
                         Emit("shot", x, Field.SQY);
                     }
                     // Savunma kuleleri (Hayatta Kalma): yol kenarından otomatik ateş
+                    if (anyTarget && tempTurretT > 0)
+                        for (int side = 0; side < 2; side++)
+                            bullets.Add(new Bullet { x = side == 0 ? 26 : Field.W - 26, y = Field.SQY - 40, vy = mods.bulletVy, dmg = tempTurretDmg * mods.turretMul, life = mods.bulletLife });
                     if (anyTarget && turretDmg > 0)
                         for (int side = 0; side < 2; side++)
                         {

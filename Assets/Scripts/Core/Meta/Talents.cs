@@ -75,6 +75,40 @@ namespace SuruSavasi.Core.Meta
                     N("Koruyucu Ruh", "♥", 1, .25f, "Zirve: +%25 kahraman canı", (m, v) => m.heroHpMul += v),
                 }
             },
+            // Deniz: taretler ve istihkâm
+            new Tree
+            {
+                branches = new[] { "Taretçi", "Saha İşleri", "Dayanıklılık" }, colors = new[] { "#ffb02e", "#9fe8ff", "#8be39d" },
+                nodes = new[]
+                {
+                    N("Kalibre", "♜", 3, .15f, "Kademe başına taret ve kule hasarı +%15", (m, v) => m.turretMul += v),
+                    N("Uzun Mesai", "◇", 3, 2, "Kademe başına taretler 2 sn daha uzun kalır", (m, v) => m.skillTurret += v),
+                    N("Kale Kulesi", "♖", 1, 1, "Zirve: Hayatta Kalma'ya +1 hazır kuleyle başla", (m, v) => m.startTurret += (int)v),
+                    N("Barikat Ustası", "▬", 3, .1f, "Kademe başına tabelalar %10 daha az asker götürür", (m, v) => m.boardMul *= 1 - v),
+                    N("Fıçı Tamiri", "◆", 3, .08f, "Kademe başına fıçılardan +%8 asker", (m, v) => m.barrelMul += v),
+                    N("Seri Üretim", "»", 1, .15f, "Zirve: yetenek %15 daha sık", (m, v) => m.skillCd *= 1 - v),
+                    N("Çelik Yelek", "■", 3, .05f, "Kademe başına %5 daha az hasar", (m, v) => m.guard *= 1 - v),
+                    N("Saha Hekimi", "+", 3, .08f, "Kademe başına +%8 kahraman canı", (m, v) => m.heroHpMul += v),
+                    N("Onarım Kiti", "↺", 1, .01f, "Zirve: kahraman saniyede %1 can yeniler", (m, v) => m.regen += v),
+                }
+            },
+            // Cem: şans ve kapılar
+            new Tree
+            {
+                branches = new[] { "Şans", "Kapı Ustası", "Blöf" }, colors = new[] { "#ffd23f", "#5ad1ff", "#ff6f91" },
+                nodes = new[]
+                {
+                    N("Hileli Zar", "♦", 3, .06f, "Kademe başına yetenek %6 daha sık", (m, v) => m.skillCd *= 1 - v),
+                    N("Büyük Bahis", "✧", 3, .15f, "Kademe başına yetenek hasarı +%15", (m, v) => m.skillMul *= 1 + v),
+                    N("Şanslı Gün", "★", 1, 2, "Zirve: zar etkileri 2 sn uzar", (m, v) => m.buffs += v),
+                    N("Kapı Bekçisi", "▲", 3, .1f, "Kademe başına iyi kapılar %10 daha güçlü", (m, v) => m.gateBoost += v),
+                    N("Sigorta", "■", 3, .12f, "Kademe başına kötü kapıların zararı %12 azalır", (m, v) => m.badGateMul *= 1 - v),
+                    N("Çifte Kâr", "$", 1, .2f, "Zirve: altın ödülü +%20", (m, v) => m.goldMul += v),
+                    N("Poker Yüzü", "◈", 3, .05f, "Kademe başına %5 daha az hasar", (m, v) => m.guard *= 1 - v),
+                    N("Keskin Göz", "◎", 3, .06f, "Kademe başına +%6 mermi hasarı", (m, v) => m.dmgMul *= 1 + v),
+                    N("As Kartı", "♠", 1, .2f, "Zirve: +%20 başlangıç askeri", (m, v) => m.startMul += v),
+                }
+            },
         };
 
         static int Base(int hero) => hero * Nodes;

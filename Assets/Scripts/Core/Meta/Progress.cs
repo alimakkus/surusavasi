@@ -33,6 +33,11 @@ namespace SuruSavasi.Core.Meta
                 skill = "Siper Çağrısı", skillDesc = "Ekrana hasar verir ve askerlerinin %15'ini geri getirir", perk = "Düşman ve tabela hasarı %20 azalır", lv5 = "Alınan hasar ayrıca %10 azalır" },
             new HeroDef { id = "mira", name = "Mira", role = "Keskin Nişancı", reqStars = 36, sk = .8f, cd = 1, fire = .86f, guard = 1, buffs = 8,
                 skill = "Kurşun Fırtınası", skillDesc = "Hafif hasar verir, 8 sn çift ve hızlı ateş açar", perk = "Ateş hızı %14 artar", lv5 = "Çift ve hızlı ateş 12 sn sürer" },
+            // Parçayla açılanlar (reqStars kullanılmaz, bkz. HeroShards)
+            new HeroDef { id = "deniz", name = "Deniz", role = "Mühendis", reqStars = 0, sk = .9f, cd = .95f, fire = 1, guard = .95f,
+                skill = "Taret Kur", skillDesc = "Hasar verir ve 10 sn yolun iki yanına ateş eden taret kurar", perk = "Savunma kuleleri %50 güçlü, Hayatta Kalma'ya kuleyle başlar", lv5 = "Taretler 15 sn kalır" },
+            new HeroDef { id = "cem", name = "Cem", role = "Kumarbaz", reqStars = 0, sk = 1.1f, cd = 1, fire = 1, guard = 1,
+                skill = "Zar At", skillDesc = "Hasar verir ve zar atar: asker, çift/hızlı ateş, patlayıcı ya da büyük ikramiye", perk = "İyi kapılar %25 daha güçlü", lv5 = "Kötü kapıların zararı yarıya iner" },
         };
 
         public static readonly WeaponDef[] Weapons =
@@ -59,7 +64,7 @@ namespace SuruSavasi.Core.Meta
 
         public static int TotalStars(SaveData d) { int t = 0; foreach (var s in d.stars) t += s; return t; }
 
-        public static bool HeroOpen(SaveData d, int i) => TotalStars(d) >= Heroes[i].reqStars;
+        public static bool HeroOpen(SaveData d, int i) => HeroShards.IsShardHero(i) ? (d.heroOwned & (1 << i)) != 0 : TotalStars(d) >= Heroes[i].reqStars;
         public static bool WeaponOpen(SaveData d, int i) => Level(d, BuildingKind.Armory) >= Weapons[i].reqArmory;
         public static int HeroLevel(SaveData d, int i) => d.heroLevels != null && i < d.heroLevels.Length ? Math.Max(1, d.heroLevels[i]) : 1;
         public static int WeaponLevel(SaveData d, int i) => d.weaponLevels != null && i < d.weaponLevels.Length ? d.weaponLevels[i] : 0;
@@ -98,6 +103,12 @@ namespace SuruSavasi.Core.Meta
                 heal = H.heal,
                 buffs = H.buffs > 0 ? H.buffs + (H.id == "mira" && hl >= 5 ? 4 : 0) : 0,
                 rapidOnSkill = H.id == "ayaz" && hl >= 5 ? 4 : 0,
+                skillTurret = H.id == "deniz" ? (hl >= 5 ? 15 : 10) : 0,
+                turretMul = H.id == "deniz" ? 1.5f : 1f,
+                startTurret = H.id == "deniz" ? 1 : 0,
+                dice = H.id == "cem",
+                gateBoost = H.id == "cem" ? .25f : 0,
+                badGateMul = H.id == "cem" && hl >= 5 ? .5f : 1f,
                 pierce = W.pierce, bulletLife = W.life, bulletVy = W.vy, blast = W.blast,
                 goldMul = 1 + .04f * Eff(d, BuildingKind.Mine),
                 marketMul = 1 + .01f * Eff(d, BuildingKind.Market),

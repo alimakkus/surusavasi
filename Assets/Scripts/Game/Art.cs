@@ -45,13 +45,17 @@ namespace SuruSavasi.Game
             int ti = System.Array.IndexOf(EliteOrder, typeId); if (ti < 0) ti = 0;
             return Pick(Sheet("elites", 8, 2, 256, 18f / 128f, 200), ti * 2 + (frame & 1));
         }
-        public static Sprite Hero(int heroIndex, int frame) => Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), heroIndex * 2 + (frame & 1));
-        static readonly Texture2D[] portraits = new Texture2D[6];
+        static readonly string[] HeroIds = { "ayaz", "kaya", "mira", "deniz", "cem" };
+        /// <summary>Savaştaki kahraman. İlk üçü birim sayfasından, sonradan eklenenler ayrı dosyadan (Art/heroes/unit_<id>_<kare>).</summary>
+        public static Sprite Hero(int heroIndex, int frame) => heroIndex < 3
+            ? Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), heroIndex * 2 + (frame & 1))
+            : Single($"heroes/unit_{HeroIds[Mathf.Clamp(heroIndex, 0, HeroIds.Length - 1)]}_{frame & 1}", 96, 34f / 96f);
+        static readonly Texture2D[] portraits = new Texture2D[10];
         /// <summary>Kahraman ekranı için büyük görsel (Resources/Art/heroes/hero_<id>_<kare>.png; özel AI görseli gelince aynı adla değiştirilir).</summary>
         public static Texture2D HeroPortrait(int heroIndex, int frame)
         {
-            string[] ids = { "ayaz", "kaya", "mira" };
-            int i = Mathf.Clamp(heroIndex, 0, 2) * 2 + (frame & 1);
+            var ids = HeroIds;
+            int i = Mathf.Clamp(heroIndex, 0, ids.Length - 1) * 2 + (frame & 1);
             if (portraits[i] == null) { portraits[i] = Resources.Load<Texture2D>($"Art/heroes/hero_{ids[i / 2]}_{i % 2}"); if (portraits[i] != null) portraits[i].hideFlags = HideFlags.DontUnloadUnusedAsset; }
             return portraits[i];
         }

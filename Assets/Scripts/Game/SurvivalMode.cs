@@ -157,8 +157,9 @@ namespace SuruSavasi.Game
                 var prev = granted > 0 ? Modes.SurvReward(new SaveData { survBest = 999, unlocked = d.unlocked }, granted, s.mods) : new LevelReward();
                 var rw = new LevelReward { gold = all.gold - prev.gold, iron = all.iron - prev.iron, food = all.food - prev.food, gems = all.gems };
                 ModeUi.Grant(rw, "survival");
+                string shard = all.gems > 0 ? HeroShards.GiveText(d, 5) : "";
                 League.Add(d, (waves - granted) * League.PtsSurvWave);
-                endText = $"Ulaşılan dalga: <b>{waves}</b>   Rekor: <b>{d.survBest}</b>" + (waves > prevBest ? "  <color=#ffd23f>Yeni rekor!</color>" : "") + "\n" + ModeUi.RewardLine(rw);
+                endText = $"Ulaşılan dalga: <b>{waves}</b>   Rekor: <b>{d.survBest}</b>" + (waves > prevBest ? "  <color=#ffd23f>Yeni rekor!</color>" : "") + "\n" + ModeUi.RewardLine(rw) + shard;
                 granted = waves;
                 Daily.Add(d, "clear");
             }

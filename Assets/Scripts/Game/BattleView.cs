@@ -226,6 +226,15 @@ namespace SuruSavasi.Game
                 case "barrel": SoundFx.Play("board"); Burst(x, y - 8, 22, new[] { "#c98d49", "#6a3a14", "#ffd23f" }, 100, 50); break;
                 case "power": SoundFx.Play("power"); Burst(x, y - 10, 26, new[] { "#ffffff", "#ffd23f", "#2fb6c9" }, 130, 60); break;
                 case "kill": SoundFx.Play("kill"); Burst(x, y - 8, 20, new[] { "#8dbd80", "#5f8f55", "#e9f26c" }, 110, 30); Splat(x, y); break;
+                case "turret":
+                    SoundFx.Play("power");
+                    Burst(26, Field.SQY - 30, 18, new[] { "#ffb02e", "#ffffff", "#9aa4b0" }, 110, 40);
+                    Burst(Field.W - 26, Field.SQY - 30, 18, new[] { "#ffb02e", "#ffffff", "#9aa4b0" }, 110, 40); break;
+                case "dice": SoundFx.Play("coin"); Burst(x, y - 60, 16, new[] { "#ffd23f", "#ffffff" }, 120, 40); break;
+                case "jackpot":
+                    SoundFx.Play("chest"); shake = Mathf.Max(shake, 6); Banner("BÜYÜK İKRAMİYE!", "Zar 6 geldi", "#ffd23f", 1.4f);
+                    for (int cf = 0; cf < 6; cf++) Burst(40 + cf * 56, 60, 12, new[] { "#ffd23f", "#8be39d", "#5ad1ff", "#ff6f91" }, 120, 10);
+                    break;
                 case "gate_good":
                     SoundFx.Play("gate_good"); gateFlash = 1; gateFlashCol = C("#5ad1ff");
                     Burst(x, y - 20, 36, new[] { "#5ad1ff", "#ffffff", "#8be39d", "#ffd23f" }, 170, 70); break;
@@ -444,7 +453,9 @@ namespace SuruSavasi.Game
             // Hayatta Kalma savunma kuleleri: yol kenarında, seviyeye göre büyür
             for (int side = 0; side < 2; side++)
             {
-                int tl = side == 0 ? sim.turretL : sim.turretR; if (tl <= 0) continue;
+                int tl = side == 0 ? sim.turretL : sim.turretR;
+                if (sim.tempTurretT > 0 && (sim.tempTurretT > 2 || Mathf.Repeat(Time.time * 6, 1) > .4f)) tl = Mathf.Max(tl, 2);   // Deniz'in geçici tareti (sönerken yanıp söner)
+                if (tl <= 0) continue;
                 var tw = Art.WallTower(Mathf.Clamp(tl, 1, 5));
                 if (tw != null) DrawSprite(tw, side == 0 ? 26 : Field.W - 26, Field.SQY + 6, .62f + .04f * tl, 10 + (int)(Field.SQY / 4) + 1);
             }

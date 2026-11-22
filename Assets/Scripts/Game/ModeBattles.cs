@@ -88,7 +88,7 @@ namespace SuruSavasi.Game
                 ModeUi.Grant(rw, "tower");
                 text = ModeUi.RewardLine(rw);
                 var g = Modes.MilestoneGear(d, floor, new System.Random());
-                if (g != null) SoundFx.Play("chest");
+                if (g != null) { SoundFx.Play("chest"); text += HeroShards.GiveText(d, 6); }
                 if (g != null) text += $"\n<color={Gear.RarityColors[g.rarity]}><b>Kat {floor} sandığı: {Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>";
                 League.Add(d, League.PtsTowerBase + floor);
                 bool record = floor > d.towerBest;
@@ -206,6 +206,8 @@ namespace SuruSavasi.Game
                 text = "Yeni kademe: ";
                 for (int i = 0; i < nt.Count; i++) text += (i > 0 ? ", " : "") + $"<color={Modes.TierColors[nt[i]]}>{Modes.TierNames[nt[i]]}</color>";
                 text += "\n" + ModeUi.RewardLine(rw);
+                if (nt.Contains(2)) text += HeroShards.GiveText(d, 4);
+                if (nt.Contains(3)) text += HeroShards.GiveText(d, 6);
                 if (tier == 3)
                 {
                     var g = new GearItem { id = ++d.gearSeq, slot = Random.Range(0, 3), rarity = 2 };

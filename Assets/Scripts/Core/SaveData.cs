@@ -16,7 +16,9 @@ namespace SuruSavasi.Core
         // Kahraman ve silah
         public string hero = "ayaz";
         public string weapon = "pistol";
-        public int[] heroLevels = { 1, 1, 1 };       // ayaz, kaya, mira
+        public int[] heroLevels = { 1, 1, 1, 1, 1 }; // ayaz, kaya, mira, deniz, cem
+        public int[] heroShards = new int[5];          // parçayla açılan kahramanlar (deniz, cem)
+        public int heroOwned;                          // parçayla açılmış kahraman bitleri
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
         // Üs: bina seviyeleri BuildingKind sırasıyla
@@ -67,7 +69,7 @@ namespace SuruSavasi.Core
         public int huntTries, huntAdTries, huntBest, huntTiers;     // huntBest: bugünkü en iyi hasar (binde), huntTiers: alınan kademe bitleri
         public int huntBestEver;
         public int survRuns, survAdRuns, survBest;
-        public int[] talents = new int[27];   // yetenek ağacı: kahraman × 9 düğüm kademesi
+        public int[] talents = new int[45];   // yetenek ağacı: kahraman × 9 düğüm kademesi
         public bool talentResetUsed;
         public int[] chapterChests = new int[10];   // bölüm yıldız sandıkları (bit 0: 15★, bit 1: 30★)
         public int chapterRevealed = -1;            // "yeni bölge açıldı" gösterilen en yüksek bölüm                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
@@ -131,6 +133,8 @@ namespace SuruSavasi.Core
             if (d.seenScenes == null) d.seenScenes = new List<string>();
             if (d.towerBoons == null) d.towerBoons = new List<string>();
             Meta.Talents.Ensure(d);
+            if (d.heroLevels == null || d.heroLevels.Length < 5) { var hl = new int[] { 1, 1, 1, 1, 1 }; d.heroLevels?.CopyTo(hl, 0); d.heroLevels = hl; }
+            if (d.heroShards == null || d.heroShards.Length < 5) { var hs = new int[5]; d.heroShards?.CopyTo(hs, 0); d.heroShards = hs; }
             if (d.chapterChests == null || d.chapterChests.Length < 10) { var cc = new int[10]; d.chapterChests?.CopyTo(cc, 0); d.chapterChests = cc; }
             if (d.modeDay == null) d.modeDay = "";
             if (d.questKeys == null) d.questKeys = new List<string>();

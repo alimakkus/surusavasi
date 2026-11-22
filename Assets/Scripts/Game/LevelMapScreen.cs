@@ -148,9 +148,10 @@ namespace SuruSavasi.Game
             var rw = ChapterChests.Reward(c, k);
             var g = ChapterChests.Claim(d, c, k, new System.Random());
             ModeUi.Grant(rw, "chapter_chest");
+            string shard = k == 1 ? HeroShards.GiveText(d, 8) : "";
             GameServices.Save.Save();
             SoundFx.Play("chest");
-            chestMsg = $"<b>Bölüm {c + 1} · {ChapterChests.Need[k]}★ sandığı</b>\n{ModeUi.RewardLine(rw)}" + (g != null ? $"\n<color={Gear.RarityColors[g.rarity]}><b>{Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>" : "");
+            chestMsg = $"<b>Bölüm {c + 1} · {ChapterChests.Need[k]}★ sandığı</b>\n{ModeUi.RewardLine(rw)}" + (g != null ? $"\n<color={Gear.RarityColors[g.rarity]}><b>{Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>" : "") + shard;
             chestT = 3.2f;
         }
 
