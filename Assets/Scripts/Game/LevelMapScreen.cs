@@ -173,7 +173,10 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(r.x + 24, r.y + 160, r.width - 48, 60), d.stars[lv - 1] > 0 ? "TEKRAR SAVAŞ" : "PATRONA SALDIR", UiSkin.ButtonRed)) { popupCh = -1; flow.Play(lv); return; }
             // Hikâye: bu bölümde görülen sahneler sırayla
             var ids = new System.Collections.Generic.List<string>();
-            foreach (var id in new[] { $"intro{c}", $"boss{c}", $"win{c}" }) if (Story.Get(id) != null && Story.Seen(d, id)) ids.Add(id);
+            // Görülen ya da ilerlemeyle açılmış sahneler (hikâye sonradan eklendiyse eski oyuncular da izleyebilsin)
+            bool[] avail = { c * 10 + 1 <= d.unlocked, lv <= d.unlocked, d.stars[lv - 1] > 0 };
+            string[] sc = { $"intro{c}", $"boss{c}", $"win{c}" };
+            for (int i = 0; i < 3; i++) if (Story.Get(sc[i]) != null && (avail[i] || Story.Seen(d, sc[i]))) ids.Add(sc[i]);
             GUI.enabled = ids.Count > 0;
             if (GUI.Button(new Rect(r.x + 24, r.y + 230, r.width - 48, 54), ids.Count > 0 ? $"▶ Hikâyeyi yeniden izle  <size=12>({ids.Count} sahne)</size>" : "Hikâye henüz görülmedi", UiSkin.Button))
             { popupCh = -1; PlayChain(ids, 0, lv); return; }
@@ -286,10 +289,10 @@ namespace SuruSavasi.Game
                 GUI.Label(pr, "<b><size=13>OYNA ›</size></b>", new GUIStyle(num) { normal = { textColor = new Color(.25f, .14f, .02f) } });
                 if (GUI.Button(pr, "", GUIStyle.none)) { SoundFx.Play("click"); flow.Play(lv); }
             }
-            if (open && GUI.Button(r, "", GUIStyle.none))
+            if ((open || boss) && GUI.Button(r, "", GUIStyle.none))
             {
                 SoundFx.Play("click");
-                if (boss) popupCh = lv / 10 - 1; else flow.Play(lv);   // patron: önce menü (savaş / hikâye)
+                if (boss) popupCh = lv / 10 - 1; else if (open) flow.Play(lv);   // patron: önce menü (savaş / hikâye)
             }
         }
     }
