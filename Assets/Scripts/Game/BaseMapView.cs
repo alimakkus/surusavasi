@@ -725,7 +725,9 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0 + 10 + side, by, side, bh), "Kahraman", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Heroes); }
             int lv = Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel);
             if (GUI.Button(new Rect(x0 + 16 + side * 2, by - 6, mid, bh + 12), $"SAVAŞ\n<size=13>Bölüm {lv}</size>", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Play(lv); }
-            if (GUI.Button(new Rect(x0 + 22 + mid + side * 2, by, side, bh), "Silah", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Weapons); }
+            var mr = new Rect(x0 + 22 + mid + side * 2, by, side, bh);
+            if (GUI.Button(mr, Modes.TowerOpen(D) ? "Modlar" : "Modlar\n<size=10>Bölüm 6</size>", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Modes); }
+            if (Modes.AnyFree(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(mr.xMax - 12 - 6 * pu, mr.y - 2 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + 28 + mid + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
         }
 

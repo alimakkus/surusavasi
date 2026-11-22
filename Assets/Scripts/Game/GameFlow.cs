@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -66,7 +66,15 @@ namespace SuruSavasi.Game
             battle.Begin(Mathf.Clamp(lv, 1, Balance.MaxLevel));
         }
 
-        void Toast(string s) { toast = s; toastT = 2.2f; }
+        /// <summary>Kule / Patron Avı gibi bir oyun modunu başlatır.</summary>
+        public void PlayMode(IBattleMode m)
+        {
+            baseMap.Close();
+            screen = GameScreen.Battle;
+            battle.BeginMode(m);
+        }
+
+        public void Toast(string s) { toast = s; toastT = 2.2f; }
 
         // ---------- Bildirimler: arka plana geçince planla, geri gelince sil ----------
         void OnApplicationPause(bool paused) { if (paused) PlanNotifications(); else GameServices.Notifications?.CancelAll(); }
@@ -150,6 +158,7 @@ namespace SuruSavasi.Game
                     case GameScreen.Shop: MetaScreens.Shop(this, x0, w); break;
                     case GameScreen.Daily: MetaScreens.DailyScreen(this, x0, w); break;
                     case GameScreen.Gear: GearScreen.Draw(this, x0, w); break;
+                    case GameScreen.Modes: ModesScreen.Draw(this, x0, w); break;
                 }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
@@ -227,7 +236,8 @@ namespace SuruSavasi.Game
         void HeroesScreen(float x0, float w)
         {
             if (Back(x0)) { Show(GameScreen.Base); return; }
-            GUI.Label(new Rect(x0 + 100, 48, w - 220, 40), $"<b>Kahramanlar</b>  (★ {Progress.TotalStars(D)})", label);
+            GUI.Label(new Rect(x0 + 100, 48, w - 300, 40), $"<b>Kahramanlar</b>\n<size=12>★ {Progress.TotalStars(D)}</size>", label);
+            if (GUI.Button(new Rect(x0 + w - 196, 48, 76, 40), "Silah", UiSkin.Button)) { SoundFx.Play("click"); Show(GameScreen.Weapons); return; }
             if (GUI.Button(new Rect(x0 + w - 116, 48, 116, 40), "Ekipman", UiSkin.ButtonGold)) { SoundFx.Play("click"); Show(GameScreen.Gear); return; }
             float y = 100;
             string[] tint = { "#7a5cff", "#ff6a3a", "#2ad6b0" };
@@ -284,7 +294,7 @@ namespace SuruSavasi.Game
 
         void WeaponsScreen(float x0, float w)
         {
-            if (Back(x0)) { Show(GameScreen.Base); return; }
+            if (Back(x0)) { Show(GameScreen.Heroes); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), $"<b>Silahlar</b>  (Silahhane Sv. {Progress.Level(D, BuildingKind.Armory)})", label);
             float y = 100;
             for (int i = 0; i < Progress.Weapons.Length; i++)

@@ -29,7 +29,7 @@ namespace SuruSavasi.Game
             who == "ayaz" ? new Color(.48f, .36f, 1f) : who == "kaya" ? new Color(1f, .42f, .23f) : who == "mira" ? new Color(.16f, .84f, .69f) :
             who == "nuri" ? new Color(.85f, .7f, .35f) : new Color(.85f, .2f, .25f);
 
-        static void DrawSprite(Rect r, Sprite sp, bool flip = false)
+        internal static void DrawSprite(Rect r, Sprite sp, bool flip = false)
         {
             if (sp == null) return;
             var tex = sp.texture; var tr = sp.textureRect;

@@ -194,6 +194,18 @@ namespace SuruSavasi.Core.Battle
             Emit("revive", x, Field.SQY);
         }
 
+        /// <summary>Mod savaşları için dışarıdan bitirme (ör. süre doldu).</summary>
+        public void ForceEnd(bool win) { if (Live) Finish(win); }
+
+        /// <summary>Koşuyu atlayıp doğrudan son düşmana geçer (Patron Avı). Ordu, bölüm sonuna ulaşmış iyi bir oyuncu kadar verilir.</summary>
+        public void SkipToFinal(float armyOfRef)
+        {
+            foreach (var o in objs) o.done = true;
+            objs.Clear();
+            scroll = endScroll;
+            n = peak = Math.Max(n, hv0 + armyOfRef * .33f * L.efin);
+        }
+
         void Finish(bool win)
         {
             state = win ? BattleState.Won : BattleState.Lost;

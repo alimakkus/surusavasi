@@ -58,7 +58,35 @@ namespace SuruSavasi.Game
         {
             Init();
             gameObject.SetActive(true);
+            mode = null;
             StartLevel(lv);
+        }
+
+        // ---------- Oyun modları (Kule, Patron Avı): aynı savaş motoru, farklı kurallar ----------
+        IBattleMode mode;
+        public BattleSim Sim => sim;
+        public int Level => level;
+
+        public void BeginMode(IBattleMode m)
+        {
+            Init();
+            gameObject.SetActive(true);
+            StartMode(m);
+        }
+
+        public void StartMode(IBattleMode m)
+        {
+            mode = m;
+            var mods = GameServices.Save != null ? Progress.BuildMods(GameServices.Save.Data) : new BattleMods();
+            m.Configure(mods);
+            level = m.Level;
+            sim = new BattleSim(level, mods, 0, 0, m.HardMul);
+            sim.Fx += OnFx;
+            m.Setup(sim);
+            parts.Clear(); decals.Clear(); shake = 0; flash = 0;
+            heroIndex = Progress.HeroIndex(mods.heroId);
+            rewardText = ""; rewardGiven = false; doubled = false;
+            GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", level }, { "mode", m.Id } });
         }
 
         public void Stop()
@@ -68,10 +96,11 @@ namespace SuruSavasi.Game
             gameObject.SetActive(false);
         }
 
-        void GoMenu() { Stop(); onMenu?.Invoke(); }
+        public void GoMenu() { Stop(); mode = null; onMenu?.Invoke(); }
 
         void StartLevel(int lv)
         {
+            mode = null;
             level = lv;
             Fails.TryGetValue(lv, out int f);
             var mods = GameServices.Save != null ? Progress.BuildMods(GameServices.Save.Data) : new BattleMods();
@@ -223,13 +252,14 @@ namespace SuruSavasi.Game
                 float k = (Input.GetKey(KeyCode.LeftArrow) ? -1 : 0) + (Input.GetKey(KeyCode.RightArrow) ? 1 : 0);
                 if (k != 0) sim.tx = Mathf.Clamp(sim.x + k * 60, 0, Field.W);
                 if (Input.GetKeyDown(KeyCode.Space)) sim.UseSkill();
+                if (mode != null && mode.TimeLimit > 0 && sim.t >= mode.TimeLimit) sim.ForceEnd(false);
 #if UNITY_EDITOR
                 // Test kısayolları (sadece Editor'de): K = yenil, PageUp/PageDown = bölüm değiştir
                 if (Input.GetKeyDown(KeyCode.K)) sim.DamageSquad(sim.n + 999);
-                if (Input.GetKeyDown(KeyCode.PageUp)) { StartLevel(Mathf.Min(Balance.MaxLevel, level + 1)); return; }
-                if (Input.GetKeyDown(KeyCode.PageDown)) { StartLevel(Mathf.Max(1, level - 1)); return; }
+                if (mode == null && Input.GetKeyDown(KeyCode.PageUp)) { StartLevel(Mathf.Min(Balance.MaxLevel, level + 1)); return; }
+                if (mode == null && Input.GetKeyDown(KeyCode.PageDown)) { StartLevel(Mathf.Max(1, level - 1)); return; }
 #endif
-                sim.Step(Mathf.Min(Time.deltaTime, .05f));
+                if (sim.Live) sim.Step(Mathf.Min(Time.deltaTime, .05f));
                 if (!sim.Live) OnBattleEnd();
             }
             else sim.Step(Mathf.Min(Time.deltaTime, .05f)); // yazılar sönsün
@@ -345,6 +375,13 @@ namespace SuruSavasi.Game
 
         void OnBattleEnd()
         {
+            if (mode != null)
+            {
+                mode.OnEnd(sim);
+                GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelEnd, new Dictionary<string, object>
+                    { { "level", level }, { "mode", mode.Id }, { "win", sim.state == BattleState.Won } });
+                return;
+            }
             if (sim.state == BattleState.Won)
             {
                 if (GameServices.Save != null) { var after = Story.After(GameServices.Save.Data, level); if (after != null) DialogBox.Play(after, level, null); }
@@ -462,7 +499,12 @@ namespace SuruSavasi.Game
 
             // Üst bilgi
             var M = BattleData.Maps[sim.map];
-            Text(new Vector2(VW / 2, 22), $"Bölüm {level} · {M.nameTr}", Color.white, label, 400);
+            Text(new Vector2(VW / 2, 22), mode != null ? mode.Title : $"Bölüm {level} · {M.nameTr}", mode != null ? C("#ffd23f") : Color.white, label, 400);
+            if (mode != null && sim.Live)
+            {
+                string hud = mode.Hud(sim);
+                if (!string.IsNullOrEmpty(hud)) Text(new Vector2(VW / 2, 112), hud, Color.white, label, 400);
+            }
             float hpF = sim.hhp / Mathf.Max(1, sim.HeroMax);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .6f), 0, 0);
             GUI.DrawTexture(new Rect(VW / 2 - 100, 40, 200 * hpF, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#8be39d"), 0, 0);
@@ -476,9 +518,14 @@ namespace SuruSavasi.Game
                 GUI.DrawTexture(new Rect(VW / 2 - 140, 82, 280 * Mathf.Clamp01(B.hp / B.max), 12), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#ff5a4d"), 0, 0);
             }
             if (sim.t < 2.6f && sim.Live)
-                Text(new Vector2(VW / 2, 300), $"BÖLÜM {level}", Color.white, big, 400);
+                Text(new Vector2(VW / 2, 300), mode != null ? mode.Intro : $"BÖLÜM {level}", Color.white, big, 400);
 
-            if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), "Üs", btn)) { GoMenu(); return; }
+            if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), mode != null ? "Pes et" : "Üs", btn))
+            {
+                // Modda çıkış = yenilgi (kat/deneme hile ile tekrarlanmasın); sonuç ekranı açılır
+                if (mode != null) { sim.ForceEnd(false); OnBattleEnd(); } else GoMenu();
+                return;
+            }
 
             // Yetenek butonu
             if (sim.Live)
@@ -493,6 +540,7 @@ namespace SuruSavasi.Game
 
         void DrawResult(float VW)
         {
+            if (mode != null) { mode.DrawResult(this, VW); return; }
             float pw = Mathf.Min(360, VW - 20), px = VW / 2 - pw / 2, py = 230;
             bool won = sim.state == BattleState.Won;
             var sd = GameServices.Save?.Data;

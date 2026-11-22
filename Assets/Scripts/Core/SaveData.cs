@@ -59,6 +59,14 @@ namespace SuruSavasi.Core
         // Senaryo: görülen hikâye sahneleri
         public List<string> seenScenes = new List<string>();
 
+        // Oyun modları: Kule Tırmanışı (roguelite) ve Patron Avı (günlük patron)
+        public string modeDay = "";
+        public int towerRuns, towerAdRuns, towerBest, towerFloor;   // towerFloor > 0: devam eden koşunun sıradaki katı
+        public bool towerRevived;
+        public List<string> towerBoons = new List<string>();
+        public int huntTries, huntAdTries, huntBest, huntTiers;     // huntBest: bugünkü en iyi hasar (binde), huntTiers: alınan kademe bitleri
+        public int huntBestEver;
+
         // Hikâye görevleri
         public int storyIndex;
         public List<string> questKeys = new List<string>(), storyBase = new List<string>();
@@ -113,6 +121,8 @@ namespace SuruSavasi.Core
             if (d.gear == null) d.gear = new List<Meta.GearItem>();
             if (d.equipped == null || d.equipped.Length < 3) d.equipped = new int[3];
             if (d.seenScenes == null) d.seenScenes = new List<string>();
+            if (d.towerBoons == null) d.towerBoons = new List<string>();
+            if (d.modeDay == null) d.modeDay = "";
             if (d.questKeys == null) d.questKeys = new List<string>();
             if (d.questVals == null) d.questVals = new List<int>();
             if (d.storyBase == null) d.storyBase = new List<string>();
