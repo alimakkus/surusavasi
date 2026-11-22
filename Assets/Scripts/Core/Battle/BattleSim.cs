@@ -90,8 +90,8 @@ namespace SuruSavasi.Core.Battle
             float tgt = o.hp <= 0 ? o.v : (float)Math.Floor(o.v * (1 - o.hp / o.max)), nw = tgt - o.rel, sy = Osy(o);
             if (nw > 0)
             {
-                o.rel = tgt; n += nw; if (n > peak) peak = n;
-                AddFloat(o.x, sy - 22, "+" + nw, "#8be39d"); Emit("pickup", o.x, sy);
+                o.rel = tgt; float gain = nw * mods.barrelMul; n += gain; if (n > peak) peak = n;
+                AddFloat(o.x, sy - 22, "+" + Fmt(gain), "#8be39d"); Emit("pickup", o.x, sy);
             }
             if (o.hp <= 0)
             {
@@ -220,7 +220,7 @@ namespace SuruSavasi.Core.Battle
             if (n > peak) peak = n;
             string txt = LevelGen.GateText(pick);
             AddFloat(x, Field.SQY - 60, txt + (n != before && (pick.gk == GateFx.Add || pick.gk == GateFx.Mul) ? $"  ({Fmt(n)})" : ""), LevelGen.GateGood(pick) ? "#8be39d" : "#ff8a80");
-            Emit(LevelGen.GateGood(pick) ? "revive" : "hurt", x, Field.SQY);
+            Emit(LevelGen.GateGood(pick) ? "gate_good" : "gate_bad", x, Field.SQY);
         }
 
         /// <summary>Bot ve ipuçları için: kapının asker cinsinden yaklaşık değeri.</summary>
@@ -321,7 +321,7 @@ namespace SuruSavasi.Core.Battle
                         if (sy > 0 && sy < Field.SQY) anyTarget = true;
                         if (sy > Field.SQY - 22 && sy < Field.SQY + 22 && Math.Abs(o.x - x) < contactR)
                         {
-                            float pv = Math.Max(1, (float)Math.Ceiling(Math.Ceiling(o.v) * mods.guard));
+                            float pv = Math.Max(1, (float)Math.Ceiling(Math.Ceiling(o.v) * mods.guard * mods.boardMul));
                             o.done = true; DamageSquad(pv); AddFloat(o.x, sy, "−" + pv, "#ff8a80"); Emit("hurt", o.x, sy);
                         }
                         else if (sy > Field.H + 30) o.done = true;
@@ -360,7 +360,7 @@ namespace SuruSavasi.Core.Battle
                         {
                             int tl = side == 0 ? turretL : turretR; if (tl <= 0) continue;
                             float tx0 = side == 0 ? 26 : Field.W - 26;
-                            bullets.Add(new Bullet { x = tx0, y = Field.SQY - 40, vy = mods.bulletVy, dmg = turretDmg * tl, life = mods.bulletLife });
+                            bullets.Add(new Bullet { x = tx0, y = Field.SQY - 40, vy = mods.bulletVy, dmg = turretDmg * tl * mods.turretMul, life = mods.bulletLife });
                         }
                 }
 

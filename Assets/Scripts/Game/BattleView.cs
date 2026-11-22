@@ -37,8 +37,26 @@ namespace SuruSavasi.Game
         /// <summary>Menüye dön butonuna basılınca çağrılır (GameFlow bağlar).</summary>
         public System.Action onMenu;
 
+        // ---------- His paketi: başlık bandı, sayı zıplaması, vuruş yavaşlatma ----------
+        public static BattleView Current { get; private set; }
+        string bannerText, bannerSub, bannerColor = "#ffffff"; float bannerT, bannerDur;
+        float countPop, countHurt, lastN, slowT, gateFlash; Color gateFlashCol;
+        bool bossBannerShown; int lastTick = -1;
+
+        /// <summary>Ekranın ortasından kayarak geçen büyük başlık (bölüm, dalga, kat, patron).</summary>
+        public void Banner(string text, string sub = null, string color = "#ffffff", float dur = 1.9f)
+        { bannerText = text; bannerSub = sub; bannerColor = color; bannerT = 0; bannerDur = dur; }
+
+        void ResetJuice()
+        {
+            bannerText = null; countPop = countHurt = slowT = gateFlash = 0; lastN = sim != null ? sim.n : 0;
+            bossBannerShown = false; lastTick = -1;
+            SoundFx.Ambient("battle");
+        }
+
         void Init()
         {
+            Current = this;
             if (ready) return;
             ready = true;
             cam = Camera.main;
@@ -87,6 +105,8 @@ namespace SuruSavasi.Game
             heroIndex = Progress.HeroIndex(mods.heroId);
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", level }, { "mode", m.Id } });
+            ResetJuice();
+            Banner(m.Intro, m.Title, "#ffd23f");
         }
 
         public void Stop()
@@ -96,7 +116,7 @@ namespace SuruSavasi.Game
             gameObject.SetActive(false);
         }
 
-        public void GoMenu() { Stop(); mode = null; onMenu?.Invoke(); }
+        public void GoMenu() { Stop(); mode = null; SoundFx.Ambient(null); onMenu?.Invoke(); }
 
         void StartLevel(int lv)
         {
@@ -115,6 +135,8 @@ namespace SuruSavasi.Game
             heroIndex = Progress.HeroIndex(mods.heroId);
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", lv } });
+            ResetJuice();
+            Banner($"BÖLÜM {lv}", BattleData.Maps[sim.map].nameTr + (Story.Chapter(lv) >= 0 ? " · " + Story.ChapterNames[Mathf.Clamp(Story.Chapter(lv), 0, Story.ChapterNames.Length - 1)] : ""), lv % 10 == 0 ? "#ff8a80" : "#ffffff");
             // Hikâye: bölüm açılışı / patron öncesi sahne
             if (GameServices.Save != null) DialogBox.Play(Story.Before(GameServices.Save.Data, lv), lv, null);
         }
@@ -204,18 +226,37 @@ namespace SuruSavasi.Game
                 case "barrel": SoundFx.Play("board"); Burst(x, y - 8, 22, new[] { "#c98d49", "#6a3a14", "#ffd23f" }, 100, 50); break;
                 case "power": SoundFx.Play("power"); Burst(x, y - 10, 26, new[] { "#ffffff", "#ffd23f", "#2fb6c9" }, 130, 60); break;
                 case "kill": SoundFx.Play("kill"); Burst(x, y - 8, 20, new[] { "#8dbd80", "#5f8f55", "#e9f26c" }, 110, 30); Splat(x, y); break;
-                case "bigkill": SoundFx.Play("boom"); shake = Mathf.Max(shake, 6); Burst(x, y - 20, 30, new[] { "#ffd23f", "#ffffff", "#ff7a3a" }, 150, 40); Splat(x, y); break;
+                case "gate_good":
+                    SoundFx.Play("gate_good"); gateFlash = 1; gateFlashCol = C("#5ad1ff");
+                    Burst(x, y - 20, 36, new[] { "#5ad1ff", "#ffffff", "#8be39d", "#ffd23f" }, 170, 70); break;
+                case "gate_bad":
+                    SoundFx.Play("gate_bad"); gateFlash = 1; gateFlashCol = C("#ff3b30"); shake = Mathf.Max(shake, 8);
+                    Burst(x, y - 20, 30, new[] { "#ff5a4d", "#b8322b", "#2b0f0f" }, 140, 40); break;
+                case "bigkill": slowT = Mathf.Max(slowT, .12f); SoundFx.Play("boom"); shake = Mathf.Max(shake, 6); Burst(x, y - 20, 30, new[] { "#ffd23f", "#ffffff", "#ff7a3a" }, 150, 40); Splat(x, y); break;
                 case "boom": SoundFx.Play("boom"); shake = Mathf.Max(shake, 3); Burst(x, y, 16, new[] { "#ff9a3a", "#ffd23f", "#ffffff" }, 110, 30); break;
                 case "spit": SoundFx.Play("spit"); break;
                 case "hurt": SoundFx.Play("hurt"); shake = Mathf.Max(shake, 6); Burst(x, y, 22, new[] { "#ff5a4d", "#b8322b", "#8dbd80" }, 110, 30); break;
                 case "board": SoundFx.Play("board"); Burst(x, y, 18, new[] { "#b8322b", "#ffb3ab", "#6c4a2e" }, 90, 30); break;
                 case "block": Burst(x, y, 8, new[] { "#ffffff", "#b6ff5a" }, 60, 10); break;
                 case "skill": SoundFx.Play("skill"); shake = Mathf.Max(shake, 5); flash = 1; break;
-                case "bossin": SoundFx.Play("boss"); break;
-                case "bossdead": shake = 9; Burst(x, y - 20, 60, new[] { "#ffd23f", "#ffffff", "#8be39d", "#cbb8ff" }, 160, 60); break;
-                case "win": SoundFx.Play("win"); break;
-                case "lose": SoundFx.Play("lose"); shake = 8; Burst(x, Field.SQY - 6, 40, new[] { "#2f6fb3", "#cfe3f7", "#ff5a4d" }, 130, 40); break;
-                case "revive": SoundFx.Play("power"); Burst(x, Field.SQY, 30, new[] { "#8be39d", "#ffffff" }, 120, 40); break;
+                case "bossin":
+                    if (!bossBannerShown && sim.boss != null)
+                    {
+                        bossBannerShown = true; shake = Mathf.Max(shake, sim.boss.isBoss ? 12 : 6);
+                        SoundFx.Play(sim.boss.isBoss ? "roar" : "boss");
+                        if (sim.boss.isBoss) { Banner("PATRON", sim.boss.name, "#ff5a4d", 2.2f); SoundFx.Ambient("boss_fight"); }
+                        else Banner("ELİT", sim.boss.name, "#ffb02e", 1.6f);
+                    }
+                    else { SoundFx.Play("roar"); shake = Mathf.Max(shake, 10); Banner("ÖFKELENDİ!", "Zırhı çatladı: şimdi vur!", "#ffb02e", 1.5f); }
+                    break;
+                case "bossdead": slowT = .45f; shake = 9; SoundFx.Play("boom"); Burst(x, y - 20, 60, new[] { "#ffd23f", "#ffffff", "#8be39d", "#cbb8ff" }, 160, 60); break;
+                case "win":
+                    SoundFx.Play("win"); SoundFx.Ambient(null);
+                    // Konfeti: üstten renkli yağmur
+                    for (int cf = 0; cf < 6; cf++) Burst(40 + cf * 56, 40, 14, new[] { "#ffd23f", "#8be39d", "#5ad1ff", "#ff6f91", "#c9b8ff" }, 120, 10);
+                    break;
+                case "lose": SoundFx.Play("lose"); SoundFx.Ambient(null); shake = 8; Burst(x, Field.SQY - 6, 40, new[] { "#2f6fb3", "#cfe3f7", "#ff5a4d" }, 130, 40); break;
+                case "revive": SoundFx.Play("power"); SoundFx.Ambient(sim.boss != null && sim.boss.isBoss ? "boss_fight" : "battle"); Burst(x, Field.SQY, 30, new[] { "#8be39d", "#ffffff" }, 120, 40); break;
             }
         }
 
@@ -260,13 +301,28 @@ namespace SuruSavasi.Game
                 if (mode == null && Input.GetKeyDown(KeyCode.PageDown)) { StartLevel(Mathf.Max(1, level - 1)); return; }
 #endif
                 if (mode != null && mode.Paused) { Render(); return; }
-                if (sim.Live) sim.Step(Mathf.Min(Time.deltaTime, .05f));
-                if (mode != null && sim.Live) mode.Tick(sim, Mathf.Min(Time.deltaTime, .05f));
+                // Vuruş yavaşlatma: dev düşman / patron ölünce an kısa süre ağırlaşır
+                float sdt = Mathf.Min(Time.deltaTime, .05f) * (slowT > 0 ? .2f : 1);
+                slowT = Mathf.Max(0, slowT - Time.unscaledDeltaTime);
+                if (sim.Live) sim.Step(sdt);
+                if (mode != null && sim.Live) mode.Tick(sim, sdt);
+                // Son 10 saniye tik sesi (süreli modlar)
+                if (mode != null && mode.TimeLimit > 0 && sim.Live)
+                {
+                    int left = Mathf.CeilToInt(mode.TimeLimit - sim.t);
+                    if (left <= 10 && left != lastTick) { lastTick = left; SoundFx.Play("tick"); }
+                }
                 if (!sim.Live) OnBattleEnd();
             }
             else sim.Step(Mathf.Min(Time.deltaTime, .05f)); // yazılar sönsün
 
             float dt = Mathf.Min(Time.deltaTime, .05f);
+            // Ordu sayısı değişince zıplasın: artınca yeşil, azalınca kırmızı
+            if (sim.n > lastN + .5f) countPop = 1; else if (sim.n < lastN - .5f) countHurt = 1;
+            lastN = sim.n;
+            countPop = Mathf.Max(0, countPop - dt * 3); countHurt = Mathf.Max(0, countHurt - dt * 3);
+            gateFlash = Mathf.Max(0, gateFlash - dt * 2.5f);
+            bannerT += Time.unscaledDeltaTime;
             foreach (var p in parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.life -= dt; }
             parts.RemoveAll(p => p.life <= 0);
             shake = Mathf.Max(0, shake - dt * 22); flash = Mathf.Max(0, flash - dt * 2.5f);
@@ -496,6 +552,42 @@ namespace SuruSavasi.Game
             GUI.color = old;
         }
 
+        void ScaledText(Vector2 p, string s, Color c, GUIStyle st, float scale, float w = 170)
+        {
+            if (Mathf.Abs(scale - 1) < .01f) { Text(p, s, c, st, w); return; }
+            var m = GUI.matrix;
+            GUI.matrix = m * Matrix4x4.TRS(new Vector3(p.x, p.y, 0), Quaternion.identity, new Vector3(scale, scale, 1)) * Matrix4x4.TRS(new Vector3(-p.x, -p.y, 0), Quaternion.identity, Vector3.one);
+            Text(p, s, c, st, w);
+            GUI.matrix = m;
+        }
+
+        GUIStyle bannerSt, bannerSubSt;
+        void DrawBanner(float VW)
+        {
+            if (gateFlash > 0) GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(gateFlashCol.r, gateFlashCol.g, gateFlashCol.b, gateFlash * .22f), 0, 0);
+            if (bannerText == null || bannerT > bannerDur) return;
+            bannerSt ??= new GUIStyle(UiSkin.Big) { alignment = TextAnchor.MiddleCenter, fontSize = 40, richText = true };
+            bannerSubSt ??= new GUIStyle(UiSkin.Label) { alignment = TextAnchor.MiddleCenter, fontSize = 16, richText = true };
+            // Giriş: soldan kayar, ortada durur, sağa kayıp çıkar
+            float t = bannerT, inT = .28f, outT = bannerDur - .3f;
+            float ox = t < inT ? Mathf.Lerp(-VW, 0, 1 - Mathf.Pow(1 - t / inT, 3)) : t > outT ? Mathf.Lerp(0, VW, Mathf.Pow((t - outT) / .3f, 2)) : 0;
+            float a = t > outT ? 1 - (t - outT) / .3f : 1;
+            float y = 270;
+            GUI.DrawTexture(new Rect(ox - 20, y - 46, VW + 40, 92 + (bannerSub != null ? 22 : 0)), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f * a), 0, 0);
+            var bc = C(bannerColor); bc.a = a;
+            GUI.DrawTexture(new Rect(ox - 20, y - 46, VW + 40, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, bc, 0, 0);
+            GUI.DrawTexture(new Rect(ox - 20, y + 43 + (bannerSub != null ? 22 : 0), VW + 40, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, bc, 0, 0);
+            float pulse = t < inT + .15f ? 1 + .25f * Mathf.Max(0, 1 - (t - inT) / .15f) * (t > inT ? 1 : 0) : 1;
+            var old = GUI.color;
+            var m = GUI.matrix; var pv = new Vector3(VW / 2 + ox, y, 0);
+            GUI.matrix = m * Matrix4x4.TRS(pv, Quaternion.identity, new Vector3(pulse, pulse, 1)) * Matrix4x4.TRS(-pv, Quaternion.identity, Vector3.one);
+            GUI.color = new Color(0, 0, 0, .8f * a); GUI.Label(new Rect(ox + 2, y - 28 + 2, VW, 60), $"<b>{bannerText}</b>", bannerSt);
+            GUI.color = bc; GUI.Label(new Rect(ox, y - 28, VW, 60), $"<b>{bannerText}</b>", bannerSt);
+            GUI.matrix = m;
+            if (bannerSub != null) { GUI.color = new Color(1, 1, 1, a); GUI.Label(new Rect(ox, y + 30, VW, 30), bannerSub, bannerSubSt); }
+            GUI.color = old;
+        }
+
         void OnGUI()
         {
             if (sim == null || cam == null) return;
@@ -524,8 +616,18 @@ namespace SuruSavasi.Game
                     Text(ToGui(o.x, sy), gt, LevelGen.GateGood(o) ? Color.white : C("#ffd0d0"), gt.Length <= 5 ? big : label, 170);
                 }
             }
-            foreach (var f in sim.floats) { var c = C(f.color); c.a = Mathf.Clamp01(f.life * 1.5f); Text(ToGui(f.x, f.y), f.text, c, label); }
-            if (sim.state != BattleState.Lost) Text(ToGui(sim.x, Field.SQY + 34), BattleSim.Fmt(sim.n), Color.white, big);
+            foreach (var f in sim.floats)
+            {
+                // Yazılar büyüyerek belirir, sonra söner
+                var c = C(f.color); c.a = Mathf.Clamp01(f.life * 1.5f);
+                float age = 1 - f.life, sc = age < .12f ? Mathf.Lerp(1.7f, 1f, age / .12f) : 1;
+                ScaledText(ToGui(f.x, f.y), f.text, c, label, sc);
+            }
+            if (sim.state != BattleState.Lost)
+            {
+                var nc = Color.Lerp(Color.Lerp(Color.white, C("#8be39d"), countPop), C("#ff6a5a"), countHurt);
+                ScaledText(ToGui(sim.x, Field.SQY + 34), BattleSim.Fmt(sim.n), nc, big, 1 + .45f * countPop * countPop + .2f * countHurt);
+            }
 
             // Üst bilgi
             var M = BattleData.Maps[sim.map];
@@ -547,8 +649,7 @@ namespace SuruSavasi.Game
                 GUI.DrawTexture(new Rect(VW / 2 - 140, 82, 280, 12), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .6f), 0, 0);
                 GUI.DrawTexture(new Rect(VW / 2 - 140, 82, 280 * Mathf.Clamp01(B.hp / B.max), 12), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#ff5a4d"), 0, 0);
             }
-            if (sim.t < 2.6f && sim.Live)
-                Text(new Vector2(VW / 2, 300), mode != null ? mode.Intro : $"BÖLÜM {level}", Color.white, big, 400);
+            DrawBanner(VW);
 
             if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), mode != null ? "Pes et" : "Üs", btn))
             {

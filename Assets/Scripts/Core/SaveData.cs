@@ -66,7 +66,9 @@ namespace SuruSavasi.Core
         public List<string> towerBoons = new List<string>();
         public int huntTries, huntAdTries, huntBest, huntTiers;     // huntBest: bugünkü en iyi hasar (binde), huntTiers: alınan kademe bitleri
         public int huntBestEver;
-        public int survRuns, survAdRuns, survBest;                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
+        public int survRuns, survAdRuns, survBest;
+        public int[] talents = new int[27];   // yetenek ağacı: kahraman × 9 düğüm kademesi
+        public bool talentResetUsed;                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
         // Haftalık lig
         public int leagueWeek, leagueTier, leaguePts;
         public bool leagueResPending; public int leagueResRank, leagueResTier, leagueResNew, leagueResPts;
@@ -126,6 +128,7 @@ namespace SuruSavasi.Core
             if (d.equipped == null || d.equipped.Length < 3) d.equipped = new int[3];
             if (d.seenScenes == null) d.seenScenes = new List<string>();
             if (d.towerBoons == null) d.towerBoons = new List<string>();
+            Meta.Talents.Ensure(d);
             if (d.modeDay == null) d.modeDay = "";
             if (d.questKeys == null) d.questKeys = new List<string>();
             if (d.questVals == null) d.questVals = new List<int>();

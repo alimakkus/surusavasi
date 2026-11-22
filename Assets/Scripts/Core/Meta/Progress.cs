@@ -102,6 +102,7 @@ namespace SuruSavasi.Core.Meta
                 goldMul = 1 + .04f * Eff(d, BuildingKind.Mine),
                 marketMul = 1 + .01f * Eff(d, BuildingKind.Market),
             };
+            Talents.Apply(d, hi, mods);
             Gear.Apply(d, mods);
             return mods;
         }

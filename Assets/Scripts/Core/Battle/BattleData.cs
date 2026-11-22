@@ -112,5 +112,9 @@ namespace SuruSavasi.Core.Battle
         public float bulletLife = 9f, bulletVy = -520f;
         public bool blast;                 // Roketatar
         public float goldMul = 1f, marketMul = 1f; // ödül çarpanları
+        public float barrelMul = 1f;       // fıçılardan gelen asker çarpanı (yetenek ağacı)
+        public float turretMul = 1f;       // savunma kulesi hasar çarpanı
+        public float boardMul = 1f;        // tabelanın götürdüğü asker çarpanı
+        public int startTurret;            // Hayatta Kalma'ya hazır kule
     }
 }

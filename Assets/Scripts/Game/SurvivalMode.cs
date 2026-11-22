@@ -38,6 +38,7 @@ namespace SuruSavasi.Game
             foreach (var o in s.objs) o.done = true;
             s.objs.Clear();
             s.endScroll = float.MaxValue;   // patron yok, dalgalar sonsuz
+            s.turretL = s.mods.startTurret;  // Kaya'nın "Kule Ustası" zirvesi
             s.turretDmg = Balance.StartSoldiers(lv) * Balance.DmgPer(lv) * .3f;
         }
 
@@ -63,7 +64,7 @@ namespace SuruSavasi.Game
                 s.AddFloat(Field.W / 2, Field.SQY - 120, $"Dalga {wave} temizlendi! +{bonus} para", "#ffd23f");
                 // Toplanmamış fıçılar kaybolur, mağaza açılır
                 foreach (var o in s.objs) if (o.kind == ObjKind.Barrel) o.done = true;
-                shop = true;
+                shop = true; SoundFx.Play("coin");
             }
         }
 
@@ -94,10 +95,10 @@ namespace SuruSavasi.Game
             {
                 string big = types.Contains("giant") ? "giant" : types.Contains("brute") ? "brute" : types.Contains("armored") ? "armored" : "walker";
                 s.objs.Add(LevelGen.MakeEnemy(lv, row, big, H, Field.W / 2, baseY - (r + 1) * 115, rnd.NextDouble(), 5f));
-                s.AddFloat(Field.W / 2, Field.SQY - 150, "Dev zombi geliyor!", "#ff8a80");
             }
             s.turretDmg = Balance.StartSoldiers(lv) * Balance.DmgPer(lv) * .3f * Mathf.Pow(1.06f, w - 1);
-            s.AddFloat(Field.W / 2, Field.SQY - 180, $"DALGA {w}", "#ffffff");
+            SoundFx.Play("wave");
+            BattleView.Current?.Banner($"DALGA {w}", w % 5 == 0 ? "Dev zombi geliyor!" : $"{cnt} zombi yaklaşıyor", w % 5 == 0 ? "#ff8a80" : "#ffffff", 1.6f);
         }
 
         // ---------------- Dalga arası mağaza ----------------
@@ -133,7 +134,7 @@ namespace SuruSavasi.Game
         void Buy(BattleSim s, int i, int price)
         {
             coins -= price; bought[i]++;
-            SoundFx.Play("click");
+            SoundFx.Play(i == 3 ? "power" : "coin");
             switch (i)
             {
                 case 0: s.n += Modes.ArmyGain(lv, wave); if (s.n > s.peak) s.peak = s.n; break;

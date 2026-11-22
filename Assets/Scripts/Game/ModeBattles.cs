@@ -88,6 +88,7 @@ namespace SuruSavasi.Game
                 ModeUi.Grant(rw, "tower");
                 text = ModeUi.RewardLine(rw);
                 var g = Modes.MilestoneGear(d, floor, new System.Random());
+                if (g != null) SoundFx.Play("chest");
                 if (g != null) text += $"\n<color={Gear.RarityColors[g.rarity]}><b>Kat {floor} sandığı: {Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>";
                 League.Add(d, League.PtsTowerBase + floor);
                 bool record = floor > d.towerBest;

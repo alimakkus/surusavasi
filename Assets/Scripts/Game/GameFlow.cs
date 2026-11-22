@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -160,6 +160,7 @@ namespace SuruSavasi.Game
                     case GameScreen.Gear: GearScreen.Draw(this, x0, w); break;
                     case GameScreen.Modes: ModesScreen.Draw(this, x0, w); break;
                     case GameScreen.League: LeagueScreen.Draw(this, x0, w); break;
+                    case GameScreen.Talents: TalentScreen.Draw(this, x0, w); break;
                 }
             }
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
@@ -274,6 +275,12 @@ namespace SuruSavasi.Game
                 }
                 else
                 {
+                    // Yetenek ağacı: boş puan varsa nabız atan işaret
+                    int tfree = Talents.Free(D, i);
+                    var trr = new Rect(tx, y + 124, tw, 26);
+                    if (GUI.Button(trr, $"Yetenek Ağacı  <size=11>({(tfree > 0 ? $"<color=#8be39d>{tfree} boş puan</color>" : "puan yok")})</size>", new GUIStyle(UiSkin.Button) { fontSize = 13, richText = true }))
+                    { SoundFx.Play("click"); TalentScreen.Open(this, i); return; }
+                    if (tfree > 0) { float pu = 1 + .15f * Mathf.Sin(Time.time * 6); GUI.DrawTexture(new Rect(trr.xMax - 8 - 5 * pu, trr.y - 4 - 5 * pu, 12 * pu, 12 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 6 * pu); }
                     GUI.enabled = !sel;
                     if (GUI.Button(new Rect(tx, by, bw, 50), sel ? "Seçili" : "Seç", sel ? UiSkin.ButtonGray : UiSkin.ButtonGreen)) { D.hero = H.id; GameServices.Save.Save(); SoundFx.Play("power"); }
                     GUI.enabled = L < Progress.HeroMax;
@@ -283,7 +290,7 @@ namespace SuruSavasi.Game
                         if (Wl.CanAfford(Currency.Gold, cg) && Wl.CanAfford(Currency.Diamonds, ce))
                         {
                             Wl.Spend(Currency.Gold, cg, "hero_up"); Wl.Spend(Currency.Diamonds, ce, "hero_up:" + H.id);
-                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}!"); SoundFx.Play("power");
+                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}! +2 yetenek puanı"); SoundFx.Play("levelup");
                         }
                         else Toast("Yeterli kaynak yok");
                     }

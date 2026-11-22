@@ -23,8 +23,8 @@ namespace SuruSavasi.Game
         readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
         readonly Dictionary<string, float> last = new Dictionary<string, float>();
         static readonly Dictionary<string, float> Gap = new Dictionary<string, float>
-        { { "shot", .11f }, { "hit", .07f }, { "kill", .05f }, { "board", .12f }, { "hurt", .08f }, { "spit", .15f }, { "shot_pierce", .11f }, { "shot_flame", .07f }, { "shot_rocket", .2f } };
-        static readonly HashSet<string> Vib = new HashSet<string> { "hurt", "boom", "skill", "boss", "lose", "win" };
+        { { "shot", .11f }, { "hit", .07f }, { "kill", .05f }, { "board", .12f }, { "hurt", .08f }, { "spit", .15f }, { "shot_pierce", .11f }, { "shot_flame", .07f }, { "shot_rocket", .2f }, { "coin", .06f }, { "tick", .5f }, { "gate_good", .2f }, { "gate_bad", .2f } };
+        static readonly HashSet<string> Vib = new HashSet<string> { "hurt", "boom", "skill", "boss", "lose", "win", "roar", "gate_bad", "chest" };
 
         public static void Ensure()
         {
@@ -134,7 +134,42 @@ namespace SuruSavasi.Game
                     d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * (1 - k) * Mathf.Min(1, k * 20);
                 }
             }
-            switch (key)
+            // Savaş ritmi: davul (kick), trampet, zil ve bas; 12 sn'ye tam oturan tempo (döngü dikişsiz)
+            void Kick(float at, float vol)
+            {
+                int s0 = (int)(at * ASR), m = (int)(.22f * ASR); double ph = 0;
+                for (int i = 0; i < m && s0 + i < n; i++)
+                {
+                    float k = i / (float)m; ph += Mathf.Lerp(130, 42, Mathf.Sqrt(k)) / ASR;
+                    d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * Mathf.Pow(1 - k, 2) * Mathf.Min(1, k * 60);
+                }
+            }
+            void Bass(float at, float f, float dur, float vol)
+            {
+                int s0 = (int)(at * ASR), m = (int)(dur * ASR); double ph = 0;
+                for (int i = 0; i < m && s0 + i < n; i++)
+                {
+                    float k = i / (float)m; ph += f / ASR; float p = (float)(ph - System.Math.Floor(ph));
+                    d[s0 + i] += (2 * p - 1) * .5f * vol * Mathf.Min(1, k * 30) * (1 - k);
+                }
+            }
+            if (key == "battle" || key == "boss_fight")
+            {
+                bool boss = key == "boss_fight";
+                float beat = boss ? .5f : .6f;            // 120 / 100 vuruş/dk: 12 sn'de 24 / 20 vuruş
+                float[] bassNotes = boss ? new[] { 55f, 55f, 58.3f, 49f } : new[] { 55f, 55f, 65.4f, 49f };
+                int bi = 0;
+                for (float t = 0; t < len + fade; t += beat, bi++)
+                {
+                    Kick(t, boss ? .5f : .38f);
+                    if (bi % 2 == 1) Burst(t, .14f, boss ? .1f : .07f, 2200);      // trampet
+                    Burst(t + beat / 2, .03f, .035f, 7000);                         // zil
+                    if (boss) Burst(t + beat * .75f, .02f, .03f, 7000);
+                    if (bi % 2 == 0) Bass(t, bassNotes[(bi / 2) % 4], beat * 1.8f, boss ? .12f : .08f);
+                }
+                if (boss) for (float t = 0; t < len + fade; t += beat * 8) Chirp(t, 220, 208, beat * 7.5f, .02f); // gerilim teli
+            }
+            else switch (key)
             {
                 case "winter":
                     Wind(.09f, 120, 520, 1);
@@ -197,6 +232,20 @@ namespace SuruSavasi.Game
             }
         }
 
+        /// <summary>Kabaran ton (boru/kükreme): yumuşak giriş, hafif titreşim, yumuşak çıkış.</summary>
+        static void Swell(Mix m, float f, float dur, float vol, float delay = 0)
+        {
+            int start = (int)(delay * SR), n = (int)(dur * SR); m.Ensure(start + n + 1);
+            double ph = 0; float amp = vol * 7f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                ph += f * (1 + .012f * Mathf.Sin(t * dur * 6.2832f * 5.5f)) / SR; float p = (float)(ph - System.Math.Floor(ph));
+                float env = Mathf.Min(1, t * 6) * Mathf.Min(1, (1 - t) * 4);
+                m.d[start + i] += (2 * p - 1) * amp * env * .6f;
+            }
+        }
+
         static void Noise(Mix m, float dur, float vol, float freq, float delay = 0)
         {
             int start = (int)(delay * SR), n = (int)(dur * SR); m.Ensure(start + n + 1);
@@ -235,6 +284,17 @@ namespace SuruSavasi.Game
             Add("win", m => { float[] f = { 523, 659, 784, 1047 }; for (int i = 0; i < 4; i++) Tone(m, f[i], f[i], .22f, Wave.Square, .05f, i * .12f); });
             Add("lose", m => { float[] f = { 392, 330, 262, 196 }; for (int i = 0; i < 4; i++) Tone(m, f[i], f[i] * .9f, .3f, Wave.Triangle, .07f, i * .16f); });
             Add("click", m => Tone(m, 660, 880, .05f, Wave.Square, .02f));
+            // ---- His paketi ----
+            Add("gate_good", m => { float[] f = { 660, 880, 1320 }; for (int i = 0; i < 3; i++) Tone(m, f[i], f[i] * 1.06f, .12f, Wave.Square, .04f, i * .05f); Noise(m, .25f, .04f, 5000, .05f); });
+            Add("gate_bad", m => { Tone(m, 300, 110, .32f, Wave.Saw, .06f); Tone(m, 240, 90, .32f, Wave.Square, .03f, .03f); });
+            Add("wave", m => { Swell(m, 110, .9f, .07f); Swell(m, 165, .9f, .05f); Swell(m, 220, .5f, .03f, .45f); Noise(m, .12f, .06f, 400); });
+            Add("roar", m => { Noise(m, 1.0f, .12f, 380); Swell(m, 70, 1.0f, .08f); Swell(m, 52, 1.1f, .07f, .1f); });
+            Add("coin", m => { Tone(m, 1320, 1320, .08f, Wave.Square, .03f); Tone(m, 1760, 1760, .18f, Wave.Square, .03f, .07f); });
+            Add("chest", m => { float[] f = { 1047, 1319, 1568, 2093, 2637 }; for (int i = 0; i < 5; i++) Tone(m, f[i], f[i], .25f, Wave.Sine, .05f, i * .06f); Noise(m, .4f, .03f, 6000, .05f); });
+            Add("levelup", m => { float[] f = { 523, 659, 784, 1047 }; for (int i = 0; i < 4; i++) Tone(m, f[i], f[i], .14f, Wave.Square, .045f, i * .06f); Swell(m, 1047, .35f, .03f, .24f); });
+            Add("promote", m => { float[] f = { 392, 523, 659, 784 }; for (int i = 0; i < 4; i++) Tone(m, f[i], f[i], .18f, Wave.Saw, .04f, i * .1f); Swell(m, 523, .8f, .04f, .4f); Swell(m, 659, .8f, .03f, .4f); Swell(m, 784, .8f, .03f, .4f); });
+            Add("whoosh", m => { Noise(m, .28f, .06f, 1600); Tone(m, 500, 1400, .2f, Wave.Sine, .015f); });
+            Add("tick", m => Tone(m, 1500, 1400, .03f, Wave.Square, .02f));
         }
     }
 }
