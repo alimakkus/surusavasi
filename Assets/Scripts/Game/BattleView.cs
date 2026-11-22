@@ -571,7 +571,7 @@ namespace SuruSavasi.Game
             if (won)
             {
                 Text(new Vector2(VW / 2, py + 76), new string('★', sim.stars) + new string('☆', 3 - sim.stars), C("#ffd23f"), big, pw);
-                Text(new Vector2(VW / 2, py + 112), rewardText, Color.white, label, pw);
+                GUI.Label(new Rect(px + 12, py + 96, pw - 24, 44), rewardText, new GUIStyle(label) { wordWrap = true, fontSize = 13, richText = true });
                 float by = py + 140;
                 if (!doubled && GUI.Button(new Rect(px + 20, by, pw - 40, 50), "▶ Ödülü 2 katına çıkar (reklam)", UiSkin.ButtonGold)) DoubleRewards();
                 by += 60;
