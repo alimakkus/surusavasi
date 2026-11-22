@@ -86,7 +86,7 @@ namespace SuruSavasi.Core.Meta
         {
             int lv = TowerLevel(d, floor);
             var rw = Rewards.ForLevel(lv, 3, false, m);
-            float mul = 1.1f + .08f * floor;
+            float mul = 2f + .15f * floor;
             return new LevelReward { gold = (int)(rw.gold * mul), iron = (int)(rw.iron * mul), food = (int)(rw.food * mul), gems = Array.IndexOf(TowerMilestones, floor) >= 0 ? 10 + floor : 0 };
         }
 
@@ -108,7 +108,7 @@ namespace SuruSavasi.Core.Meta
         // ================= Patron Avı =================
         public const int HuntUnlock = 11;              // ilk patron yenilmiş olmalı
         public const int HuntTriesPerDay = 3, HuntAdPerDay = 1;
-        public const float HuntTime = 75f, HuntHpMul = 3f;
+        public const float HuntTime = 75f, HuntHpMul = 10f;
         public static readonly string[] TierNames = { "Bronz", "Gümüş", "Altın", "Elmas" };
         public static readonly string[] TierColors = { "#d08a4a", "#cfd8dc", "#ffd23f", "#7fe8ff" };
         public static readonly float[] TierAt = { .25f, .5f, .75f, 1f };
@@ -136,7 +136,7 @@ namespace SuruSavasi.Core.Meta
             F.boss = true; F.bossIndex = bi; F.name = BattleData.BossNames[bi]; F.color = BattleData.BossColors[bi];
             F.sc = 3.6f + s.lv / 100f * .8f; F.typeId = null;
             F.hp = (float)Math.Ceiling(F.hp * HuntHpMul);
-            s.SkipToFinal(1.1f);
+            s.SkipToFinal(1f);
         }
 
         public static float HuntFrac(BattleSim s) => s.boss == null ? 0 : Math.Max(0, Math.Min(1, 1 - s.boss.hp / s.boss.max));

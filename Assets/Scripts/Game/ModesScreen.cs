@@ -25,7 +25,7 @@ namespace SuruSavasi.Game
         {
             var rib = new Rect(r.x + 120, r.y + 10, r.width - 132, 34);
             GUI.Box(rib, "", UiSkin.Ribbon);
-            GUI.Label(rib, $"<b><color={col}>{title}</color></b>", ModeUi.Center);
+            GUI.Label(rib, $"<b>{title}</b>", ModeUi.Center);
             GUI.Label(new Rect(r.x + 124, r.y + 46, r.width - 136, 54), sub, new GUIStyle(UiSkin.Small) { wordWrap = true, richText = true });
         }
 
@@ -104,10 +104,10 @@ namespace SuruSavasi.Game
             var art = new Rect(r.x + 12, r.y + 12, 100, 150);
             GUI.DrawTexture(art, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C("#5a1f24"), 0, 10);
             var sp = Art.Boss(bi, (int)(Time.time * 2.5f));
-            if (sp != null) DialogBox.DrawSprite(new Rect(art.x - 6, art.y + 6, art.width + 12, art.height - 4), sp);
+            if (sp != null) DialogBox.DrawSprite(new Rect(art.x - 40, art.y - 20, art.width + 80, art.height + 16), sp);
             GUI.Label(new Rect(art.x - 4, art.yMax + 4, art.width + 8, 40), $"<size=12>Bugünün patronu</size>\n<b>{BattleData.BossNames[bi]}</b>", ModeUi.Small);
 
-            Header(r, "PATRON AVI", $"Koşu yok, ordun hazır! {Modes.HuntTime:0} saniyede patrona en çok hasarı ver. Canı 3 kat. Kademe ödülleri her gün yenilenir.", "#ff8a80");
+            Header(r, "PATRON AVI", $"Koşu yok, ordun hazır! {Modes.HuntTime:0} saniyede patrona en çok hasarı ver. Canı 10 kat! Kademe ödülleri her gün yenilenir.", "#ff8a80");
             if (!Modes.HuntOpen(d)) { Locked(r, Modes.HuntUnlock); return; }
 
             float bx = r.x + 124, bw = r.width - 136, by = r.y + 104;

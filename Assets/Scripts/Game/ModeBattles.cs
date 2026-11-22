@@ -119,7 +119,7 @@ namespace SuruSavasi.Game
                     }
                     GUI.DrawTexture(new Rect(r.x + 10, r.y + 12, 8, r.height - 26), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(b.color), 0, 3);
                     int have = Modes.BoonCount(d, b.id);
-                    GUI.Label(new Rect(r.x + 28, r.y + 6, r.width - 40, 28), $"<b><color={b.color}>{b.name}</color></b>" + (have > 0 ? $"  <size=12>(x{have + 1})</size>" : ""), new GUIStyle(UiSkin.Label) { richText = true });
+                    GUI.Label(new Rect(r.x + 28, r.y + 6, r.width - 40, 28), $"<b>{b.name}</b>" + (have > 0 ? $"  <size=12>(x{have + 1})</size>" : ""), new GUIStyle(UiSkin.Label) { richText = true });
                     GUI.Label(new Rect(r.x + 28, r.y + 32, r.width - 40, 26), b.desc, new GUIStyle(UiSkin.Small) { richText = true });
                     y += 78;
                 }
@@ -139,7 +139,7 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(px + 12, py + 116, pw - 24, 50), text, ModeUi.Center);
             float by = py + 176;
             var sim = v.Sim;
-            if (savedFloor > 0 && !reviving && sim.CanRevive && GUI.Button(new Rect(px + 20, by, pw - 40, 54), "▶ İkinci şans (reklam): koşu devam etsin", UiSkin.ButtonGold))
+            if (savedFloor > 0 && !reviving && sim.CanRevive && GUI.Button(new Rect(px + 20, by, pw - 40, 54), "▶ İkinci şans (reklam)", UiSkin.ButtonGold))
             {
                 reviving = true;
                 Shop.WatchAd(AdPlacement.SecondChance, () =>
@@ -162,7 +162,7 @@ namespace SuruSavasi.Game
     {
         static SaveData D => GameServices.Save.Data;
         public string Id => "hunt";
-        public string Title => "Patron Avı · " + BattleData.BossNames[Modes.HuntBoss(D)];
+        public string Title => "Patron Avı";
         public string Intro => "AV BAŞLASIN!";
         public int Level => Modes.HuntLevel(D);
         public float HardMul => 1;
@@ -239,7 +239,7 @@ namespace SuruSavasi.Game
                 bool got = (claimed & (1 << i)) != 0;
                 var c = ModeUi.C(Modes.TierColors[i]); if (!got) c *= new Color(.55f, .55f, .55f, 1);
                 GUI.DrawTexture(new Rect(x - 9, r.y + 7, 18, 18), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, c, 0, 9);
-                GUI.Label(new Rect(x - 40, r.y + 22, 80, 16), $"<size=11>{Modes.TierNames[i]}</size>", ModeUi.Small);
+                GUI.Label(new Rect(Mathf.Min(x - 40, r.xMax - 64), r.y + 22, 80, 16), $"<size=11>{Modes.TierNames[i]}</size>", ModeUi.Small);
             }
         }
     }
