@@ -123,9 +123,9 @@ namespace SuruSavasi.Game
         }
         /// <summary>Yuvarlak üs zemini: 800x1200 oyun pikseli, ortası köy merkezi.</summary>
         public static Sprite ThemeGround(string themeId) => Single("base_ground_" + themeId, 800);
-        /// <summary>Sur parçası (26x34) ve kule (40x60), alt ortadan.</summary>
-        public static Sprite WallSeg(int tier) => Single("wall_seg_t" + Mathf.Clamp(tier, 0, 5), 26, 2f / 34f);
-        public static Sprite WallTower(int tier) => Single("wall_tower_t" + Mathf.Clamp(tier, 0, 5), 40, 2f / 60f);
+        /// <summary>Sur parçası (30x40) ve kule (46x76), alt ortadan.</summary>
+        public static Sprite WallSeg(int tier) => Single("wall_seg_t" + Mathf.Clamp(tier, 0, 5), 30, 2f / 40f);
+        public static Sprite WallTower(int tier) => Single("wall_tower_t" + Mathf.Clamp(tier, 0, 5), 46, 2f / 76f);
         public static Sprite WallGate(int tier) => Single("wall_gate_t" + Mathf.Clamp(tier, 0, 5), 160, 44f / 160f);
 
         /// <summary>Açılışta ön yüklenecek tüm görseller.</summary>

@@ -91,7 +91,7 @@ namespace SuruSavasi.Game
         /// <summary>Sur parçalarını elips boyunca eşit aralıkla dizer, kuleleri ve dıştaki ağaçları yerleştirir.</summary>
         void BuildScenery()
         {
-            const int N = 720; const float step = 21f; float acc = step;
+            const int N = 720; const float step = 23f; float acc = step;
             Vector2 prev = new Vector2(CX + WallRX, CY);
             for (int i = 1; i <= N; i++)
             {
