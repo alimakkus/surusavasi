@@ -68,7 +68,9 @@ namespace SuruSavasi.Core
         public int huntBestEver;
         public int survRuns, survAdRuns, survBest;
         public int[] talents = new int[27];   // yetenek ağacı: kahraman × 9 düğüm kademesi
-        public bool talentResetUsed;                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
+        public bool talentResetUsed;
+        public int[] chapterChests = new int[10];   // bölüm yıldız sandıkları (bit 0: 15★, bit 1: 30★)
+        public int chapterRevealed = -1;            // "yeni bölge açıldı" gösterilen en yüksek bölüm                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
         // Haftalık lig
         public int leagueWeek, leagueTier, leaguePts;
         public bool leagueResPending; public int leagueResRank, leagueResTier, leagueResNew, leagueResPts;
@@ -129,6 +131,7 @@ namespace SuruSavasi.Core
             if (d.seenScenes == null) d.seenScenes = new List<string>();
             if (d.towerBoons == null) d.towerBoons = new List<string>();
             Meta.Talents.Ensure(d);
+            if (d.chapterChests == null || d.chapterChests.Length < 10) { var cc = new int[10]; d.chapterChests?.CopyTo(cc, 0); d.chapterChests = cc; }
             if (d.modeDay == null) d.modeDay = "";
             if (d.questKeys == null) d.questKeys = new List<string>();
             if (d.questVals == null) d.questVals = new List<int>();

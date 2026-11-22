@@ -721,7 +721,10 @@ namespace SuruSavasi.Game
             float bh = 64, by = 800 - bh - 8, mid = 124, side = (w - mid - 32) / 4;
             GUI.Box(new Rect(x0 - 4, by - 8, w + 8, bh + 16), "", card);
             var sb = new GUIStyle(btn) { fontSize = 12, padding = new RectOffset(2, 2, 2, 2) };
-            if (GUI.Button(new Rect(x0 + 4, by, side, bh), "Bölümler", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Levels); }
+            var lr2 = new Rect(x0 + 4, by, side, bh);
+            if (GUI.Button(lr2, "Bölümler", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Levels); }
+            if (ChapterChests.AnyReady(D) || Story.Chapter(Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel)) > D.chapterRevealed)
+            { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(lr2.xMax - 12 - 6 * pu, lr2.y - 2 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + 10 + side, by, side, bh), "Kahraman", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Heroes); }
             int lv = Mathf.Clamp(D.unlocked, 1, Balance.MaxLevel);
             if (GUI.Button(new Rect(x0 + 16 + side * 2, by - 6, mid, bh + 12), $"SAVAŞ\n<size=13>Bölüm {lv}</size>", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Play(lv); }
