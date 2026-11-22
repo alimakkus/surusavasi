@@ -46,6 +46,15 @@ namespace SuruSavasi.Game
             return Pick(Sheet("elites", 8, 2, 256, 18f / 128f, 200), ti * 2 + (frame & 1));
         }
         public static Sprite Hero(int heroIndex, int frame) => Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), heroIndex * 2 + (frame & 1));
+        static readonly Texture2D[] portraits = new Texture2D[6];
+        /// <summary>Kahraman ekranı için büyük görsel (Resources/Art/heroes/hero_<id>_<kare>.png; özel AI görseli gelince aynı adla değiştirilir).</summary>
+        public static Texture2D HeroPortrait(int heroIndex, int frame)
+        {
+            string[] ids = { "ayaz", "kaya", "mira" };
+            int i = Mathf.Clamp(heroIndex, 0, 2) * 2 + (frame & 1);
+            if (portraits[i] == null) { portraits[i] = Resources.Load<Texture2D>($"Art/heroes/hero_{ids[i / 2]}_{i % 2}"); if (portraits[i] != null) portraits[i].hideFlags = HideFlags.DontUnloadUnusedAsset; }
+            return portraits[i];
+        }
         public static Sprite Soldier(int k) => Pick(Sheet("units", 10, 1, 192, 34f / 96f, 200), 6 + (k & 3));
         /// <summary>0 fıçı, 1 çift ateş, 2 hızlı ateş, 3 patlayıcı, 4 tabela.</summary>
         public static Sprite Prop(int i) => Pick(Sheet("props", 5, 1, 256, .5f, 200), i);

@@ -230,38 +230,55 @@ namespace SuruSavasi.Game
             GUI.Label(new Rect(x0 + 100, 48, w - 220, 40), $"<b>Kahramanlar</b>  (★ {Progress.TotalStars(D)})", label);
             if (GUI.Button(new Rect(x0 + w - 116, 48, 116, 40), "Ekipman", UiSkin.ButtonGold)) { SoundFx.Play("click"); Show(GameScreen.Gear); return; }
             float y = 100;
+            string[] tint = { "#7a5cff", "#ff6a3a", "#2ad6b0" };
             for (int i = 0; i < Progress.Heroes.Length; i++)
             {
                 var H = Progress.Heroes[i]; int L = Progress.HeroLevel(D, i); bool open = Progress.HeroOpen(D, i), sel = D.hero == H.id;
-                GUI.Box(new Rect(x0, y, w, 200), "", card);
-                GUI.Label(new Rect(x0 + 12, y + 6, w - 24, 28), $"<b>{H.name}</b> — {H.role}   <color=#ffd23f>Sv. {L}/{Progress.HeroMax}</color>{(sel ? "  <color=#8be39d>(seçili)</color>" : "")}", label);
-                GUI.Label(new Rect(x0 + 12, y + 34, w - 24, 44), $"<b>{H.skill}:</b> {H.skillDesc}", small);
-                GUI.Label(new Rect(x0 + 12, y + 78, w - 24, 24), $"Özellik: {H.perk}", small);
-                GUI.Label(new Rect(x0 + 12, y + 100, w - 24, 24), $"5. seviye: {H.lv5}", small);
-                GUI.Label(new Rect(x0 + 12, y + 122, w - 24, 24), $"Her seviye: hasar +%3", small);
-                float by = y + 148, bw = (w - 36) / 2;
+                float ch = 214;
+                GUI.Box(new Rect(x0, y, w, ch), "", sel ? UiSkin.CardGold : card);
+                // Portre: renkli arka plan, nefes alan kahraman, seviye rozeti
+                var pr = new Rect(x0 + 10, y + 10, 132, ch - 20);
+                ColorUtility.TryParseHtmlString(tint[i], out var tc);
+                GUI.DrawTexture(pr, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(tc.r * .35f, tc.g * .35f, tc.b * .35f, .95f), 0, 10);
+                GUI.DrawTexture(new Rect(pr.x + 4, pr.y + pr.height * .45f, pr.width - 8, pr.height * .55f - 4), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(tc.r, tc.g, tc.b, .25f), 0, 8);
+                var port = Art.HeroPortrait(i, Mathf.FloorToInt(Time.time * 1.6f + i));
+                if (port != null)
+                {
+                    float bob = Mathf.Sin(Time.time * 2.2f + i) * 3;
+                    var old = GUI.color; if (!open) GUI.color = new Color(0, 0, 0, .85f);
+                    GUI.DrawTexture(new Rect(pr.x - 14, pr.y - 6 + bob, pr.width + 28, pr.width + 28), port, ScaleMode.ScaleToFit);
+                    GUI.color = old;
+                }
+                if (!open) GUI.Label(new Rect(pr.x, pr.y + pr.height / 2 - 20, pr.width, 40), "<b>KİLİTLİ</b>", new GUIStyle(label) { alignment = TextAnchor.MiddleCenter });
+                GUI.Box(new Rect(pr.x + 6, pr.yMax - 34, pr.width - 12, 28), $"Sv. {L}/{Progress.HeroMax}", new GUIStyle(UiSkin.Ribbon) { fontSize = 14 });
+
+                float tx = x0 + 152, tw = w - 164;
+                GUI.Label(new Rect(tx, y + 8, tw, 28), $"<b><size=20>{H.name}</size></b>  <color=#c9d3e0>{H.role}</color>", label);
+                GUI.Label(new Rect(tx, y + 36, tw, 48), $"<color=#ffd23f><b>{H.skill}:</b></color> {H.skillDesc}", new GUIStyle(small) { fontSize = 13 });
+                GUI.Label(new Rect(tx, y + 84, tw, 40), $"<color=#8be39d>●</color> {H.perk}\n<color=#9fe8ff>●</color> 5. seviye: {H.lv5}", new GUIStyle(small) { fontSize = 12 });
+                float by = y + ch - 62, bw = (tw - 8) / 2;
                 if (!open)
                 {
-                    GUI.enabled = false; GUI.Button(new Rect(x0 + 12, by, w - 24, 42), $"Kilitli: {H.reqStars} yıldız gerekli", btn); GUI.enabled = true;
+                    GUI.enabled = false; GUI.Button(new Rect(tx, by, tw, 50), $"{H.reqStars} yıldızla açılır", UiSkin.ButtonGray); GUI.enabled = true;
                 }
                 else
                 {
                     GUI.enabled = !sel;
-                    if (GUI.Button(new Rect(x0 + 12, by, bw, 42), sel ? "Seçili" : "Seç", btn)) { D.hero = H.id; GameServices.Save.Save(); }
+                    if (GUI.Button(new Rect(tx, by, bw, 50), sel ? "Seçili" : "Seç", sel ? UiSkin.ButtonGray : UiSkin.ButtonGreen)) { D.hero = H.id; GameServices.Save.Save(); SoundFx.Play("power"); }
                     GUI.enabled = L < Progress.HeroMax;
                     int cg = Progress.HeroCostGold(L), ce = Progress.HeroCostGems(L);
-                    if (GUI.Button(new Rect(x0 + 24 + bw, by, bw, 42), L < Progress.HeroMax ? $"Yükselt: {cg} altın + {ce} elmas" : "En üst seviye", new GUIStyle(btn) { fontSize = 14 }))
+                    if (GUI.Button(new Rect(tx + bw + 8, by, bw, 50), L < Progress.HeroMax ? $"Yükselt\n<size=11>{UiSkin.Short(cg)} altın + {ce} elmas</size>" : "En üst", new GUIStyle(UiSkin.ButtonGold) { fontSize = 16 }))
                     {
                         if (Wl.CanAfford(Currency.Gold, cg) && Wl.CanAfford(Currency.Diamonds, ce))
                         {
                             Wl.Spend(Currency.Gold, cg, "hero_up"); Wl.Spend(Currency.Diamonds, ce, "hero_up:" + H.id);
-                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}!");
+                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}!"); SoundFx.Play("power");
                         }
                         else Toast("Yeterli kaynak yok");
                     }
                     GUI.enabled = true;
                 }
-                y += 210;
+                y += 224;
             }
         }
 
