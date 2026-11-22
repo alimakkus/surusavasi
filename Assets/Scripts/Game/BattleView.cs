@@ -51,7 +51,7 @@ namespace SuruSavasi.Game
         {
             bannerText = null; countPop = countHurt = slowT = gateFlash = 0; lastN = sim != null ? sim.n : 0;
             bossBannerShown = false; lastTick = -1;
-            SoundFx.Ambient("battle");
+            SoundFx.Music("battle");
         }
 
         void Init()
@@ -116,7 +116,7 @@ namespace SuruSavasi.Game
             gameObject.SetActive(false);
         }
 
-        public void GoMenu() { Stop(); mode = null; SoundFx.Ambient(null); onMenu?.Invoke(); }
+        public void GoMenu() { Stop(); mode = null; onMenu?.Invoke(); }
 
         void StartLevel(int lv)
         {
@@ -244,19 +244,19 @@ namespace SuruSavasi.Game
                     {
                         bossBannerShown = true; shake = Mathf.Max(shake, sim.boss.isBoss ? 12 : 6);
                         SoundFx.Play(sim.boss.isBoss ? "roar" : "boss");
-                        if (sim.boss.isBoss) { Banner("PATRON", sim.boss.name, "#ff5a4d", 2.2f); SoundFx.Ambient("boss_fight"); }
+                        if (sim.boss.isBoss) { Banner("PATRON", sim.boss.name, "#ff5a4d", 2.2f); SoundFx.Music("boss_fight"); }
                         else Banner("ELİT", sim.boss.name, "#ffb02e", 1.6f);
                     }
                     else { SoundFx.Play("roar"); shake = Mathf.Max(shake, 10); Banner("ÖFKELENDİ!", "Zırhı çatladı: şimdi vur!", "#ffb02e", 1.5f); }
                     break;
                 case "bossdead": slowT = .45f; shake = 9; SoundFx.Play("boom"); Burst(x, y - 20, 60, new[] { "#ffd23f", "#ffffff", "#8be39d", "#cbb8ff" }, 160, 60); break;
                 case "win":
-                    SoundFx.Play("win"); SoundFx.Ambient(null);
+                    SoundFx.Play("win"); SoundFx.Music("victory");
                     // Konfeti: üstten renkli yağmur
                     for (int cf = 0; cf < 6; cf++) Burst(40 + cf * 56, 40, 14, new[] { "#ffd23f", "#8be39d", "#5ad1ff", "#ff6f91", "#c9b8ff" }, 120, 10);
                     break;
-                case "lose": SoundFx.Play("lose"); SoundFx.Ambient(null); shake = 8; Burst(x, Field.SQY - 6, 40, new[] { "#2f6fb3", "#cfe3f7", "#ff5a4d" }, 130, 40); break;
-                case "revive": SoundFx.Play("power"); SoundFx.Ambient(sim.boss != null && sim.boss.isBoss ? "boss_fight" : "battle"); Burst(x, Field.SQY, 30, new[] { "#8be39d", "#ffffff" }, 120, 40); break;
+                case "lose": SoundFx.Play("lose"); SoundFx.Music(null); shake = 8; Burst(x, Field.SQY - 6, 40, new[] { "#2f6fb3", "#cfe3f7", "#ff5a4d" }, 130, 40); break;
+                case "revive": SoundFx.Play("power"); SoundFx.Music(sim.boss != null && sim.boss.isBoss ? "boss_fight" : "battle"); Burst(x, Field.SQY, 30, new[] { "#8be39d", "#ffffff" }, 120, 40); break;
             }
         }
 

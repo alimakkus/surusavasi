@@ -808,7 +808,9 @@ namespace SuruSavasi.Game
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);
-                if (GUI.Button(new Rect(x + 20, y + 64, w - 40, 50), SoundFx.Muted ? "Ses: Kapalı" : "Ses: Açık", btn)) SoundFx.Muted = !SoundFx.Muted;
+                float hw2 = (w - 50) / 2;
+                if (GUI.Button(new Rect(x + 20, y + 64, hw2, 50), SoundFx.Muted ? "Ses: Kapalı" : "Ses: Açık", btn)) SoundFx.Muted = !SoundFx.Muted;
+                if (GUI.Button(new Rect(x + 30 + hw2, y + 64, hw2, 50), SoundFx.MusicOn ? "Müzik: Açık" : "Müzik: Kapalı", btn)) SoundFx.MusicOn = !SoundFx.MusicOn;
                 if (GUI.Button(new Rect(x + 20, y + 124, w - 40, 50), SoundFx.Vibrate ? "Titreşim: Açık" : "Titreşim: Kapalı", btn)) SoundFx.Vibrate = !SoundFx.Vibrate;
                 if (GUI.Button(new Rect(x + 20, y + 184, w - 40, 50), NightEnabled ? "Gece görünümü: Saate göre" : "Gece görünümü: Kapalı", btn)) NightEnabled = !NightEnabled;
                 if (GUI.Button(new Rect(x + 20, y + 244, w - 40, 50), NotificationsFactory.Enabled ? "Bildirimler: Açık" : "Bildirimler: Kapalı", btn)) NotificationsFactory.Enabled = !NotificationsFactory.Enabled;

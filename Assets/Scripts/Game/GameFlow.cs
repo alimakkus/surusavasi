@@ -56,6 +56,7 @@ namespace SuruSavasi.Game
         public void Show(GameScreen s)
         {
             screen = s; scroll = Vector2.zero;
+            if (s == GameScreen.Levels) LevelMapScreen.Focus();
             if (s == GameScreen.Base) baseMap.Open(); else baseMap.Close();
         }
 
@@ -99,6 +100,12 @@ namespace SuruSavasi.Game
         void Update()
         {
             if (toastT > 0) toastT -= Time.deltaTime;
+            // Menü/üs müziği: gece saatlerinde (gece görünümü açıksa) sakin minör parça
+            if (screen != GameScreen.Battle && screen != GameScreen.Splash)
+            {
+                int h = System.DateTime.Now.Hour;
+                SoundFx.Music(BaseMapView.NightEnabled && (h >= 20 || h < 6) ? "base_night" : "base_day");
+            }
             if (screen != GameScreen.Splash) return;
             splashT += Time.unscaledDeltaTime;
             // Her karede birkaç görsel yüklenir: ilerleme çubuğu gerçek yüklemeyi gösterir
@@ -209,31 +216,7 @@ namespace SuruSavasi.Game
             return GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn);
         }
 
-        void LevelsScreen(float x0, float w)
-        {
-            if (Back(x0)) { Show(GameScreen.Base); return; }
-            GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Bölümler</b>", label);
-            int cols = 5; float cw = (w - 10) / cols, ch = 64;
-            int rows = Mathf.CeilToInt(Balance.MaxLevel / (float)cols);
-            float headerEvery = ch * 1 + 26; // her 5 bölüm (1 satır) bir harita
-            scroll = GUI.BeginScrollView(new Rect(x0, 96, w + 16, 700), scroll, new Rect(0, 0, w, rows * headerEvery + 10));
-            for (int r = 0; r < rows; r++)
-            {
-                float ry = r * headerEvery;
-                GUI.Label(new Rect(4, ry, w, 24), $"<color=#9fe8ff>{BattleData.Maps[BattleData.MapOf(r * cols + 1)].nameTr}</color>", small);
-                for (int c = 0; c < cols; c++)
-                {
-                    int lv = r * cols + c + 1; if (lv > Balance.MaxLevel) break;
-                    bool open = lv <= D.unlocked;
-                    int st = D.stars[lv - 1];
-                    GUI.enabled = open;
-                    string txt = open ? $"{lv}{(lv % 10 == 0 ? " ☠" : "")}\n<color=#ffd23f>{new string('★', st)}{new string('☆', 3 - st)}</color>" : $"{lv}\nKilitli";
-                    if (GUI.Button(new Rect(c * cw + 2, ry + 24, cw - 4, ch - 4), txt, btn)) Play(lv);
-                    GUI.enabled = true;
-                }
-            }
-            GUI.EndScrollView();
-        }
+        void LevelsScreen(float x0, float w) => LevelMapScreen.Draw(this, x0, w);
 
         void HeroesScreen(float x0, float w)
         {

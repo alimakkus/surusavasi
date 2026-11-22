@@ -4,7 +4,7 @@ using UnityEngine;
 namespace SuruSavasi.Game
 {
     /// <summary>Ses efektleri kodla üretilir (dosya gerekmez). Prototipteki ses tarifleriyle aynı.</summary>
-    public class SoundFx : MonoBehaviour
+    public partial class SoundFx : MonoBehaviour
     {
         public static SoundFx I { get; private set; }
         public static bool Muted
@@ -40,6 +40,8 @@ namespace SuruSavasi.Game
             amb = gameObject.AddComponent<AudioSource>();
             amb.playOnAwake = false; amb.loop = true; amb.volume = 0;
             if (FindObjectOfType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
+            mus = gameObject.AddComponent<AudioSource>();
+            mus.playOnAwake = false; mus.loop = true; mus.volume = 0;
             Build();
         }
 
@@ -70,6 +72,7 @@ namespace SuruSavasi.Game
 
         void Update()
         {
+            MusicUpdate();
             if (amb == null) return;
             float target = Muted || ambWant == null ? 0 : AmbVolume;
             if (ambNow != ambWant)
@@ -134,42 +137,7 @@ namespace SuruSavasi.Game
                     d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * (1 - k) * Mathf.Min(1, k * 20);
                 }
             }
-            // Savaş ritmi: davul (kick), trampet, zil ve bas; 12 sn'ye tam oturan tempo (döngü dikişsiz)
-            void Kick(float at, float vol)
-            {
-                int s0 = (int)(at * ASR), m = (int)(.22f * ASR); double ph = 0;
-                for (int i = 0; i < m && s0 + i < n; i++)
-                {
-                    float k = i / (float)m; ph += Mathf.Lerp(130, 42, Mathf.Sqrt(k)) / ASR;
-                    d[s0 + i] += Mathf.Sin((float)(ph * 6.2832)) * vol * Mathf.Pow(1 - k, 2) * Mathf.Min(1, k * 60);
-                }
-            }
-            void Bass(float at, float f, float dur, float vol)
-            {
-                int s0 = (int)(at * ASR), m = (int)(dur * ASR); double ph = 0;
-                for (int i = 0; i < m && s0 + i < n; i++)
-                {
-                    float k = i / (float)m; ph += f / ASR; float p = (float)(ph - System.Math.Floor(ph));
-                    d[s0 + i] += (2 * p - 1) * .5f * vol * Mathf.Min(1, k * 30) * (1 - k);
-                }
-            }
-            if (key == "battle" || key == "boss_fight")
-            {
-                bool boss = key == "boss_fight";
-                float beat = boss ? .5f : .6f;            // 120 / 100 vuruş/dk: 12 sn'de 24 / 20 vuruş
-                float[] bassNotes = boss ? new[] { 55f, 55f, 58.3f, 49f } : new[] { 55f, 55f, 65.4f, 49f };
-                int bi = 0;
-                for (float t = 0; t < len + fade; t += beat, bi++)
-                {
-                    Kick(t, boss ? .5f : .38f);
-                    if (bi % 2 == 1) Burst(t, .14f, boss ? .1f : .07f, 2200);      // trampet
-                    Burst(t + beat / 2, .03f, .035f, 7000);                         // zil
-                    if (boss) Burst(t + beat * .75f, .02f, .03f, 7000);
-                    if (bi % 2 == 0) Bass(t, bassNotes[(bi / 2) % 4], beat * 1.8f, boss ? .12f : .08f);
-                }
-                if (boss) for (float t = 0; t < len + fade; t += beat * 8) Chirp(t, 220, 208, beat * 7.5f, .02f); // gerilim teli
-            }
-            else switch (key)
+            switch (key)
             {
                 case "winter":
                     Wind(.09f, 120, 520, 1);
