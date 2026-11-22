@@ -297,7 +297,7 @@ namespace SuruSavasi.Game
             }
             bool all = Daily.AllClaimed(D);
             GUI.enabled = all && !Dd.bonus;
-            if (GUI.Button(new Rect(0, y, w, 50), Dd.bonus ? "Bonus alındı" : $"Üç görev bonusu: {Daily.BonusGems} elmas, {Daily.BonusFood} yiyecek", all && !Dd.bonus ? UiSkin.ButtonGold : btn))
+            if (GUI.Button(new Rect(0, y, w, 50), Dd.bonus ? "Bonus alındı" : $"Tüm görevler bonusu: {Daily.BonusGems} elmas, {Daily.BonusFood} yiyecek", all && !Dd.bonus ? UiSkin.ButtonGold : btn))
             { Dd.bonus = true; Grant(0, 0, Daily.BonusFood, Daily.BonusGems, "quest_bonus"); }
             GUI.enabled = true;
             GUI.EndScrollView();

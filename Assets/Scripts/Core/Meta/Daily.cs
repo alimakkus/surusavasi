@@ -44,7 +44,7 @@ namespace SuruSavasi.Core.Meta
         };
         static readonly string[] EventByDay = { "wk", "gold", "gold", "iron", "iron", "gem", "wk" }; // Pazar=0
 
-        public const int FreeAdGems = 5, FreeAdsPerDay = 5, MonthlyDailyGems = 50, BonusGems = 5, BonusFood = 100;
+        public const int FreeAdGems = 5, FreeAdsPerDay = 5, MonthlyDailyGems = 50, BonusGems = 8, BonusFood = 150;
 
         public static int Key(DateTime d) => d.Year * 10000 + d.Month * 100 + d.Day;
         public static int Today => Key(DateTime.Now);
