@@ -4,7 +4,7 @@ using SuruSavasi.Core.Battle;
 namespace SuruSavasi.Core.Meta
 {
     /// <summary>Kahraman yetenek ağacı: her kahramanın 3 dalı, her dalda 2 geliştirme (3'er kademe) + 1 zirve yeteneği.
-    /// Puan: kahraman seviyesi başına 2 (en çok 20). Toplam 21 kademe olduğu için hepsi alınamaz: oyuncu tarz seçer.
+    /// Puan: kahraman seviyesi başına 1, 5. ve 10. seviyede +1 (en çok 12). Toplam 21 kademe olduğu için ancak bir-iki dal doldurulur: oyuncu tarz seçer.
     /// Zirve yeteneği için o dala en az 3 puan harcanmış olmalı. Sıfırlama ilk seferde ücretsiz, sonra elmasla.</summary>
     public static class Talents
     {
@@ -114,7 +114,7 @@ namespace SuruSavasi.Core.Meta
         static int Base(int hero) => hero * Nodes;
         public static int Rank(SaveData d, int hero, int node) { Ensure(d); return d.talents[Base(hero) + node]; }
         public static bool IsCap(int node) => node % 3 == 2;
-        public static int Total(SaveData d, int hero) => Progress.HeroLevel(d, hero) * 2;
+        public static int Total(SaveData d, int hero) { int hl = Progress.HeroLevel(d, hero); return hl + (hl >= 5 ? 1 : 0) + (hl >= 10 ? 1 : 0); }   // en çok 12
         public static int Spent(SaveData d, int hero) { Ensure(d); int s = 0; for (int i = 0; i < Nodes; i++) s += d.talents[Base(hero) + i]; return s; }
         public static int Free(SaveData d, int hero) => Math.Max(0, Total(d, hero) - Spent(d, hero));
         public static int BranchSpent(SaveData d, int hero, int branch) => Rank(d, hero, branch * 3) + Rank(d, hero, branch * 3 + 1);

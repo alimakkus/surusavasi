@@ -305,7 +305,7 @@ namespace SuruSavasi.Game
                         if (Wl.CanAfford(Currency.Gold, cg) && Wl.CanAfford(Currency.Diamonds, ce))
                         {
                             Wl.Spend(Currency.Gold, cg, "hero_up"); Wl.Spend(Currency.Diamonds, ce, "hero_up:" + H.id);
-                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}! +2 yetenek puanı"); SoundFx.Play("levelup");
+                            D.heroLevels[i] = L + 1; GameServices.Save.Save(); Toast($"{H.name} seviye {L + 1}! +{(L + 1 == 5 || L + 1 == 10 ? 2 : 1)} yetenek puanı"); SoundFx.Play("levelup");
                         }
                         else Toast("Yeterli kaynak yok");
                     }

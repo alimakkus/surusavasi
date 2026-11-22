@@ -22,7 +22,7 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", UiSkin.Button)) { flow.Show(GameScreen.Heroes); return; }
             int free = Talents.Free(d, hero), total = Talents.Total(d, hero);
             GUI.Label(new Rect(x0 + 100, 44, w - 100, 26), $"<b>{H.name} · Yetenek Ağacı</b>", new GUIStyle(UiSkin.Label) { richText = true });
-            GUI.Label(new Rect(x0 + 100, 68, w - 100, 22), $"Boş puan: <b><color={(free > 0 ? "#8be39d" : "#c9d3e0")}>{free}</color></b> / {total}   <size=11>(kahraman seviyesi başına 2)</size>", new GUIStyle(UiSkin.Small) { richText = true });
+            GUI.Label(new Rect(x0 + 100, 68, w - 100, 22), $"Boş puan: <b><color={(free > 0 ? "#8be39d" : "#c9d3e0")}>{free}</color></b> / {total}   <size=11>(kahraman seviyesi başına 1, 5. ve 10. seviyede +1)</size>", new GUIStyle(UiSkin.Small) { richText = true });
 
             // Dallar
             float colW = (w - 16) / 3, top = 98;
