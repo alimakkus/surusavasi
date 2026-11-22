@@ -173,7 +173,7 @@ namespace SuruSavasi.Core.Meta
         public const int SurvFreePerDay = 2, SurvAdPerDay = 1;
         public static readonly string[] ShopIds = { "army", "dmg", "tower", "heal" };
         public static readonly string[] ShopNames = { "Takviye", "Keskin Mermi", "Savunma Kulesi", "Şifa" };
-        static readonly int[] ShopBase = { 25, 30, 40, 15 };
+        static readonly int[] ShopBase = { 20, 25, 30, 12 };
 
         public static bool SurvOpen(SaveData d) => d.unlocked >= SurvUnlock;
         public static int SurvFreeLeft(SaveData d) { DayCheck(d); return Math.Max(0, SurvFreePerDay - d.survRuns); }
@@ -185,8 +185,8 @@ namespace SuruSavasi.Core.Meta
         public static float WaveHard(int lv, int wave) => Balance.Difficulty(lv) * (float)Math.Pow(1.07, wave - 1);
         public static int WaveCount(int wave) => Math.Min(15, 4 + wave);
         public static int WaveRow(int lv, int wave) => Math.Min(Balance.RowsOf(lv) - 1, 1 + wave);
-        public static int KillCoins(int wave) => 2 + wave / 3;
-        public static int WaveBonus(int wave) => 8 + 2 * wave;
+        public static int KillCoins(int wave) => 4 + wave / 2;
+        public static int WaveBonus(int wave) => 15 + 3 * wave;
         public static int ShopPrice(int item, int bought) => (int)Math.Round(ShopBase[item] * Math.Pow(1.4, bought));
         public static int ArmyGain(int lv, int wave) => (int)Math.Ceiling(Balance.StartSoldiers(lv) * .5f + wave);
 
