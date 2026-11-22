@@ -60,7 +60,7 @@ namespace SuruSavasi.Core.Battle
                 float wy = -Field.GAP * (row + 1) - Field.GAP / 2;
                 float add = (float)Math.Ceiling(g.Range(7, 13) * lvMul * Field.BARV * 1.15f);
                 GateFx a, b; float va, vb;
-                int pick = g.Range(0, lv >= 15 ? 5 : 4);
+                int pick = g.Range(0, lv >= 15 ? 4 : 3);   // Range üst sınırı dahil: 15. bölümden önce "iki kötü" kapı çıkmaz
                 switch (pick)
                 {
                     case 0: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.4f; break;               // toplama mı çarpma mı?

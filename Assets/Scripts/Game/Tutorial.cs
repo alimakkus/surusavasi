@@ -82,7 +82,7 @@ namespace SuruSavasi.Game
             float t = Time.unscaledTime, a = Mathf.Clamp01(activeT * 4);
             // Hedef
             Vector2? p = null;
-            if (target != null && !target.done) p = toGui(target.x, s.Osy(target) - 40);
+            if (target != null && !target.done) p = toGui(target.x, s.Osy(target) - (target.kind == ObjKind.Gate ? 26 : 40));
             else if (active == "skill") p = new Vector2(VW / 2, 800 - 110);
             else if (active == "weak" && s.boss != null) p = toGui(s.boss.x + s.boss.weakX, s.boss.y - 11 * s.boss.sc - 40);
             if (p.HasValue)
@@ -101,7 +101,8 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(VW / 2 - 140, 516, 280, 24), "<b>◄   ►</b>", new GUIStyle(ModeUi.Center) { fontSize = 20 });
             }
             // Bant
-            var r = new Rect(14, active == "skill" ? 560 : 600, VW - 28, 62);
+            // Bant üstte: ordu ve yetenek düğmesi altta görünür kalsın
+            var r = new Rect(14, 118, VW - 28, 62);
             GUI.color = new Color(1, 1, 1, a);
             GUI.Box(r, "", UiSkin.CardGold);
             GUI.Label(new Rect(r.x + 12, r.y + 4, r.width - 24, r.height - 8), Text(active), new GUIStyle(ModeUi.Center) { fontSize = 16 });
