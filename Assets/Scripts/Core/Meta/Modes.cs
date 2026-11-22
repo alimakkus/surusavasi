@@ -16,6 +16,7 @@ namespace SuruSavasi.Core.Meta
             d.modeDay = t;
             d.towerRuns = d.towerAdRuns = 0;
             d.huntTries = d.huntAdTries = d.huntBest = d.huntTiers = 0;
+            d.survRuns = d.survAdRuns = 0;
         }
 
         // ================= Kule Tırmanışı =================
@@ -167,8 +168,42 @@ namespace SuruSavasi.Core.Meta
             return sum;
         }
 
-        /// <summary>Üs ekranındaki "Modlar" düğmesinde kırmızı nokta: oynanabilecek ücretsiz hak var.</summary>
+        // ================= Hayatta Kalma =================
+        public const int SurvUnlock = 8;               // 7. bölüm geçilmiş olmalı
+        public const int SurvFreePerDay = 2, SurvAdPerDay = 1;
+        public static readonly string[] ShopIds = { "army", "dmg", "tower", "heal" };
+        public static readonly string[] ShopNames = { "Takviye", "Keskin Mermi", "Savunma Kulesi", "Şifa" };
+        static readonly int[] ShopBase = { 25, 30, 40, 15 };
+
+        public static bool SurvOpen(SaveData d) => d.unlocked >= SurvUnlock;
+        public static int SurvFreeLeft(SaveData d) { DayCheck(d); return Math.Max(0, SurvFreePerDay - d.survRuns); }
+        public static int SurvAdLeft(SaveData d) { DayCheck(d); return Math.Max(0, SurvAdPerDay - d.survAdRuns); }
+        public static void SurvStart(SaveData d, string how) { DayCheck(d); if (how == "free") d.survRuns++; else if (how == "ad") d.survAdRuns++; }
+
+        public static int SurvLevel(SaveData d) => Math.Max(1, Math.Min(Balance.MaxLevel, d.unlocked));
+        /// <summary>Dalga zorluğu: bölüm zorluğu, her dalgada %7 artar.</summary>
+        public static float WaveHard(int lv, int wave) => Balance.Difficulty(lv) * (float)Math.Pow(1.07, wave - 1);
+        public static int WaveCount(int wave) => Math.Min(15, 4 + wave);
+        public static int WaveRow(int lv, int wave) => Math.Min(Balance.RowsOf(lv) - 1, 1 + wave);
+        public static int KillCoins(int wave) => 2 + wave / 3;
+        public static int WaveBonus(int wave) => 8 + 2 * wave;
+        public static int ShopPrice(int item, int bought) => (int)Math.Round(ShopBase[item] * Math.Pow(1.4, bought));
+        public static int ArmyGain(int lv, int wave) => (int)Math.Ceiling(Balance.StartSoldiers(lv) * .5f + wave);
+
+        /// <summary>Koşu sonu ödülü: ulaşılan dalga başına kaynak; ilk kez geçilen 10/20/30/40. dalgada elmas.</summary>
+        public static LevelReward SurvReward(SaveData d, int waves, BattleMods m)
+        {
+            var b = Rewards.ForLevel(SurvLevel(d), 3, false, m);
+            float k = waves * .45f;
+            var r = new LevelReward { gold = (int)(b.gold * k), iron = (int)(b.iron * k), food = (int)(b.food * k) };
+            foreach (int ms in new[] { 10, 20, 30, 40 }) if (waves >= ms && d.survBest < ms) r.gems += ms;
+            d.survBest = Math.Max(d.survBest, waves);
+            return r;
+        }
+
+        /// <summary>Üs ekranındaki "Modlar" düğmesinde kırmızı nokta: oynanabilecek ücretsiz hak var ya da lig sonucu bekliyor.</summary>
         public static bool AnyFree(SaveData d) =>
-            (TowerOpen(d) && (TowerInRun(d) || TowerFreeLeft(d) > 0)) || (HuntOpen(d) && HuntTriesLeft(d) > 0);
+            (TowerOpen(d) && (TowerInRun(d) || TowerFreeLeft(d) > 0)) || (HuntOpen(d) && HuntTriesLeft(d) > 0)
+            || (SurvOpen(d) && SurvFreeLeft(d) > 0) || League.HasResult(d);
     }
 }

@@ -77,6 +77,35 @@ namespace SuruSavasi.Core.Battle
             }
         }
 
+        // ---------- Hayatta Kalma dalgaları için tekil nesne üreticileri (bölüm kurallarıyla aynı formüller) ----------
+        public static BattleObj MakeEnemy(int lv, int row, string typeId, float H, float x, float wy, double r01, float hpMul = 1)
+        {
+            var T = BattleData.Types[typeId];
+            float E = Balance.EnemyRef(lv, row);
+            var o = new BattleObj { kind = ObjKind.Enemy, type = T, x = x, wy = wy, seed = (int)(r01 * 40) };
+            o.max = o.hp = o.chip = Math.Max(4, (float)Math.Ceiling(DpsOf(E, lv) * Balance.Tw(lv) * T.mul * (.92 + r01 * .16) * H * hpMul));
+            o.contact = Math.Max(1, (float)Math.Ceiling(E * T.dmg * Math.Pow(H, .25)));
+            return o;
+        }
+
+        public static BattleObj MakeBarrel(int lv, int row, float x, float wy, double r01)
+        {
+            float lvMul = 1f + .05f * lv;
+            var o = new BattleObj { kind = ObjKind.Barrel, x = x, wy = wy, seed = (int)(r01 * 40) };
+            o.v = Math.Max(2, (float)Math.Ceiling((4 + r01 * 8) * lvMul * Field.BARV));
+            o.max = o.hp = o.chip = Math.Max(4, (float)Math.Ceiling(DpsOf(Balance.EnemyRef(lv, row), lv) * (.28 + .055 * (o.v / lvMul))));
+            return o;
+        }
+
+        /// <summary>Bu bölümde çıkabilen düşman türleri (sırayla açılanlar + haritaya özel olanlar).</summary>
+        public static List<string> TypesFor(int lv)
+        {
+            int map = BattleData.MapOf(lv);
+            var l = BattleData.Order.Where(k => BattleData.Types[k].unlock <= lv).ToList();
+            l.AddRange(BattleData.Themed.Where(k => Array.IndexOf(BattleData.Types[k].maps, map) >= 0));
+            return l;
+        }
+
         public static string GateText(BattleObj o)
         {
             switch (o.gk)

@@ -259,7 +259,9 @@ namespace SuruSavasi.Game
                 if (mode == null && Input.GetKeyDown(KeyCode.PageUp)) { StartLevel(Mathf.Min(Balance.MaxLevel, level + 1)); return; }
                 if (mode == null && Input.GetKeyDown(KeyCode.PageDown)) { StartLevel(Mathf.Max(1, level - 1)); return; }
 #endif
+                if (mode != null && mode.Paused) { Render(); return; }
                 if (sim.Live) sim.Step(Mathf.Min(Time.deltaTime, .05f));
+                if (mode != null && sim.Live) mode.Tick(sim, Mathf.Min(Time.deltaTime, .05f));
                 if (!sim.Live) OnBattleEnd();
             }
             else sim.Step(Mathf.Min(Time.deltaTime, .05f)); // yazılar sönsün
@@ -383,6 +385,13 @@ namespace SuruSavasi.Game
                 var pc = p.c; pc.a = Mathf.Clamp01(p.life / p.max);
                 Draw(circle, pc, p.x, p.y, p.size, p.size, 350);
             }
+            // Hayatta Kalma savunma kuleleri: yol kenarında, seviyeye göre büyür
+            for (int side = 0; side < 2; side++)
+            {
+                int tl = side == 0 ? sim.turretL : sim.turretR; if (tl <= 0) continue;
+                var tw = Art.WallTower(Mathf.Clamp(tl, 1, 5));
+                if (tw != null) DrawSprite(tw, side == 0 ? 26 : Field.W - 26, Field.SQY + 6, .62f + .04f * tl, 10 + (int)(Field.SQY / 4) + 1);
+            }
             if (flash > 0) Draw(square, new Color(.8f, .72f, 1f, flash * .35f), 180, 280, 400, 700, 360);
 
             for (int i = used; i < pool.Count; i++) if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
@@ -428,6 +437,7 @@ namespace SuruSavasi.Game
             if (sim.state == BattleState.Won)
             {
                 Offers.PiggyAdd(d, first);
+                League.Add(d, first ? League.PtsLevelFirst : League.PtsLevelRepeat);
                 dropText += $"\n<size=13><color=#ffb02e>Kumbara: {d.piggy}/{Offers.PiggyCap} elmas</color></size>";
                 var drop = Gear.BattleDrop(d, level, new System.Random());
                 if (drop != null) dropText = $"\n<color={Gear.RarityColors[drop.rarity]}><b>Yeni ekipman: {Gear.Name(drop)} ({Gear.RarityNames[drop.rarity]})</b></color>";
@@ -547,6 +557,7 @@ namespace SuruSavasi.Game
                 return;
             }
 
+            if (mode != null && sim.Live && mode.DrawOverlay(this, VW)) return;
             // Yetenek butonu
             if (sim.Live)
             {

@@ -106,9 +106,13 @@ namespace SuruSavasi.Core.Battle
 
         public static string PowerName(Power p) => p == Power.Double ? "ÇİFT ATEŞ" : p == Power.Rapid ? "HIZLI ATEŞ" : "PATLAYICI";
 
+        public int kills;                 // öldürülen düşman sayısı (Hayatta Kalma parası)
+        public int turretL, turretR;      // savunma kulesi seviyeleri (0 = yok)
+        public float turretDmg;           // kule mermisi taban hasarı
+
         void KillEnemy(BattleObj e, float sy)
         {
-            e.done = true; e.hp = 0;
+            e.done = true; e.hp = 0; kills++;
             Emit(e.type.big ? "bigkill" : "kill", e.x, sy);
             if (e.type.split)
             {
@@ -350,6 +354,14 @@ namespace SuruSavasi.Core.Battle
                             }
                         Emit("shot", x, Field.SQY);
                     }
+                    // Savunma kuleleri (Hayatta Kalma): yol kenarından otomatik ateş
+                    if (anyTarget && turretDmg > 0)
+                        for (int side = 0; side < 2; side++)
+                        {
+                            int tl = side == 0 ? turretL : turretR; if (tl <= 0) continue;
+                            float tx0 = side == 0 ? 26 : Field.W - 26;
+                            bullets.Add(new Bullet { x = tx0, y = Field.SQY - 40, vy = mods.bulletVy, dmg = turretDmg * tl, life = mods.bulletLife });
+                        }
                 }
 
                 // Mermiler

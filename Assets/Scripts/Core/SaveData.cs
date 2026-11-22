@@ -66,6 +66,10 @@ namespace SuruSavasi.Core
         public List<string> towerBoons = new List<string>();
         public int huntTries, huntAdTries, huntBest, huntTiers;     // huntBest: bugünkü en iyi hasar (binde), huntTiers: alınan kademe bitleri
         public int huntBestEver;
+        public int survRuns, survAdRuns, survBest;                  // Hayatta Kalma: bugünkü koşular, en iyi dalga
+        // Haftalık lig
+        public int leagueWeek, leagueTier, leaguePts;
+        public bool leagueResPending; public int leagueResRank, leagueResTier, leagueResNew, leagueResPts;
 
         // Hikâye görevleri
         public int storyIndex;

@@ -21,6 +21,12 @@ namespace SuruSavasi.Game
         string Hud(BattleSim s);
         void OnEnd(BattleSim s);
         void DrawResult(BattleView v, float VW);
+        /// <summary>Savaş sürerken her kare (Hayatta Kalma dalgaları).</summary>
+        void Tick(BattleSim s, float dt);
+        /// <summary>true iken savaş durur (dalga arası mağaza).</summary>
+        bool Paused { get; }
+        /// <summary>Savaş sırasında üstte çizilen panel; true dönerse yetenek düğmesi gizlenir.</summary>
+        bool DrawOverlay(BattleView v, float VW);
     }
 
     static class ModeUi
@@ -63,6 +69,9 @@ namespace SuruSavasi.Game
         public void Configure(BattleMods m) => Modes.ApplyBoons(D, m);
         public void Setup(BattleSim s) { if (D.towerBoons.Count > 0) s.AddFloat(Field.W / 2, Field.SQY - 100, $"{D.towerBoons.Count} güçlendirme etkin", "#c9b8ff"); }
         public string Hud(BattleSim s) => Level % 10 == 0 ? "<color=#ff8a80>Patron katı!</color>" : "";
+        public void Tick(BattleSim s, float dt) { }
+        public bool Paused => false;
+        public bool DrawOverlay(BattleView v, float VW) => false;
 
         bool won;
         string text = "";
@@ -80,6 +89,7 @@ namespace SuruSavasi.Game
                 text = ModeUi.RewardLine(rw);
                 var g = Modes.MilestoneGear(d, floor, new System.Random());
                 if (g != null) text += $"\n<color={Gear.RarityColors[g.rarity]}><b>Kat {floor} sandığı: {Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>";
+                League.Add(d, League.PtsTowerBase + floor);
                 bool record = floor > d.towerBest;
                 Modes.TowerFloorWon(d, floor);
                 if (record) text += "\n<color=#ffd23f>Yeni rekor!</color>";
@@ -169,6 +179,9 @@ namespace SuruSavasi.Game
         public float TimeLimit => Modes.HuntTime;
         public void Configure(BattleMods m) { }
         public void Setup(BattleSim s) => Modes.HuntSetup(D, s);
+        public void Tick(BattleSim s, float dt) { }
+        public bool Paused => false;
+        public bool DrawOverlay(BattleView v, float VW) => false;
 
         public string Hud(BattleSim s)
         {
@@ -185,6 +198,7 @@ namespace SuruSavasi.Game
             frac = s.state == BattleState.Won ? 1 : Modes.HuntFrac(s);
             tier = Modes.TierOf(frac);
             var rw = Modes.HuntResult(d, frac, out var nt);
+            League.Add(d, Mathf.RoundToInt(frac * League.PtsHuntMax));
             ModeUi.Grant(rw, "hunt");
             if (nt.Count > 0)
             {
