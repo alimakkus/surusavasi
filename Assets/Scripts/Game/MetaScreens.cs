@@ -53,7 +53,7 @@ namespace SuruSavasi.Game
             float tx = 210, tw2 = w - 224;
             GUI.Label(new Rect(tx, y + 56, tw2, 30), $"<b><size=20>{H.name} · {Skins.Names[ds]}</size></b>", new GUIStyle(UiSkin.Label) { richText = true });
             GUI.Label(new Rect(tx, y + 88, tw2, 60), $"<size=13>{Skins.Descs[ds]}</size>", new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
-            GUI.Label(new Rect(tx, y + 150, tw2, 30), $"<color=#ff8a80><s>{Skins.Price[ds]}</s></color>  <color=#9fe8ff><b><size=22>{Skins.PriceFor(dh, ds)}</size> elmas</b></color>", new GUIStyle(UiSkin.Label) { richText = true });
+            GUI.Label(new Rect(tx, y + 150, tw2, 30), $"<color=#ff8a80><size=14>{Skins.Price[ds]} yerine</size></color>  <color=#9fe8ff><b><size=22>{Skins.PriceFor(dh, ds)}</size> elmas</b></color>", new GUIStyle(UiSkin.Label) { richText = true });
             GUI.Label(new Rect(tx, y + 182, tw2, 22), $"<size=12>Bitişe {(int)left.TotalDays}g {left.Hours}sa</size>", new GUIStyle(UiSkin.Small) { richText = true });
             var br = new Rect(16, y + 260, w - 32, 50);
             if (owned) { GUI.enabled = false; GUI.Button(br, "Bu görünüme sahipsin", UiSkin.ButtonGray); GUI.enabled = true; }

@@ -47,7 +47,7 @@ namespace SuruSavasi.Game
                 if (mini != null) GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, 92, 92), mini, ScaleMode.ScaleToFit);
                 GUI.Label(new Rect(r.x + 96, r.y + 10, r.width - 100, 24), $"<b>{Skins.Names[s]}</b>", new GUIStyle(UiSkin.Label) { richText = true });
                 string st = on ? "<color=#8be39d>Kuşanıldı</color>" : owned ? "<color=#c9d3e0>Sahipsin</color>"
-                    : Skins.IsDeal(hero, s) ? $"<color=#ff8a80><s>{Skins.Price[s]}</s></color> <color=#9fe8ff><b>{Skins.PriceFor(hero, s)} elmas</b></color>\n<size=10><color=#ffd23f>Haftanın görünümü %40</color></size>"
+                    : Skins.IsDeal(hero, s) ? $"<color=#ff8a80>{Skins.Price[s]} →</color> <color=#9fe8ff><b>{Skins.PriceFor(hero, s)} elmas</b></color>\n<size=10><color=#ffd23f>Haftanın görünümü %40</color></size>"
                     : $"<color=#9fe8ff>{Skins.Price[s]} elmas</color>" + (s == 3 ? "\n<size=10>ya da lig ödülü</size>" : "");
                 GUI.Label(new Rect(r.x + 96, r.y + 36, r.width - 100, 50), st, new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
                 if (GUI.Button(r, "", GUIStyle.none)) { preview = s; SoundFx.Play("click"); }

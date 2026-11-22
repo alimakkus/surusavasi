@@ -35,7 +35,7 @@ namespace SuruSavasi.Core.Meta
                 skill = "Kurşun Fırtınası", skillDesc = "Hafif hasar verir, 8 sn çift ve hızlı ateş açar", perk = "Ateş hızı %14 artar", lv5 = "Çift ve hızlı ateş 12 sn sürer" },
             // Parçayla açılanlar (reqStars kullanılmaz, bkz. HeroShards)
             new HeroDef { id = "deniz", name = "Deniz", role = "Mühendis", reqStars = 0, sk = .9f, cd = .95f, fire = 1, guard = .95f,
-                skill = "Taret Kur", skillDesc = "Hasar verir ve 10 sn yolun iki yanına ateş eden taret kurar", perk = "Kule ve taretler %50 güçlü", lv5 = "Taretler 15 sn kalır; Hayatta Kalma kuleyle başlar" },
+                skill = "Taret Kur", skillDesc = "Hasar verir ve 10 sn yolun iki yanına ateş eden taret kurar", perk = "Kule/taret %50 güçlü, kuleyle başlar", lv5 = "Taretler 15 sn kalır" },
             new HeroDef { id = "cem", name = "Cem", role = "Kumarbaz", reqStars = 0, sk = 1.1f, cd = 1, fire = 1, guard = 1,
                 skill = "Zar At", skillDesc = "Hasar verir ve zar atar: asker, çift/hızlı ateş, patlayıcı ya da büyük ikramiye", perk = "İyi kapılar %25 daha güçlü", lv5 = "Kötü kapıların zararı yarıya iner" },
         };
