@@ -54,7 +54,7 @@ namespace SuruSavasi.Core.Meta
                     N("Barikat", "▬", 3, .1f, "Kademe başına tabelalar %10 daha az asker götürür", (m, v) => m.boardMul *= 1 - v),
                     N("Kule Ustası", "♖", 1, 1, "Zirve: Hayatta Kalma'ya hazır kuleyle başla", (m, v) => m.startTurret += (int)v),
                     N("Toparlanma", "↺", 3, .03f, "Kademe başına yetenekte +%3 asker geri gelir", (m, v) => m.heal += v),
-                    N("Soğukkanlılık", "◷", 3, .05f, "Kademe başına yetenek %5 daha sık", (m, v) => m.skillCd *= 1 - v),
+                    N("Soğukkanlılık", "◇", 3, .05f, "Kademe başına yetenek %5 daha sık", (m, v) => m.skillCd *= 1 - v),
                     N("Ölümsüz", "♥", 1, .012f, "Zirve: kahraman saniyede %1,2 can yeniler", (m, v) => m.regen += v),
                 }
             },
@@ -65,7 +65,7 @@ namespace SuruSavasi.Core.Meta
                 nodes = new[]
                 {
                     N("Güç Akışı", "✧", 3, .15f, "Kademe başına yetenek hasarı +%15", (m, v) => m.skillMul *= 1 + v),
-                    N("Hızlı Büyü", "◷", 3, .06f, "Kademe başına yetenek %6 daha sık", (m, v) => m.skillCd *= 1 - v),
+                    N("Hızlı Büyü", "◇", 3, .06f, "Kademe başına yetenek %6 daha sık", (m, v) => m.skillCd *= 1 - v),
                     N("Fırtına", "ϟ", 1, 3, "Zirve: yetenek etkisi 3 sn uzar", (m, v) => m.buffs += v),
                     N("Fıçı Simyası", "◆", 3, .08f, "Kademe başına fıçılardan +%8 asker", (m, v) => m.barrelMul += v),
                     N("Altın Kokusu", "$", 3, .05f, "Kademe başına +%5 altın ödülü", (m, v) => m.goldMul += v),

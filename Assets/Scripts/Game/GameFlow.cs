@@ -278,7 +278,7 @@ namespace SuruSavasi.Game
                     // Yetenek ağacı: boş puan varsa nabız atan işaret
                     int tfree = Talents.Free(D, i);
                     var trr = new Rect(tx, y + 124, tw, 26);
-                    if (GUI.Button(trr, $"Yetenek Ağacı  <size=11>({(tfree > 0 ? $"<color=#8be39d>{tfree} boş puan</color>" : "puan yok")})</size>", new GUIStyle(UiSkin.Button) { fontSize = 13, richText = true }))
+                    if (GUI.Button(trr, tfree > 0 ? $"<b>Yetenek Ağacı · {tfree} boş puan</b>" : "Yetenek Ağacı", new GUIStyle(tfree > 0 ? UiSkin.ButtonGreen : UiSkin.Button) { fontSize = 13, richText = true }))
                     { SoundFx.Play("click"); TalentScreen.Open(this, i); return; }
                     if (tfree > 0) { float pu = 1 + .15f * Mathf.Sin(Time.time * 6); GUI.DrawTexture(new Rect(trr.xMax - 8 - 5 * pu, trr.y - 4 - 5 * pu, 12 * pu, 12 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 6 * pu); }
                     GUI.enabled = !sel;
