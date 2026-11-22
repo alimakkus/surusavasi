@@ -797,7 +797,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 460 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 520 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -820,8 +820,10 @@ namespace SuruSavasi.Game
                 if (GUI.Button(new Rect(x + 20, y + 244, w - 40, 50), NotificationsFactory.Enabled ? "Bildirimler: Açık" : "Bildirimler: Kapalı", btn)) NotificationsFactory.Enabled = !NotificationsFactory.Enabled;
                 bool pers = GameServices.Consent != null && GameServices.Consent.PersonalizedAds;
                 if (GUI.Button(new Rect(x + 20, y + 304, w - 40, 50), pers ? "Kişiselleştirilmiş reklam: Açık" : "Kişiselleştirilmiş reklam: Kapalı", btn)) LocalConsent.SetAnswer(!pers);
-                if (GUI.Button(new Rect(x + 20, y + 364, w - 40, 30), "<color=#9fe8ff>Gizlilik politikası ›</color>", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter })) Application.OpenURL(ConsentScreen.PrivacyUrl);
-                GUI.Label(new Rect(x, y + 400, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+                if (GUI.Button(new Rect(x + 20, y + 364, w - 40, 50), "Hesap ve bulut kayıt ›" + (Cloud.CloudSync.Username == null ? "  <size=11><color=#ffb02e>(korunmuyor)</color></size>" : "  <size=11><color=#8be39d>(korunuyor)</color></size>"), new GUIStyle(UiSkin.ButtonGold) { richText = true, fontSize = 15 }))
+                { popup = Popup.None; flow.Show(GameScreen.Account); return; }
+                if (GUI.Button(new Rect(x + 20, y + 424, w - 40, 30), "<color=#9fe8ff>Gizlilik politikası ›</color>", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter })) Application.OpenURL(ConsentScreen.PrivacyUrl);
+                GUI.Label(new Rect(x, y + 456, w, 30), $"Sürüm {Application.version}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
                 return;
             }
 

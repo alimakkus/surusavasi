@@ -1,0 +1,24 @@
+{
+    "name": "SuruSavasi.Cloud",
+    "rootNamespace": "SuruSavasi.Cloud",
+    "references": [
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.CloudSave"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.cloudsave",
+            "expression": "3.0.0",
+            "define": "SURU_UGS"
+        }
+    ],
+    "noEngineReferences": false
+}

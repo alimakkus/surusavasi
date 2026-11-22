@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SuruSavasi.Cloud;
 using SuruSavasi.Core;
 using SuruSavasi.Core.Battle;
 using SuruSavasi.Core.Meta;
@@ -7,7 +8,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents, Skins, Achievements }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents, Skins, Achievements, Account }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -106,6 +107,7 @@ namespace SuruSavasi.Game
                 int h = System.DateTime.Now.Hour;
                 SoundFx.Music(BaseMapView.NightEnabled && (h >= 20 || h < 6) ? "base_night" : "base_day");
             }
+            TickStartWait();
             if (screen != GameScreen.Splash) return;
             splashT += Time.unscaledDeltaTime;
             // Her karede birkaç görsel yüklenir: ilerleme çubuğu gerçek yüklemeyi gösterir
@@ -115,11 +117,11 @@ namespace SuruSavasi.Game
                 for (int i = 0; i < frames.Length; i++) frames[i] = null;
                 Resources.UnloadUnusedAssets();
                 Show(GameScreen.Base);
+                // Bulut kaydı: arka planda giriş + karşılaştırma (yeniden kurulumda kayıt geri gelir)
+                CloudSaveManager.Begin();
                 // İlk açılış: önce gizlilik onayı (üs ekranında), sonra günlük ödül
                 if (ConsentScreen.Needed) LocalConsent.Answered += AfterConsent;
-                // Yeni oyuncu doğrudan ilk savaşa (hikâye + rehber); sonra giriş ödülü bekliyorsa Günlük ekranı karşılar
-                else if (NewPlayer) Play(1);
-                else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
+                else StartAfterLoad();
             }
         }
 
@@ -127,9 +129,28 @@ namespace SuruSavasi.Game
         {
             LocalConsent.Answered -= AfterConsent;
             if (screen != GameScreen.Base) return;
+            StartAfterLoad();
+        }
+
+        // Yeni oyuncu doğrudan ilk savaşa (hikâye + rehber) gider; ama önce bulutta eski kaydı var mı diye en çok 4 sn beklenir
+        float startWait = -1;
+        void StartAfterLoad()
+        {
+            if (NewPlayer && CloudSync.Supported) { startWait = 4f; return; }
             if (NewPlayer) Play(1);
             else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
         }
+        void TickStartWait()
+        {
+            if (startWait < 0) return;
+            startWait -= Time.unscaledDeltaTime;
+            if (CloudSaveManager.Busy && startWait > 0) return;
+            startWait = -1;
+            if (screen != GameScreen.Base || CloudSaveManager.Conflict != null) return;
+            if (NewPlayer) Play(1);
+            else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
+        }
+        public bool InBattle => screen == GameScreen.Battle;
 
         /// <summary>Hiç bölüm geçmemiş oyuncu.</summary>
         bool NewPlayer => D.unlocked <= 1 && Progress.TotalStars(D) == 0;
@@ -179,11 +200,13 @@ namespace SuruSavasi.Game
                     case GameScreen.Talents: TalentScreen.Draw(this, x0, w); break;
                     case GameScreen.Skins: SkinScreen.Draw(this, x0, w); break;
                     case GameScreen.Achievements: AchievementsScreen.Draw(this, x0, w); break;
+                    case GameScreen.Account: AccountScreen.Draw(this, x0, w); break;
                 }
                 GUI.enabled = true;
                 if (intro) Tutorial.DrawIntro(screen, VW);
             }
-            if (screen == GameScreen.Base) Tutorial.DrawUnlocks(this, VW);
+            if (CloudSaveManager.DrawConflict(VW)) { }
+            else if (screen == GameScreen.Base) Tutorial.DrawUnlocks(this, VW);
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
             {
                 GUI.Box(new Rect(VW / 2 - 170, 640, 340, 44), "", card);

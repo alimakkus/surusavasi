@@ -30,6 +30,7 @@ namespace SuruSavasi.Core
         public List<string> tips = new List<string>();
         // Teklifler: ilk alım, haftalık kahraman paketi, hız paketi ve hızlandırıcılar
         public bool firstPurchaseDone;
+        public long savedAt;                   // son kayıt zamanı (Unix ms) — bulut kaydıyla karşılaştırmak için
         public int heroPackWeek, speedPackDay, speedTokens, offerSeenWeek, offerSeenDay;   // rehber: görülen ipuçları ve tanıtımlar                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
@@ -158,6 +159,7 @@ namespace SuruSavasi.Core
 
         public static void Save(SaveData data)
         {
+            data.savedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
             PlayerPrefs.Save();
         }
