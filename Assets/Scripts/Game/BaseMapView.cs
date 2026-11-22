@@ -536,14 +536,14 @@ namespace SuruSavasi.Game
             label = UiSkin.Label; small = UiSkin.Small; big = UiSkin.Big; btn = UiSkin.Button; card = UiSkin.Card;
             center = new GUIStyle(UiSkin.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 15, wordWrap = false };
             tiny = new GUIStyle(center) { fontSize = 13 };
-            GUIStyle HexStyle(string a, string b, string c)
+            GUIStyle HexStyle(string a, string b, string c, string tex)
             {
-                var n = UiSkin.Hex(Hex(a), Hex(b), Hex(c));
+                var n = Resources.Load<Texture2D>("UI/" + tex) ?? UiSkin.Hex(Hex(a), Hex(b), Hex(c));
                 var s = new GUIStyle { alignment = TextAnchor.MiddleCenter, fontSize = 30, fontStyle = FontStyle.Bold };
                 s.normal.background = n; s.normal.textColor = Color.white; s.hover = s.normal; s.active = s.normal;
                 return s;
             }
-            hexBlue = HexStyle("#3f7fd0", "#7fb6f0", "#ffffff"); hexGreen = HexStyle("#2f9a3f", "#6fd96a", "#ffffff"); hexOrange = HexStyle("#d9801e", "#ffb85a", "#ffffff");
+            hexBlue = HexStyle("#3f7fd0", "#7fb6f0", "#ffffff", "hex_blue"); hexGreen = HexStyle("#2f9a3f", "#6fd96a", "#ffffff", "hex_green"); hexOrange = HexStyle("#d9801e", "#ffb85a", "#ffffff", "hex_orange");
         }
 
         Vector2 ToGui(float px, float py) { var sp = cam.WorldToScreenPoint(W(px, py)); return new Vector2(sp.x / gs, (Screen.height - sp.y) / gs); }
@@ -684,10 +684,7 @@ namespace SuruSavasi.Game
         void Hud()
         {
             float w = Mathf.Min(440, VW - 12), x0 = VW / 2 - w / 2;
-            GUI.Box(new Rect(x0, 6, w, 36), "", card);
-            GUI.Label(new Rect(x0, 6, w, 36),
-                $"<color=#ffd23f>Altın {Wl.Get(Currency.Gold)}</color>   <color=#cfd8e0>Demir {Wl.Get(Currency.Iron)}</color>   <color=#8be39d>Yiyecek {Wl.Get(Currency.Food)}</color>   <color=#9fe8ff>Elmas {Wl.Get(Currency.Diamonds)}</color>",
-                new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            UiSkin.ResourceBar(x0, 4, w, Wl.Get(Currency.Gold), Wl.Get(Currency.Iron), Wl.Get(Currency.Food), Wl.Get(Currency.Diamonds));
 
             // İnşaatçı durumu
             // İnşaatçılar: her biri için küçük bir düğme; ikincisi kilitliyse satın alma

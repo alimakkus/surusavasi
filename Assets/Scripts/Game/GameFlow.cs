@@ -190,10 +190,7 @@ namespace SuruSavasi.Game
 
         void ResourceBar(float x0, float w)
         {
-            string s = $"<color=#ffd23f>Altın {Wl.Get(Currency.Gold)}</color>   <color=#cfd8e0>Demir {Wl.Get(Currency.Iron)}</color>   " +
-                       $"<color=#8be39d>Yiyecek {Wl.Get(Currency.Food)}</color>   <color=#9fe8ff>Elmas {Wl.Get(Currency.Diamonds)}</color>";
-            GUI.Box(new Rect(x0, 6, w, 34), "", card);
-            GUI.Label(new Rect(x0 + 10, 6, w - 20, 34), s, new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            UiSkin.ResourceBar(x0, 4, w, Wl.Get(Currency.Gold), Wl.Get(Currency.Iron), Wl.Get(Currency.Food), Wl.Get(Currency.Diamonds));
         }
 
         bool Back(float x0)
