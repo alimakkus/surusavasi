@@ -439,7 +439,7 @@ namespace SuruSavasi.Game
                 if (B.isBoss) DrawSprite(Art.Boss(B.bossIndex, frame), B.x, B.y, B.sc / 3.9f, 260, bt);
                 else DrawSprite(Art.Elite(B.typeId, frame), B.x, B.y, B.sc / 2.6f, 260, bt);
                 // Zayıf nokta: nabız atan hedef halkası (son saniyede yanıp söner)
-                if (B.weakT > 0 && (B.weakT > .8f || Mathf.Repeat(Time.time * 8, 1) > .4f))
+                if (sim.Live && B.weakT > 0 && (B.weakT > .8f || Mathf.Repeat(Time.time * 8, 1) > .4f))
                 {
                     float wy = B.y - 11 * B.sc, pu = 1 + .25f * Mathf.Sin(Time.time * 12);
                     Draw(circle, new Color(1f, .85f, .2f, .35f), B.x + B.weakX, wy, 44 * pu, 44 * pu, 262);
