@@ -707,6 +707,7 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0 + w - 164, 48, 78, 34), "Günlük", tb)) { SoundFx.Play("click"); flow.Show(GameScreen.Daily); }
             if (ready) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 96 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + w - 80, 48, 80, 34), "Mağaza", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Show(GameScreen.Shop); }
+            if (Packs.AnyNew(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 12 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
 
             QuestPanel(x0, 90, Mathf.Min(270, w - 110));
 
@@ -871,6 +872,11 @@ namespace SuruSavasi.Game
                 }
                 if (GUI.Button(new Rect(x + 20, y + 294, w - 40, 54), "▶ Reklam izle: 5 dakika kısalt", UiSkin.ButtonGold))
                     Shop.WatchAd(AdPlacement.SpeedUpBuild, () => { BaseLogic.Shorten(D, k, 300); nextTick = 0; GameServices.Save.Save(); }, () => flow.ShowToast("Reklam hazır değil"));
+                // Hızlandırıcı (Hız Paketi'nden)
+                GUI.enabled = D.speedTokens > 0;
+                if (GUI.Button(new Rect(x + 20, y + 354, w - 40, 46), D.speedTokens > 0 ? $"Hızlandırıcı kullan: 1 saat kısalt  <size=12>(elinde {D.speedTokens})</size>" : "Hızlandırıcı yok (Mağaza > Teklif)", new GUIStyle(btn) { fontSize = 14, richText = true }))
+                { if (Packs.UseToken(D, k)) { nextTick = 0; GameServices.Save.Save(); SoundFx.Play("power"); } }
+                GUI.enabled = true;
                 return;
             }
             if (L >= Progress.MaxLevel(k)) { GUI.Label(new Rect(x, y + 180, w, 40), "<color=#8be39d><b>En üst seviye</b></color>", mid); return; }

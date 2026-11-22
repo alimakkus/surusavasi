@@ -10,7 +10,7 @@ namespace SuruSavasi.Game
     public static class MetaScreens
     {
         static Vector2 shopScroll, dailyScroll;
-        public static int shopTab; // 0 elmas, 1 kaynak, 2 tema
+        public static int shopTab = 4; // 0 elmas, 1 kaynak, 2 tema, 3 görünüm, 4 teklif
 
         static SaveData D => GameServices.Save.Data;
         static Wallet Wl => GameServices.Wallet;
@@ -34,6 +34,80 @@ namespace SuruSavasi.Game
         static Texture2D Icon(string name) => Resources.Load<Texture2D>("Art/" + name); // görseller gelince otomatik görünür
 
         // ---------------- Mağaza ----------------
+        /// <summary>Mağaza "Teklif" sekmesi: haftalık takvim şeridi + etkin teklifler (ilk alım, hafta sonu, kahraman paketi, hız paketi, başlangıç).</summary>
+        static float OfferTab(GameFlow flow, float y, float w)
+        {
+            var now = System.DateTime.Now;
+            // Takvim şeridi: Pazartesi-Pazar, bugün çerçeveli, hafta sonu yeşil
+            string[] dn = { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
+            float dw = (w - 36) / 7;
+            int today = ((int)now.DayOfWeek + 6) % 7;
+            for (int i = 0; i < 7; i++)
+            {
+                var r = new Rect(i * (dw + 6), y, dw, 62);
+                bool we = i >= 5, td = i == today;
+                GUI.Box(r, "", td ? UiSkin.CardGold : UiSkin.Card);
+                GUI.Label(new Rect(r.x, r.y + 4, r.width, 20), $"<b>{dn[i]}</b>", new GUIStyle(UiSkin.Small) { alignment = TextAnchor.MiddleCenter, richText = true });
+                string tag = i == 0 ? "<color=#ffb02e>Yeni\npaket</color>" : we ? "<color=#8be39d>+%50\nelmas</color>" : "<color=#7d8696>Hız\npaketi</color>";
+                GUI.Label(new Rect(r.x, r.y + 24, r.width, 34), $"<size=10>{tag}</size>", new GUIStyle(UiSkin.Small) { alignment = TextAnchor.MiddleCenter, richText = true });
+            }
+            y += 72;
+
+            // İlk alım 2 kat
+            if (Packs.FirstDouble(D))
+            {
+                var r = new Rect(0, y, w, 74); GUI.Box(r, "", UiSkin.CardGold);
+                GUI.Label(new Rect(14, y + 8, w - 170, 28), "<b><color=#ff6f91>İLK ALIMA 2 KAT ELMAS</color></b>", new GUIStyle(UiSkin.Label) { richText = true });
+                GUI.Label(new Rect(14, y + 36, w - 170, 32), "<size=12>İlk elmas paketinde iki katı elmas alırsın. Tek seferlik.</size>", new GUIStyle(UiSkin.Small) { richText = true });
+                if (GUI.Button(new Rect(w - 150, y + 12, 136, 50), "Paketlere bak", UiSkin.ButtonGold)) shopTab = 0;
+                y += 84;
+            }
+            // Hafta sonu
+            {
+                bool we = Packs.Weekend(now); var left = Packs.WeekendLeft(now);
+                var r = new Rect(0, y, w, 74); GUI.Box(r, "", we ? UiSkin.CardGold : UiSkin.Card);
+                GUI.Label(new Rect(14, y + 8, w - 170, 28), we ? "<b><color=#8be39d>HAFTA SONU: +%50 ELMAS</color></b>" : "<b>Hafta sonu bonusu</b>", new GUIStyle(UiSkin.Label) { richText = true });
+                GUI.Label(new Rect(14, y + 36, w - 170, 32), we ? $"<size=12>Tüm elmas paketlerinde. Bitişe {(int)left.TotalHours}sa {left.Minutes}dk</size>" : $"<size=12>Cumartesi başlıyor: {(int)left.TotalDays}g {left.Hours}sa</size>", new GUIStyle(UiSkin.Small) { richText = true });
+                if (we && GUI.Button(new Rect(w - 150, y + 12, 136, 50), "Paketler", UiSkin.ButtonGold)) shopTab = 0;
+                y += 84;
+            }
+            // Haftalık kahraman paketi
+            {
+                int t = Packs.HeroPackTarget(D);
+                var r = new Rect(0, y, w, 150); GUI.Box(r, "", UiSkin.CardGold);
+                var (sh, ss) = Skins.WeeklyDeal();
+                var port = t >= 0 ? Art.HeroPortrait(t, Mathf.FloorToInt(Time.time * 1.6f), 0) : Art.HeroPortrait(sh, Mathf.FloorToInt(Time.time * 1.6f), ss);
+                GUI.DrawTexture(new Rect(10, y + 10, 120, 130), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .18f, .06f, .9f), 0, 10);
+                if (port != null) GUI.DrawTexture(new Rect(0, y + 6, 140, 140), port, ScaleMode.ScaleToFit);
+                var left = League.Left(now);
+                GUI.Label(new Rect(144, y + 8, w - 154, 26), "<b><color=#ffb02e>HAFTALIK KAHRAMAN PAKETİ</color></b>", new GUIStyle(UiSkin.Label) { richText = true, fontSize = 15 });
+                GUI.Label(new Rect(144, y + 36, w - 154, 44), $"<size=13>{Packs.HeroPackDesc(D)}</size>", new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
+                GUI.Label(new Rect(144, y + 78, w - 154, 20), $"<size=11>Haftada 1 · yenilenmesine {(int)left.TotalDays}g {left.Hours}sa</size>", new GUIStyle(UiSkin.Small) { richText = true });
+                bool bought = Packs.HeroPackBought(D);
+                var def = Catalog.Find(Catalog.HeroPack); var store = GameServices.Store; bool ready = store != null && store.IsReady;
+                GUI.enabled = !bought && ready;
+                if (GUI.Button(new Rect(144, y + 98, w - 158, 44), bought ? "Bu hafta alındı" : (def?.localizedPrice ?? "—"), UiSkin.ButtonGold))
+                    Services.Shop.Buy(Catalog.HeroPack, ok => { if (ok) { SoundFx.Play("chest"); flow.ShowToast(Services.Shop.LastPackText + $" + {Packs.HeroPackGems} elmas"); } else flow.ShowToast("Satın alma tamamlanmadı"); });
+                GUI.enabled = true;
+                y += 160;
+            }
+            // Hız paketi
+            {
+                var r = new Rect(0, y, w, 92); GUI.Box(r, "", UiSkin.Card);
+                GUI.Label(new Rect(14, y + 8, w - 170, 28), "<b>Hız Paketi</b>  <size=12><color=#9fe8ff>elinde " + D.speedTokens + " hızlandırıcı</color></size>", new GUIStyle(UiSkin.Label) { richText = true });
+                GUI.Label(new Rect(14, y + 36, w - 170, 50), $"<size=12>{Packs.SpeedPackTokens} hızlandırıcı (her biri inşaatı 1 saat kısaltır) + {Packs.SpeedPackGems} elmas · günde 1</size>", new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
+                bool bought = Packs.SpeedPackBought(D);
+                var def = Catalog.Find(Catalog.SpeedPack); var store = GameServices.Store; bool ready = store != null && store.IsReady;
+                GUI.enabled = !bought && ready;
+                if (GUI.Button(new Rect(w - 150, y + 20, 136, 52), bought ? "Yarın" : (def?.localizedPrice ?? "—"), UiSkin.Button))
+                    Services.Shop.Buy(Catalog.SpeedPack, ok => { if (ok) { SoundFx.Play("coin"); flow.ShowToast(Services.Shop.LastPackText); } else flow.ShowToast("Satın alma tamamlanmadı"); });
+                GUI.enabled = true;
+                y += 102;
+            }
+            if (!D.starterPackBought) y = Product(flow, Catalog.StarterPack, "Başlangıç paketi", "500 elmas, reklamsız oyun · tek seferlik", "shop_starter", y, w, true);
+            return y;
+        }
+
         /// <summary>Mağaza "Görünüm" sekmesi: haftanın görünümü vitrini (%40 indirim) + kahraman başına görünüm durumu.</summary>
         static float SkinTab(GameFlow flow, float y, float w)
         {
@@ -94,16 +168,21 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn)) { flow.Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Mağaza</b>", label);
 
-            float tw = (w - 24) / 4;
-            if (GUI.Button(new Rect(x0, 96, tw, 40), "Elmas", shopTab == 0 ? UiSkin.ButtonGold : btn)) shopTab = 0;
-            if (GUI.Button(new Rect(x0 + tw + 8, 96, tw, 40), "Kaynak", shopTab == 1 ? UiSkin.ButtonGold : btn)) shopTab = 1;
-            if (GUI.Button(new Rect(x0 + 2 * tw + 16, 96, tw, 40), "Tema", shopTab == 2 ? UiSkin.ButtonGold : btn)) shopTab = 2;
-            if (GUI.Button(new Rect(x0 + 3 * tw + 24, 96, tw, 40), "Görünüm", new GUIStyle(shopTab == 3 ? UiSkin.ButtonGold : btn) { fontSize = 14 })) shopTab = 3;
+            float tw = (w - 24) / 5;
+            int[] order = { 4, 0, 1, 2, 3 }; string[] names = { "Teklif", "Elmas", "Kaynak", "Tema", "Görünüm" };
+            for (int ti = 0; ti < 5; ti++)
+            {
+                int t = order[ti];
+                var tr = new Rect(x0 + ti * (tw + 6), 96, tw, 40);
+                if (GUI.Button(tr, names[ti], new GUIStyle(shopTab == t ? UiSkin.ButtonGold : btn) { fontSize = 13 })) { shopTab = t; SoundFx.Play("click"); }
+                if (t == 4 && Packs.AnyNew(D) && shopTab != 4) { float pu = 1 + .15f * Mathf.Sin(Time.time * 6); GUI.DrawTexture(new Rect(tr.xMax - 10 - 5 * pu, tr.y - 4 - 5 * pu, 12 * pu, 12 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 6 * pu); }
+            }
+            if (shopTab == 4) Packs.MarkSeen(D);
             GUI.Label(new Rect(x0 + w - 150, 48, 150, 40), $"<color=#9fe8ff><b>Elmas {Wl.Get(Currency.Diamonds)}</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleRight });
 
             var store = GameServices.Store;
             float y0 = 146, ch = 86;
-            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, shopTab == 2 ? 40 + Themes.All.Length * 142 : shopTab == 3 ? 340 + Progress.Heroes.Length * 92 : 1100));
+            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, shopTab == 2 ? 40 + Themes.All.Length * 142 : shopTab == 3 ? 340 + Progress.Heroes.Length * 92 : shopTab == 4 ? 900 : 1100));
             float y = 0;
 
             if (shopTab == 0)
@@ -152,7 +231,9 @@ namespace SuruSavasi.Game
                 for (int i = 0; i < ids.Length; i++)
                 {
                     var def = Catalog.Find(ids[i]);
-                    y = Product(flow, ids[i], $"{def.diamonds} elmas", extra[i], $"shop_gems_{i + 1}", y, w, false);
+                    int got = Packs.DiamondsFor(D, def.diamonds, System.DateTime.Now);
+                    string badge = Packs.FirstDouble(D) ? "  <color=#ff6f91><b>İLK ALIM 2 KAT!</b></color>" : Packs.Weekend(System.DateTime.Now) ? "  <color=#8be39d><b>Hafta sonu +%50</b></color>" : "";
+                    y = Product(flow, ids[i], got > def.diamonds ? $"<color=#ff8a80>{def.diamonds}</color> → {got} elmas" : $"{def.diamonds} elmas", extra[i] + badge, $"shop_gems_{i + 1}", y, w, got > def.diamonds);
                 }
                 if (!D.noAds) y = Product(flow, Catalog.NoAds, "Reklamsız", "Bölüm aralarındaki reklamlar kalkar. Ödüllü reklamlar isteğe bağlı kalır.", "shop_noads", y, w, false);
 
@@ -163,6 +244,7 @@ namespace SuruSavasi.Game
             }
             else if (shopTab == 2) y = ThemeTab(flow, y, w);
             else if (shopTab == 3) y = SkinTab(flow, y, w);
+            else if (shopTab == 4) y = OfferTab(flow, y, w);
             else
             {
                 // İkinci inşaatçı (kalıcı)

@@ -16,6 +16,8 @@ namespace SuruSavasi.Services
         public const string NoAds = "no_ads";                  // aralık reklamlarını kaldırır
         public const string PiggyBank = "piggy_bank";          // kumbarayı kırar: biriken elmaslar (tekrar alınabilir)
         public const string FounderPack = "founder_pack";      // 72 saatlik kurucu teklifi (inşaatçı + elmas + epik ekipman)
+        public const string HeroPack = "pack_hero_week";       // haftalık kahraman paketi (parça ya da görünüm + elmas), haftada 1
+        public const string SpeedPack = "pack_speed";          // 3 hızlandırıcı + elmas, günde 1
 
         public static readonly IReadOnlyList<ProductDef> All = new List<ProductDef>
         {
@@ -29,6 +31,8 @@ namespace SuruSavasi.Services
             new ProductDef(NoAds, ProductKind.NonConsumable, 0),
             new ProductDef(PiggyBank, ProductKind.Consumable, 0),
             new ProductDef(FounderPack, ProductKind.NonConsumable, Core.Meta.Offers.FounderGems),
+            new ProductDef(HeroPack, ProductKind.Consumable, Core.Meta.Packs.HeroPackGems),
+            new ProductDef(SpeedPack, ProductKind.Consumable, Core.Meta.Packs.SpeedPackGems),
         };
 
         public static ProductDef Find(string id)

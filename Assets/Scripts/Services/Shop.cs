@@ -24,10 +24,22 @@ namespace SuruSavasi.Services
             });
         }
 
+        /// <summary>Son paket içeriği (ekranda göstermek için).</summary>
+        public static string LastPackText = "";
+
+        public static bool IsDiamondPack(string id) => id.StartsWith("diamonds_");
+
         static void Grant(ProductDef def)
         {
-            if (def.diamonds > 0) GameServices.Wallet.Add(Currency.Diamonds, def.diamonds, "purchase:" + def.id);
             var data = GameServices.Save.Data;
+            int gems = def.diamonds;
+            // Elmas paketleri: ilk alım 2 kat, hafta sonu +%50
+            if (IsDiamondPack(def.id)) gems = Core.Meta.Packs.DiamondsFor(data, def.diamonds, DateTime.Now);
+            if (gems > 0) GameServices.Wallet.Add(Currency.Diamonds, gems, "purchase:" + def.id);
+            if (IsDiamondPack(def.id)) data.firstPurchaseDone = true;
+            LastPackText = "";
+            if (def.id == Catalog.HeroPack) LastPackText = Core.Meta.Packs.GrantHeroPack(data);
+            if (def.id == Catalog.SpeedPack) { Core.Meta.Packs.GrantSpeedPack(data); LastPackText = $"+{Core.Meta.Packs.SpeedPackTokens} hızlandırıcı"; }
             if (def.id == Catalog.NoAds || def.id == Catalog.StarterPack)
             {
                 data.noAds = true;

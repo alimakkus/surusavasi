@@ -27,7 +27,10 @@ namespace SuruSavasi.Core
         public List<long> statVals = new List<long>();
         public List<string> achClaimed = new List<string>();
         public string title = "";
-        public List<string> tips = new List<string>();   // rehber: görülen ipuçları ve tanıtımlar                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
+        public List<string> tips = new List<string>();
+        // Teklifler: ilk alım, haftalık kahraman paketi, hız paketi ve hızlandırıcılar
+        public bool firstPurchaseDone;
+        public int heroPackWeek, speedPackDay, speedTokens, offerSeenWeek, offerSeenDay;   // rehber: görülen ipuçları ve tanıtımlar                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
         // Üs: bina seviyeleri BuildingKind sırasıyla
