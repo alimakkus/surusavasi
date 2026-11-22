@@ -117,7 +117,8 @@ namespace SuruSavasi.Game
                 Show(GameScreen.Base);
                 // İlk açılış: önce gizlilik onayı (üs ekranında), sonra günlük ödül
                 if (ConsentScreen.Needed) LocalConsent.Answered += AfterConsent;
-                // Giriş ödülü bekliyorsa oyuncuyu Günlük ekranı karşılar
+                // Yeni oyuncu doğrudan ilk savaşa (hikâye + rehber); sonra giriş ödülü bekliyorsa Günlük ekranı karşılar
+                else if (NewPlayer) Play(1);
                 else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
             }
         }
@@ -125,8 +126,13 @@ namespace SuruSavasi.Game
         void AfterConsent()
         {
             LocalConsent.Answered -= AfterConsent;
-            if (screen == GameScreen.Base && Daily.CanLogin(D)) Show(GameScreen.Daily);
+            if (screen != GameScreen.Base) return;
+            if (NewPlayer) Play(1);
+            else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
         }
+
+        /// <summary>Hiç bölüm geçmemiş oyuncu.</summary>
+        bool NewPlayer => D.unlocked <= 1 && Progress.TotalStars(D) == 0;
 
         float Progress01 => Mathf.Min(toLoad == null || toLoad.Count == 0 ? 1 : loaded / (float)toLoad.Count, splashT / 3.2f);
 
