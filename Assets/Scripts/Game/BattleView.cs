@@ -49,6 +49,7 @@ namespace SuruSavasi.Game
 
         void ResetJuice()
         {
+            Tutorial.ResetBattle();
             bannerText = null; countPop = countHurt = slowT = gateFlash = 0; lastN = sim != null ? sim.n : 0;
             bossBannerShown = false; lastTick = -1;
             SoundFx.Music("battle");
@@ -241,6 +242,9 @@ namespace SuruSavasi.Game
                     SoundFx.Play("chest"); shake = Mathf.Max(shake, 6); Banner("BÜYÜK İKRAMİYE!", "Zar 6 geldi", "#ffd23f", 1.4f);
                     for (int cf = 0; cf < 6; cf++) Burst(40 + cf * 56, 60, 12, new[] { "#ffd23f", "#8be39d", "#5ad1ff", "#ff6f91" }, 120, 10);
                     break;
+                case "weak": SoundFx.Play("tick"); Burst(x, y - 60, 10, new[] { "#ffd23f", "#ffffff" }, 90, 20); break;
+                case "weakhit": SoundFx.Play("coin"); shake = Mathf.Max(shake, 3); Burst(x, y, 14, new[] { "#ffd23f", "#ff5a4d", "#ffffff" }, 140, 30); break;
+                case "tired": SoundFx.Play("gate_good"); Banner("YORULDU!", "Patron artık daha çok hasar alıyor", "#8be39d", 1.4f); break;
                 case "gate_good":
                     SoundFx.Play("gate_good"); gateFlash = 1; gateFlashCol = C("#5ad1ff");
                     Burst(x, y - 20, 36, new[] { "#5ad1ff", "#ffffff", "#8be39d", "#ffd23f" }, 170, 70); break;
@@ -323,7 +327,8 @@ namespace SuruSavasi.Game
 #endif
                 if (mode != null && mode.Paused) { Render(); return; }
                 // Vuruş yavaşlatma: dev düşman / patron ölünce an kısa süre ağırlaşır
-                float sdt = Mathf.Min(Time.deltaTime, .05f) * (slowT > 0 ? .2f : 1);
+                float sdt = Mathf.Min(Time.deltaTime, .05f) * (slowT > 0 ? .2f : 1) * (Tutorial.Slow ? .3f : 1);
+                Tutorial.Tick(sim, level, Mathf.Min(Time.unscaledDeltaTime, .05f));
                 slowT = Mathf.Max(0, slowT - Time.unscaledDeltaTime);
                 if (sim.Live) sim.Step(sdt);
                 if (mode != null && sim.Live) mode.Tick(sim, sdt);
@@ -433,6 +438,16 @@ namespace SuruSavasi.Game
                 Color? bt = B.flash > 0 ? new Color(1.6f, 1.6f, 1.6f) : (Color?)null;
                 if (B.isBoss) DrawSprite(Art.Boss(B.bossIndex, frame), B.x, B.y, B.sc / 3.9f, 260, bt);
                 else DrawSprite(Art.Elite(B.typeId, frame), B.x, B.y, B.sc / 2.6f, 260, bt);
+                // Zayıf nokta: nabız atan hedef halkası (son saniyede yanıp söner)
+                if (B.weakT > 0 && (B.weakT > .8f || Mathf.Repeat(Time.time * 8, 1) > .4f))
+                {
+                    float wy = B.y - 11 * B.sc, pu = 1 + .25f * Mathf.Sin(Time.time * 12);
+                    Draw(circle, new Color(1f, .85f, .2f, .35f), B.x + B.weakX, wy, 44 * pu, 44 * pu, 262);
+                    Draw(circle, new Color(1f, .9f, .3f, .9f), B.x + B.weakX, wy, 26, 26, 263);
+                    Draw(circle, new Color(.9f, .15f, .1f, 1f), B.x + B.weakX, wy, 14, 14, 264);
+                    Draw(square, new Color(1, 1, 1, .9f), B.x + B.weakX, wy, 30 * pu, 2, 265);
+                    Draw(square, new Color(1, 1, 1, .9f), B.x + B.weakX, wy, 2, 30 * pu, 265);
+                }
             }
 
             // Sürü: askerler + kahraman
@@ -676,11 +691,12 @@ namespace SuruSavasi.Game
             if (sim.boss != null && sim.Live)
             {
                 var B = sim.boss;
-                Text(new Vector2(VW / 2, 66), (B.isBoss ? "PATRON: " : "") + B.name, C("#ffd23f"), label, 400);
+                Text(new Vector2(VW / 2, 66), (B.isBoss ? "PATRON: " : "") + B.name + (B.tired > 1.01f ? $"  <color=#8be39d>Yorgun ×{B.tired:0.0}</color>" : ""), C("#ffd23f"), label, 400);
                 GUI.DrawTexture(new Rect(VW / 2 - 140, 82, 280, 12), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .6f), 0, 0);
                 GUI.DrawTexture(new Rect(VW / 2 - 140, 82, 280 * Mathf.Clamp01(B.hp / B.max), 12), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, C("#ff5a4d"), 0, 0);
             }
             DrawBanner(VW);
+            if (sim.Live) Tutorial.DrawBattle(sim, VW, (px, py) => ToGui(px, py));
 
             if (sim.Live && GUI.Button(new Rect(8, 8, 70, 36), mode != null ? "Pes et" : "Üs", btn))
             {

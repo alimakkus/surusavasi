@@ -13,6 +13,10 @@ namespace SuruSavasi.Core.Battle
     {
         public float x, y, hp, max, chip, sc, flash, sum, shootT = 1.5f, acc, accT, vuln = 1;
         public int phase;   // öfke aşaması (0 normal)
+        // Zayıf nokta ve yorgunluk: uzun patron savaşlarını kısaltır, nişan almayı ödüllendirir
+        public float fightT, weakT, weakCd = 3f, weakX, tired = 1f;
+        public int weakHits;
+        public bool tiredShown;
         public string color, name, typeId;
         public bool isBoss;
         public int bossIndex;
@@ -140,7 +144,7 @@ namespace SuruSavasi.Core.Battle
                 if (e.done || e.kind != ObjKind.Enemy || e == skip) continue;
                 float y2 = Osy(e); if (Math.Abs(e.x - ex) < 62 && Math.Abs(y2 - ey) < 50) Hurt(e, y2, dmg * .5f);
             }
-            if (boss != null && Math.Abs(boss.x - ex) < 70 + 10 * boss.sc && Math.Abs(boss.y - 10 - ey) < 60 + 12 * boss.sc) { boss.hp -= dmg * .5f * boss.vuln; boss.flash = .08f; }
+            if (boss != null && Math.Abs(boss.x - ex) < 70 + 10 * boss.sc && Math.Abs(boss.y - 10 - ey) < 60 + 12 * boss.sc) { boss.hp -= dmg * .5f * boss.vuln * boss.tired; boss.flash = .08f; }
         }
 
         void EnemyShoot(float sx, float sy, float spd, float dm, string col, float spread = 0)
@@ -175,7 +179,12 @@ namespace SuruSavasi.Core.Battle
                     AddFloat(o.x, sy, "Fıçı", "#c9b8ff");
                 }
             }
-            if (boss != null) { boss.hp -= dmg * boss.vuln; boss.flash = .15f; AddFloat(boss.x, boss.y - 40, Fmt(dmg), "#c9b8ff"); CheckBossDead(); }
+            if (boss != null)
+            {
+                // Zayıf nokta açıkken yetenek iki kat vurur
+                float sm = boss.vuln * boss.tired * (boss.weakT > 0 ? 2 : 1);
+                boss.hp -= dmg * sm; boss.flash = .15f; AddFloat(boss.x, boss.y - 40, Fmt(dmg * sm) + (boss.weakT > 0 ? "!" : ""), boss.weakT > 0 ? "#ffd23f" : "#c9b8ff"); CheckBossDead();
+            }
             // Deniz: geçici taretler
             if (mods.skillTurret > 0)
             {
@@ -271,6 +280,31 @@ namespace SuruSavasi.Core.Battle
                 case GateFx.MulDown: return -sol * (1 - o.v);
             }
             return 0;
+        }
+
+        public bool noFatigue;   // Patron Avı: süre zaten sınırlı, yorgunluk yok
+        public const float WeakMul = 3f, WeakDur = 3.5f, WeakGap = 5f, FatigueAt = 45f;
+
+        /// <summary>Patron/elit: belli aralıklarla zayıf nokta açar; 45 sn'den uzun süren savaşta yorulur (her saniye +%3 hasar alır, en çok ×4).</summary>
+        void BossWeakAndFatigue(float dt)
+        {
+            var B = boss;
+            B.fightT += dt;
+            if (B.weakT > 0) { B.weakT -= dt; if (B.weakT <= 0) B.weakCd = WeakGap; }
+            else
+            {
+                B.weakCd -= dt;
+                if (B.weakCd <= 0)
+                {
+                    B.weakT = WeakDur; B.weakX = (Rand * 2 - 1) * Math.Min(34, 7 * B.sc);
+                    AddFloat(B.x + B.weakX, B.y - 20 * B.sc * .5f - 20, "ZAYIF NOKTA!", "#ffd23f"); Emit("weak", B.x + B.weakX, B.y);
+                }
+            }
+            if (!noFatigue && B.fightT > FatigueAt)
+            {
+                B.tired = Math.Min(4f, 1f + .03f * (B.fightT - FatigueAt));
+                if (!B.tiredShown) { B.tiredShown = true; AddFloat(B.x, B.y - 60, (B.isBoss ? "PATRON" : "ELİT") + " YORULDU!", "#8be39d"); Emit("tired", B.x, B.y); }
+            }
         }
 
         /// <summary>Mod savaşları için dışarıdan bitirme (ör. süre doldu).</summary>
@@ -457,7 +491,13 @@ namespace SuruSavasi.Core.Battle
                         }
                         if (!gone && boss != null && Math.Abs(bu.x - boss.x) < 12 + 11 * boss.sc && bu.y < boss.y + 8 && bu.y > boss.y - 22 * boss.sc)
                         {
-                            boss.hp -= bu.dmg * boss.vuln; boss.flash = .08f; boss.acc += bu.dmg * boss.vuln; gone = true; Emit("hit", bu.x, bu.y);
+                            float bm = boss.vuln * boss.tired;
+                            if (boss.weakT > 0 && Math.Abs(bu.x - (boss.x + boss.weakX)) < 16)
+                            {   // zayıf noktaya isabet: ×3
+                                bm *= WeakMul; boss.weakHits++;
+                                if (boss.weakHits % 6 == 1) { AddFloat(boss.x + boss.weakX, boss.y - 30 * boss.sc * .5f, "ZAYIF NOKTA ×3", "#ffd23f"); Emit("weakhit", bu.x, bu.y); }
+                            }
+                            boss.hp -= bu.dmg * bm; boss.flash = .08f; boss.acc += bu.dmg * bm; gone = true; Emit("hit", bu.x, bu.y);
                             if (bu.blast) Explode(bu.x, bu.y, bu.dmg, null);
                         }
                     }
@@ -488,6 +528,7 @@ namespace SuruSavasi.Core.Battle
                     else
                     {
                         DamageSquad(Math.Max(.3f, n / Balance.SquadTime(lv) * .55f * mods.guard) * dt);
+                        BossWeakAndFatigue(dt);
                         // Öfke aşamaları: 50. bölümden itibaren patron %50'de öfkelenir (daha hızlı saldırır ama zırhı çatlar);
                         // 100. bölümün son patronu %25'te son aşamaya geçer.
                         if (boss.isBoss && lv >= 50)

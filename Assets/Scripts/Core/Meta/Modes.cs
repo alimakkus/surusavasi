@@ -138,6 +138,7 @@ namespace SuruSavasi.Core.Meta
             F.sc = 3.6f + s.lv / 100f * .8f; F.typeId = null;
             F.hp = (float)Math.Ceiling(F.hp * HuntHpMul);
             s.SkipToFinal(1f);
+            s.noFatigue = true;
         }
 
         public static float HuntFrac(BattleSim s) => s.boss == null ? 0 : Math.Max(0, Math.Min(1, 1 - s.boss.hp / s.boss.max));

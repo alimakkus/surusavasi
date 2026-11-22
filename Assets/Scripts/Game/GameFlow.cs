@@ -139,6 +139,7 @@ namespace SuruSavasi.Game
         void OnGUI()
         {
             if (screen == GameScreen.Battle) return;
+            GUI.depth = -5;   // rehber pencereleri üs arayüzünün üstünde kalsın ve tıklamayı önce alsın
             Styles();
             gs = UnityEngine.Screen.height / 800f;
             VW = UnityEngine.Screen.width / gs;
@@ -157,6 +158,8 @@ namespace SuruSavasi.Game
                     GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.03f, .04f, .08f, .62f), 0, 0);
                 }
                 ResourceBar(x0, w);
+                bool intro = Tutorial.HasIntro(screen);
+                if (intro) GUI.enabled = false;
                 switch (screen)
                 {
                     case GameScreen.Levels: LevelsScreen(x0, w); break;
@@ -171,7 +174,10 @@ namespace SuruSavasi.Game
                     case GameScreen.Skins: SkinScreen.Draw(this, x0, w); break;
                     case GameScreen.Achievements: AchievementsScreen.Draw(this, x0, w); break;
                 }
+                GUI.enabled = true;
+                if (intro) Tutorial.DrawIntro(screen, VW);
             }
+            if (screen == GameScreen.Base) Tutorial.DrawUnlocks(this, VW);
             if (toastT > 0 && !string.IsNullOrEmpty(toast))
             {
                 GUI.Box(new Rect(VW / 2 - 170, 640, 340, 44), "", card);
