@@ -151,6 +151,7 @@ namespace SuruSavasi.Core.Meta
                 int hi = Progress.HeroIndex(d.hero), hl = Progress.HeroLevel(d, hi);
                 if (hl < Progress.HeroMax && d.gold >= Progress.HeroCostGold(hl) * 2 && d.diamonds >= Progress.HeroCostGems(hl))
                 { d.gold -= Progress.HeroCostGold(hl); d.diamonds -= Progress.HeroCostGems(hl); d.heroLevels[hi]++; }
+                Talents.AutoSpend(d, hi);   // oyuncu yetenek puanlarını harcar
                 // Silah: açık olan en iyi silahı seç ve yükselt
                 for (int w = Progress.Weapons.Length - 1; w >= 0; w--) if (Progress.WeaponOpen(d, w)) { d.weapon = Progress.Weapons[w].id; break; }
                 int wi = Progress.WeaponIndex(d.weapon), wl = Progress.WeaponLevel(d, wi);

@@ -34,21 +34,76 @@ namespace SuruSavasi.Game
         static Texture2D Icon(string name) => Resources.Load<Texture2D>("Art/" + name); // görseller gelince otomatik görünür
 
         // ---------------- Mağaza ----------------
+        /// <summary>Mağaza "Görünüm" sekmesi: haftanın görünümü vitrini (%40 indirim) + kahraman başına görünüm durumu.</summary>
+        static float SkinTab(GameFlow flow, float y, float w)
+        {
+            var (dh, ds) = Skins.WeeklyDeal();
+            var H = Progress.Heroes[dh];
+            bool open = Progress.HeroOpen(D, dh), owned = Skins.Owned(D, dh, ds);
+            var r = new Rect(0, y, w, 320);
+            GUI.Box(r, "", UiSkin.CardGold);
+            var rib = new Rect(16, y + 10, w - 32, 32); GUI.Box(rib, "", UiSkin.Ribbon);
+            GUI.Label(rib, "<b>HAFTANIN GÖRÜNÜMÜ  ·  %40 İNDİRİM</b>", new GUIStyle(UiSkin.Label) { alignment = TextAnchor.MiddleCenter, richText = true, fontSize = 15 });
+            var left = League.Left(System.DateTime.Now);
+            string[] bg = { "#2a3550", "#5a4512", "#101836", "#5a1420" };
+            ColorUtility.TryParseHtmlString(bg[ds], out var bc);
+            GUI.DrawTexture(new Rect(16, y + 50, 180, 200), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, bc, 0, 12);
+            var port = Art.HeroPortrait(dh, Mathf.FloorToInt(Time.time * 1.6f), ds);
+            if (port != null) GUI.DrawTexture(new Rect(6, y + 40 + Mathf.Sin(Time.time * 2.2f) * 3, 200, 200), port, ScaleMode.ScaleToFit);
+            float tx = 210, tw2 = w - 224;
+            GUI.Label(new Rect(tx, y + 56, tw2, 30), $"<b><size=20>{H.name} · {Skins.Names[ds]}</size></b>", new GUIStyle(UiSkin.Label) { richText = true });
+            GUI.Label(new Rect(tx, y + 88, tw2, 60), $"<size=13>{Skins.Descs[ds]}</size>", new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
+            GUI.Label(new Rect(tx, y + 150, tw2, 30), $"<color=#ff8a80><s>{Skins.Price[ds]}</s></color>  <color=#9fe8ff><b><size=22>{Skins.PriceFor(dh, ds)}</size> elmas</b></color>", new GUIStyle(UiSkin.Label) { richText = true });
+            GUI.Label(new Rect(tx, y + 182, tw2, 22), $"<size=12>Bitişe {(int)left.TotalDays}g {left.Hours}sa</size>", new GUIStyle(UiSkin.Small) { richText = true });
+            var br = new Rect(16, y + 260, w - 32, 50);
+            if (owned) { GUI.enabled = false; GUI.Button(br, "Bu görünüme sahipsin", UiSkin.ButtonGray); GUI.enabled = true; }
+            else if (!open) { GUI.enabled = false; GUI.Button(br, $"Önce {H.name} kahramanını aç", UiSkin.ButtonGray); GUI.enabled = true; }
+            else if (GUI.Button(br, $"SATIN AL VE KUŞAN  <size=14>({Skins.PriceFor(dh, ds)} elmas)</size>", UiSkin.ButtonGold))
+            {
+                if (Wl.Spend(Currency.Diamonds, Skins.PriceFor(dh, ds), $"skin_deal:{H.id}_{Skins.Ids[ds]}"))
+                { Skins.Give(D, dh, ds); Skins.Equip(D, dh, ds); GameServices.Save.Save(); SoundFx.Play("chest"); flow.ShowToast($"{H.name}: {Skins.Names[ds]} görünümü!"); }
+                else flow.ShowToast("Yeterli elmas yok");
+            }
+            y += 330;
+            // Kahraman başına görünümler
+            for (int i = 0; i < Progress.Heroes.Length; i++)
+            {
+                var hr = new Rect(0, y, w, 84);
+                GUI.Box(hr, "", UiSkin.Card);
+                bool ho = Progress.HeroOpen(D, i);
+                for (int s = 0; s < Skins.Ids.Length; s++)
+                {
+                    var p2 = Art.HeroPortrait(i, 0, s);
+                    var old = GUI.color; if (!Skins.Owned(D, i, s)) GUI.color = new Color(1, 1, 1, .35f);
+                    if (p2 != null) GUI.DrawTexture(new Rect(4 + s * 46, y + 10, 64, 64), p2, ScaleMode.ScaleToFit);
+                    GUI.color = old;
+                }
+                GUI.Label(new Rect(196, y + 10, w - 330, 26), $"<b>{Progress.Heroes[i].name}</b>", new GUIStyle(UiSkin.Label) { richText = true });
+                GUI.Label(new Rect(196, y + 38, w - 330, 30), $"<size=12>{Skins.OwnedCount(D, i)}/{Skins.Ids.Length} görünüm</size>", new GUIStyle(UiSkin.Small) { richText = true });
+                GUI.enabled = ho;
+                if (GUI.Button(new Rect(w - 130, y + 18, 116, 48), ho ? "Görünümler" : "Kilitli", new GUIStyle(UiSkin.Button) { fontSize = 14 })) SkinScreen.Open(flow, i);
+                GUI.enabled = true;
+                y += 92;
+            }
+            return y;
+        }
+
         public static void Shop(GameFlow flow, float x0, float w)
         {
             var label = UiSkin.Label; var small = UiSkin.Small; var btn = UiSkin.Button; var card = UiSkin.Card;
             if (GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn)) { flow.Show(GameScreen.Base); return; }
             GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Mağaza</b>", label);
 
-            float tw = (w - 20) / 3;
+            float tw = (w - 24) / 4;
             if (GUI.Button(new Rect(x0, 96, tw, 40), "Elmas", shopTab == 0 ? UiSkin.ButtonGold : btn)) shopTab = 0;
-            if (GUI.Button(new Rect(x0 + tw + 10, 96, tw, 40), "Kaynak", shopTab == 1 ? UiSkin.ButtonGold : btn)) shopTab = 1;
-            if (GUI.Button(new Rect(x0 + 2 * tw + 20, 96, tw, 40), "Tema", shopTab == 2 ? UiSkin.ButtonGold : btn)) shopTab = 2;
+            if (GUI.Button(new Rect(x0 + tw + 8, 96, tw, 40), "Kaynak", shopTab == 1 ? UiSkin.ButtonGold : btn)) shopTab = 1;
+            if (GUI.Button(new Rect(x0 + 2 * tw + 16, 96, tw, 40), "Tema", shopTab == 2 ? UiSkin.ButtonGold : btn)) shopTab = 2;
+            if (GUI.Button(new Rect(x0 + 3 * tw + 24, 96, tw, 40), "Görünüm", new GUIStyle(shopTab == 3 ? UiSkin.ButtonGold : btn) { fontSize = 14 })) shopTab = 3;
             GUI.Label(new Rect(x0 + w - 150, 48, 150, 40), $"<color=#9fe8ff><b>Elmas {Wl.Get(Currency.Diamonds)}</b></color>", new GUIStyle(label) { alignment = TextAnchor.MiddleRight });
 
             var store = GameServices.Store;
             float y0 = 146, ch = 86;
-            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, shopTab == 2 ? 40 + Themes.All.Length * 142 : 1100));
+            shopScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), shopScroll, new Rect(0, 0, w, shopTab == 2 ? 40 + Themes.All.Length * 142 : shopTab == 3 ? 340 + Progress.Heroes.Length * 92 : 1100));
             float y = 0;
 
             if (shopTab == 0)
@@ -107,6 +162,7 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(0, y, w, 60), $"<size=12>Mağaza: {store?.Name ?? "yok"}. Fiyatlar mağazadan gelir; Editor'de satın alma sahtedir, para çekilmez.</size>", small);
             }
             else if (shopTab == 2) y = ThemeTab(flow, y, w);
+            else if (shopTab == 3) y = SkinTab(flow, y, w);
             else
             {
                 // İkinci inşaatçı (kalıcı)

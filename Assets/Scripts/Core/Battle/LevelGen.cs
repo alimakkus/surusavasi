@@ -58,17 +58,17 @@ namespace SuruSavasi.Core.Battle
             {
                 int row = Math.Max(1, Math.Min(R - 2, (int)Math.Round((R - 1) * (k + 1f) / (count + 1f))));
                 float wy = -Field.GAP * (row + 1) - Field.GAP / 2;
-                float add = (float)Math.Ceiling(g.Range(7, 13) * lvMul * Field.BARV * 1.4f);
+                float add = (float)Math.Ceiling(g.Range(7, 13) * lvMul * Field.BARV * 1.15f);
                 GateFx a, b; float va, vb;
                 int pick = g.Range(0, lv >= 15 ? 5 : 4);
                 switch (pick)
                 {
-                    case 0: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.5f; break;               // toplama mı çarpma mı?
-                    case 1: a = GateFx.Add; va = add; b = GateFx.Dmg; vb = .25f; break;               // asker mi güç mü?
-                    case 2: a = GateFx.Mul; va = 1.3f; b = GateFx.Fire; vb = 10f; break;     // kalıcı mı anlık mı?
+                    case 0: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.4f; break;               // toplama mı çarpma mı?
+                    case 1: a = GateFx.Add; va = add; b = GateFx.Dmg; vb = .2f; break;               // asker mi güç mü?
+                    case 2: a = GateFx.Mul; va = 1.25f; b = GateFx.Fire; vb = 10f; break;     // kalıcı mı anlık mı?
                     case 3: a = GateFx.Heal; va = .5f; b = GateFx.Add; vb = (float)Math.Ceiling(add * .8f); break; // can mı asker mi?
                     case 4: a = GateFx.Sub; va = (float)Math.Ceiling(add * 1.2f); b = GateFx.MulDown; vb = .75f; break; // iki kötüden az kötü
-                    default: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.5f; break;
+                    default: a = GateFx.Add; va = add; b = GateFx.Mul; vb = 1.4f; break;
                 }
                 if (g.Next() < .5) { var t = a; a = b; b = t; var tv = va; va = vb; vb = tv; }
                 int id = 1000 + k;

@@ -143,6 +143,18 @@ namespace SuruSavasi.Core.Meta
             return true;
         }
 
+        /// <summary>Denge simülasyonu için: boş puanları sırayla (hasar ve asker dalları önce) dağıtır.</summary>
+        public static void AutoSpend(SaveData d, int hero)
+        {
+            int[] order = { 0, 3, 1, 4, 2, 5, 6, 7, 8 };
+            for (int guard = 0; guard < 40 && Free(d, hero) > 0; guard++)
+            {
+                bool any = false;
+                foreach (int nd in order) if (Free(d, hero) > 0 && Up(d, hero, nd)) any = true;
+                if (!any) break;
+            }
+        }
+
         public static bool ResetFree(SaveData d) => !d.talentResetUsed;
         public static void Reset(SaveData d, int hero) { Ensure(d); for (int i = 0; i < Nodes; i++) d.talents[Base(hero) + i] = 0; d.talentResetUsed = true; }
 

@@ -28,6 +28,21 @@ namespace SuruSavasi.Core.Meta
         public static int Current(SaveData d, int hero) { Ensure(d); int s = hero >= 0 && hero < d.heroSkin.Length ? d.heroSkin[hero] : 0; return s >= 0 && s < Ids.Length && Owned(d, hero, s) ? s : 0; }
         public static void Equip(SaveData d, int hero, int skin) { if (Owned(d, hero, skin)) d.heroSkin[hero] = skin; }
         public static void Give(SaveData d, int hero, int skin) { Ensure(d); if (!Owned(d, hero, skin)) d.ownedSkins.Add(Key(hero, skin)); }
+        // ---------- Haftanın görünümü: her hafta bir kahraman + görünüm %40 indirimli ----------
+        public const float DealOff = .4f;
+        public static (int hero, int skin) WeeklyDeal()
+        {
+            int wk = League.WeekKey(DateTime.Now);
+            int k = (int)((uint)(wk * 2654435761u) % (uint)(Progress.Heroes.Length * 3));
+            return (k / 3, 1 + k % 3);
+        }
+        public static bool IsDeal(int hero, int skin) { var (h, s) = WeeklyDeal(); return h == hero && s == skin; }
+        public static int PriceFor(int hero, int skin) => IsDeal(hero, skin) ? (int)Math.Round(Price[skin] * (1 - DealOff)) : Price[skin];
+
+        /// <summary>Görünüme özel mermi rengi (null: silah rengi). Bayram her mermide başka renk.</summary>
+        public static readonly string[] Bullet = { null, "#ffd23f", "#7fe8ff", null };
+        public static readonly string[] FestColors = { "#ff6f91", "#ffd23f", "#5ad1ff", "#8be39d", "#ffffff" };
+
         public static int OwnedCount(SaveData d, int hero) { int c = 0; for (int s = 0; s < Ids.Length; s++) if (Owned(d, hero, s)) c++; return c; }
     }
 }

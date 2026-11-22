@@ -32,7 +32,7 @@ namespace SuruSavasi.Game
         readonly List<Part> parts = new List<Part>();
         readonly List<Decal> decals = new List<Decal>();
         float shake, flash;
-        int heroIndex;
+        int heroIndex, skinId;
 
         /// <summary>Menüye dön butonuna basılınca çağrılır (GameFlow bağlar).</summary>
         public System.Action onMenu;
@@ -103,6 +103,7 @@ namespace SuruSavasi.Game
             m.Setup(sim);
             parts.Clear(); decals.Clear(); shake = 0; flash = 0;
             heroIndex = Progress.HeroIndex(mods.heroId);
+            skinId = GameServices.Save != null ? Skins.Current(GameServices.Save.Data, heroIndex) : 0;
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", level }, { "mode", m.Id } });
             ResetJuice();
@@ -133,6 +134,7 @@ namespace SuruSavasi.Game
             if (boosted) sim.AddFloat(Field.W / 2, Field.SQY - 130, "Güç takviyesi!", "#ffd23f");
             parts.Clear(); decals.Clear(); shake = 0; flash = 0;
             heroIndex = Progress.HeroIndex(mods.heroId);
+            skinId = GameServices.Save != null ? Skins.Current(GameServices.Save.Data, heroIndex) : 0;
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", lv } });
             ResetJuice();
@@ -251,7 +253,13 @@ namespace SuruSavasi.Game
                 case "hurt": SoundFx.Play("hurt"); shake = Mathf.Max(shake, 6); Burst(x, y, 22, new[] { "#ff5a4d", "#b8322b", "#8dbd80" }, 110, 30); break;
                 case "board": SoundFx.Play("board"); Burst(x, y, 18, new[] { "#b8322b", "#ffb3ab", "#6c4a2e" }, 90, 30); break;
                 case "block": Burst(x, y, 8, new[] { "#ffffff", "#b6ff5a" }, 60, 10); break;
-                case "skill": SoundFx.Play("skill"); shake = Mathf.Max(shake, 5); flash = 1; break;
+                case "skill":
+                    SoundFx.Play("skill"); shake = Mathf.Max(shake, 5); flash = 1;
+                    // Görünüme özel yetenek efekti
+                    if (skinId == 1) Burst(x, y - 20, 40, new[] { "#ffd23f", "#fff3b8", "#ffffff" }, 190, 60);
+                    else if (skinId == 2) { Burst(x, y - 20, 40, new[] { "#7fe8ff", "#c9b8ff", "#ffffff" }, 200, 70); flash = 1.3f; }
+                    else if (skinId == 3) for (int cf = 0; cf < 5; cf++) Burst(x + (cf - 2) * 50, y - 60, 12, Skins.FestColors, 150, 20);
+                    break;
                 case "bossin":
                     if (!bossBannerShown && sim.boss != null)
                     {
@@ -335,6 +343,10 @@ namespace SuruSavasi.Game
             lastN = sim.n;
             countPop = Mathf.Max(0, countPop - dt * 3); countHurt = Mathf.Max(0, countHurt - dt * 3);
             gateFlash = Mathf.Max(0, gateFlash - dt * 2.5f);
+            // Görünüm parıltısı: kahramanın çevresinde ara sıra kıvılcım
+            if (skinId > 0 && sim.Live && Random.value < dt * 7)
+                Burst(sim.x + (Random.value - .5f) * 30, Field.SQY - 6 - Random.value * 20, 1,
+                    skinId == 1 ? new[] { "#ffd23f", "#fff3b8" } : skinId == 2 ? new[] { "#7fe8ff", "#ffffff" } : Skins.FestColors, 25, 30);
             bannerT += Time.unscaledDeltaTime;
             foreach (var p in parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.life -= dt; }
             parts.RemoveAll(p => p.life <= 0);
@@ -437,9 +449,13 @@ namespace SuruSavasi.Game
                 DrawSprite(Art.Hero(heroIndex, frame), sim.x, Field.SQY + 2, 1, 340);
             }
 
+            int bi = 0;
             foreach (var b in sim.bullets)
             {
-                var bc = sim.buffBlast > 0 ? C("#ff9a3a") : C(sim.mods.weaponColor);
+                bi++;
+                // Görünüme özel mermi rengi (patlayıcı güç her zaman turuncu)
+                string skc = skinId == 3 ? Skins.FestColors[(bi + (int)(b.x)) % Skins.FestColors.Length] : Skins.Bullet[skinId];
+                var bc = sim.buffBlast > 0 ? C("#ff9a3a") : C(skc ?? sim.mods.weaponColor);
                 Draw(circle, new Color(bc.r, bc.g, bc.b, .35f), b.x, b.y, 12, 16, 345);
                 Draw(circle, bc, b.x, b.y, 5, 9, 346);
             }
