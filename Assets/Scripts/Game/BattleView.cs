@@ -213,7 +213,11 @@ namespace SuruSavasi.Game
             if (GameServices.Save != null)
             {
                 var sd = GameServices.Save.Data;
-                if (k == "kill" || k == "bigkill") Daily.Add(sd, "kills");
+                if (k == "kill" || k == "bigkill") { Daily.Add(sd, "kills"); Achievements.Add(sd, "kills"); }
+                else if (k == "bossdead") { Daily.Add(sd, "boss"); Achievements.Add(sd, "bosses"); }
+                else if (k == "gate_good") { Daily.Add(sd, "gates"); Achievements.Add(sd, "gates"); }
+                else if (k == "jackpot") { Daily.Add(sd, "dice6"); Achievements.Add(sd, "jackpot"); }
+                else if (k == "turret") { Daily.Add(sd, "turret"); Achievements.Add(sd, "turret"); }
                 else if (k == "barrel") Daily.Add(sd, "barrels");
                 else if (k == "power") Daily.Add(sd, "power");
                 else if (k == "skill") Daily.Add(sd, "skill");

@@ -703,7 +703,7 @@ namespace SuruSavasi.Game
             }
             GUI.Label(new Rect(x0 + 216, 48, 60, 34), $"<color=#ffd23f>★ {Progress.TotalStars(D)}</color>", new GUIStyle(label) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = 15 });
             var tb = new GUIStyle(btn) { fontSize = 13, padding = new RectOffset(2, 2, 2, 2) };
-            bool ready = Daily.Ready(D);
+            bool ready = Daily.Ready(D) || Achievements.AnyClaim(D);
             if (GUI.Button(new Rect(x0 + w - 164, 48, 78, 34), "Günlük", tb)) { SoundFx.Play("click"); flow.Show(GameScreen.Daily); }
             if (ready) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 96 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + w - 80, 48, 80, 34), "Mağaza", UiSkin.ButtonGold)) { SoundFx.Play("click"); flow.Show(GameScreen.Shop); }

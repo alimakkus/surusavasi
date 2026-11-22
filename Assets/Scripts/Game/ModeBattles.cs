@@ -91,6 +91,7 @@ namespace SuruSavasi.Game
                 if (g != null) { SoundFx.Play("chest"); text += HeroShards.GiveText(d, 6); }
                 if (g != null) text += $"\n<color={Gear.RarityColors[g.rarity]}><b>Kat {floor} sandığı: {Gear.Name(g)} ({Gear.RarityNames[g.rarity]})</b></color>";
                 League.Add(d, League.PtsTowerBase + floor);
+                Daily.Add(d, "tower_floor");
                 bool record = floor > d.towerBest;
                 Modes.TowerFloorWon(d, floor);
                 if (record) text += "\n<color=#ffd23f>Yeni rekor!</color>";
@@ -200,6 +201,7 @@ namespace SuruSavasi.Game
             tier = Modes.TierOf(frac);
             var rw = Modes.HuntResult(d, frac, out var nt);
             League.Add(d, Mathf.RoundToInt(frac * League.PtsHuntMax));
+            if (tier >= 1) Daily.Add(d, "hunt_tier");
             ModeUi.Grant(rw, "hunt");
             if (nt.Count > 0)
             {

@@ -76,9 +76,10 @@ namespace SuruSavasi.Core.Meta
             }
             else if (d.leagueWeek != 0) d.leagueTier = Math.Max(0, d.leagueTier - 1); // hiç oynamayan düşer
             d.leagueWeek = wk; d.leaguePts = 0;
+            Achievements.Max(d, "leagueBest", d.leagueTier);
         }
 
-        public static void Add(SaveData d, int pts) { if (pts <= 0) return; Check(d); d.leaguePts += pts; }
+        public static void Add(SaveData d, int pts) { if (pts <= 0) return; Check(d); d.leaguePts += pts; Daily.Add(d, "league", pts); }
         public static bool HasResult(SaveData d) { Check(d); return d.leagueResPending; }
 
         public static LevelReward RankReward(int rank, int tier)

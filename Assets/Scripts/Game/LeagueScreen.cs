@@ -67,7 +67,7 @@ namespace SuruSavasi.Game
                 string medal = i == 0 ? "#ffd23f" : i == 1 ? "#cfd8dc" : i == 2 ? "#d08a4a" : null;
                 if (medal != null) GUI.DrawTexture(new Rect(r.x + 8, r.y + 7, 24, 24), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(medal), 0, 12);
                 GUI.Label(new Rect(r.x + 8, r.y, 24, rowH - 3), $"<b>{i + 1}</b>", new GUIStyle(ModeUi.Center) { normal = { textColor = medal != null ? new Color(.15f, .1f, .05f) : Color.white } });
-                GUI.Label(new Rect(r.x + 44, r.y, r.width - 140, rowH - 3), e.me ? "<b><color=#ffe27a>Sen</color></b>" : e.name, new GUIStyle(UiSkin.Label) { richText = true, alignment = TextAnchor.MiddleLeft });
+                GUI.Label(new Rect(r.x + 44, r.y, r.width - 140, rowH - 3), e.me ? "<b><color=#ffe27a>Sen</color></b>" + (Achievements.Title(D) is string tt ? $"  <size=11><color=#ffd23f>« {tt} »</color></size>" : "") : e.name, new GUIStyle(UiSkin.Label) { richText = true, alignment = TextAnchor.MiddleLeft });
                 GUI.Label(new Rect(r.xMax - 96, r.y, 88, rowH - 3), $"<b>{e.score}</b>", new GUIStyle(UiSkin.Label) { richText = true, alignment = TextAnchor.MiddleRight });
                 if (i == League.Promote - 1 || i == League.Size - League.Demote - 1)
                     GUI.DrawTexture(new Rect(r.x, r.yMax + 1, r.width, 2), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, i == League.Promote - 1 ? ModeUi.C("#8be39d") : ModeUi.C("#ff8a80"), 0, 0);

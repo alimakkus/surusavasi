@@ -221,7 +221,11 @@ namespace SuruSavasi.Game
             var label = UiSkin.Label; var small = UiSkin.Small; var btn = UiSkin.Button; var card = UiSkin.Card;
             var Dd = Daily.Ensure(D);
             if (GUI.Button(new Rect(x0, 48, 90, 40), "‹ Geri", btn)) { flow.Show(GameScreen.Base); return; }
-            GUI.Label(new Rect(x0 + 100, 48, w - 100, 40), "<b>Günlük</b>", label);
+            GUI.Label(new Rect(x0 + 100, 48, w - 260, 40), "<b>Günlük</b>", label);
+            var abr = new Rect(x0 + w - 150, 46, 150, 44);
+            if (GUI.Button(abr, $"Başarımlar\n<size=11>{Achievements.Score(D)}/{Achievements.All.Length * 3} rozet</size>", new GUIStyle(UiSkin.ButtonGold) { fontSize = 14, richText = true }))
+            { SoundFx.Play("click"); flow.Show(GameScreen.Achievements); return; }
+            if (Achievements.AnyClaim(D)) { float pu = 1 + .15f * Mathf.Sin(Time.time * 6); GUI.DrawTexture(new Rect(abr.xMax - 10 - 6 * pu, abr.y - 4 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
 
             float y0 = 96;
             dailyScroll = GUI.BeginScrollView(new Rect(x0, y0, w + 16, 800 - y0 - 10), dailyScroll, new Rect(0, 0, w, 1000));

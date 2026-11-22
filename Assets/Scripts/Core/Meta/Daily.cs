@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SuruSavasi.Core.Meta
 {
-    public class QuestDef { public string id, text; public int n; }
+    public class QuestDef { public string id, text; public int n; public bool mode; public Func<SaveData, bool> req; }
     public class EventDef { public string key, name, desc; public float all = 1, gold = 1, iron = 1, gem = 1; }
 
     /// <summary>Günlük görevler, 7 günlük giriş ödülü, haftanın günlerine bağlı etkinlikler, aylık kart ve bedava elmas reklamı.
@@ -20,6 +20,16 @@ namespace SuruSavasi.Core.Meta
             new QuestDef { id = "stars3", text = "{0} bölümü 3 yıldızla bitir", n = 2 },
             new QuestDef { id = "upgrade", text = "{0} bina yükseltmeye başla", n = 1 },
             new QuestDef { id = "gather", text = "Üste {0} kez üretim topla", n = 1 },
+            // Oyun tarzı görevleri: her gün 2 tane, oyuncunun açtığı modlardan
+            new QuestDef { id = "gates", text = "{0} iyi kapıdan geç", n = 4, mode = true, req = d => d.unlocked >= 3 },
+            new QuestDef { id = "boss", text = "{0} patron ya da elit yen", n = 2, mode = true },
+            new QuestDef { id = "tower_floor", text = "Kule Tırmanışı'nda {0} kat çık", n = 5, mode = true, req = d => Modes.TowerOpen(d) },
+            new QuestDef { id = "hunt_tier", text = "Patron Avı'nda {0} kez Gümüş ya da üstü al", n = 1, mode = true, req = d => Modes.HuntOpen(d) },
+            new QuestDef { id = "surv_wave", text = "Hayatta Kalma'da toplam {0} dalga geç", n = 8, mode = true, req = d => Modes.SurvOpen(d) },
+            new QuestDef { id = "league", text = "Ligde {0} puan topla", n = 60, mode = true, req = d => d.unlocked >= 6 },
+            new QuestDef { id = "turret", text = "Deniz ile {0} kez taret kur", n = 3, mode = true, req = d => HeroShards.Owned(d, 3) },
+            new QuestDef { id = "dice6", text = "Cem ile zarda 6 at", n = 1, mode = true, req = d => HeroShards.Owned(d, 4) },
+            new QuestDef { id = "talent", text = "Yetenek ağacına {0} puan ver", n = 1, mode = true, req = d => Talents.Free(d, Progress.HeroIndex(d.hero)) > 0 },
         };
 
         /// <summary>7 günlük giriş ödülü: (altın, demir, yiyecek, elmas).</summary>
@@ -47,12 +57,19 @@ namespace SuruSavasi.Core.Meta
         {
             if (d.daily == null) d.daily = new DailyState();
             var D = d.daily; int t = Today;
-            if (D.date != t)
+            if (D.date != t || D.ver < 2)
             {
-                D.date = t; D.bonus = false; D.adsToday = 0;
-                var rg = new Battle.Rng(t); var pool = new List<string>(); foreach (var q in Quests) pool.Add(q.id);
+                if (D.date != t) { D.bonus = false; D.adsToday = 0; }
+                D.date = t; D.ver = 2;
+                // 2 klasik + 2 oyun tarzı görevi (açılmamış modların görevleri çıkmaz)
+                var rg = new Battle.Rng(t); var core = new List<string>(); var modes = new List<string>();
+                foreach (var q in Quests) { if (!q.mode) core.Add(q.id); else if (q.req == null || q.req(d)) modes.Add(q.id); }
                 D.quests = new List<QuestState>();
-                for (int i = 0; i < 3; i++) { int j = (int)Math.Floor(rg.Next() * pool.Count); D.quests.Add(new QuestState { id = pool[j] }); pool.RemoveAt(j); }
+                for (int i = 0; i < 4; i++)
+                {
+                    var pool = i >= 2 && modes.Count > 0 ? modes : core;
+                    int j = (int)Math.Floor(rg.Next() * pool.Count); D.quests.Add(new QuestState { id = pool[j] }); pool.RemoveAt(j);
+                }
             }
             return D;
         }

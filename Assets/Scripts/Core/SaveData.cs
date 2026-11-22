@@ -21,7 +21,12 @@ namespace SuruSavasi.Core
         public int heroOwned;                          // parçayla açılmış kahraman bitleri
         public int[] heroSkin = new int[5];            // kuşanılan görünüm (0 klasik, 1 altın, 2 gece, 3 bayram)
         public List<string> ownedSkins = new List<string>();   // "ayaz_gold" gibi
-        public int leagueResSkin = -1;                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
+        public int leagueResSkin = -1;
+        // Başarımlar: sayaçlar, alınan kademeler ("kills0" gibi), seçili unvan
+        public List<string> statKeys = new List<string>();
+        public List<long> statVals = new List<long>();
+        public List<string> achClaimed = new List<string>();
+        public string title = "";                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
 
         // Üs: bina seviyeleri BuildingKind sırasıyla
@@ -93,6 +98,7 @@ namespace SuruSavasi.Core
     public class DailyState
     {
         public int date;            // görevlerin üretildiği gün (yyyymmdd)
+        public int ver;             // görev havuzu sürümü (değişince bugünkü görevler yenilenir)
         public List<QuestState> quests = new List<QuestState>();
         public int streak;          // giriş serisi (1-7)
         public int last;            // son giriş ödülü alınan gün

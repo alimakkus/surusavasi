@@ -72,7 +72,7 @@ namespace SuruSavasi.Game
             GUI.enabled = ok;
             if (GUI.Button(new Rect(dp.x + 16, dp.y + 100, dp.width - 32, 70), ok ? "GELİŞTİR  <size=13>(1 puan)</size>" : why, ok ? UiSkin.ButtonGreen : UiSkin.ButtonGray))
             {
-                if (Talents.Up(d, hero, sel)) { GameServices.Save.Save(); SoundFx.Play("levelup"); pop = 1; popNode = sel; }
+                if (Talents.Up(d, hero, sel)) { Daily.Add(d, "talent"); GameServices.Save.Save(); SoundFx.Play("levelup"); pop = 1; popNode = sel; }
             }
             GUI.enabled = true;
 

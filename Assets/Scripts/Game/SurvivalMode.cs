@@ -159,6 +159,7 @@ namespace SuruSavasi.Game
                 ModeUi.Grant(rw, "survival");
                 string shard = all.gems > 0 ? HeroShards.GiveText(d, 5) : "";
                 League.Add(d, (waves - granted) * League.PtsSurvWave);
+                Daily.Add(d, "surv_wave", waves - granted);
                 endText = $"Ulaşılan dalga: <b>{waves}</b>   Rekor: <b>{d.survBest}</b>" + (waves > prevBest ? "  <color=#ffd23f>Yeni rekor!</color>" : "") + "\n" + ModeUi.RewardLine(rw) + shard;
                 granted = waves;
                 Daily.Add(d, "clear");
