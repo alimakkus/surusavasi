@@ -86,6 +86,8 @@ namespace SuruSavasi.Game
             heroIndex = Progress.HeroIndex(mods.heroId);
             rewardText = ""; rewardGiven = false; doubled = false;
             GameServices.Analytics?.LogEvent(AnalyticsEvent.LevelStart, new Dictionary<string, object> { { "level", lv } });
+            // Hikâye: bölüm açılışı / patron öncesi sahne
+            if (GameServices.Save != null) DialogBox.Play(Story.Before(GameServices.Save.Data, lv), lv, null);
         }
 
         // ---------- Kare ve daire sprite'ları kodla üretilir (dosya gerekmez) ----------
@@ -210,6 +212,7 @@ namespace SuruSavasi.Game
             float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
             cam.orthographicSize = Mathf.Max(2.8f, 1.8f / Mathf.Max(.01f, aspect));
 
+            if (DialogBox.Active) return; // hikâye sahnesi oynarken savaş durur
             if (sim.Live)
             {
                 if (Input.GetMouseButton(0) && GUIUtility.hotControl == 0 && Input.mousePosition.y > Screen.height * .14f)
@@ -344,6 +347,7 @@ namespace SuruSavasi.Game
         {
             if (sim.state == BattleState.Won)
             {
+                if (GameServices.Save != null) { var after = Story.After(GameServices.Save.Data, level); if (after != null) DialogBox.Play(after, level, null); }
                 Fails[level] = 0;
                 completedThisSession++;
                 if (GameServices.Save != null) { Daily.Add(GameServices.Save.Data, "clear"); if (sim.stars == 3) Daily.Add(GameServices.Save.Data, "stars3"); }
@@ -436,6 +440,7 @@ namespace SuruSavasi.Game
             gs = Screen.height / 800f;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(gs, gs, 1));
             float VW = Screen.width / gs;
+            if (DialogBox.Draw(VW)) return;
             if (label == null)
             {
                 label = new GUIStyle(UiSkin.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 16, wordWrap = false };

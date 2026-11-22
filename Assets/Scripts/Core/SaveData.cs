@@ -56,6 +56,9 @@ namespace SuruSavasi.Core
         public int[] equipped = new int[3];  // Silah, Zırh, Muska (eşya kimliği, 0 = boş)
         public int gearSeq, shards;
 
+        // Senaryo: görülen hikâye sahneleri
+        public List<string> seenScenes = new List<string>();
+
         // Hikâye görevleri
         public int storyIndex;
         public List<string> questKeys = new List<string>(), storyBase = new List<string>();
@@ -109,6 +112,7 @@ namespace SuruSavasi.Core
             if (d.builders < 1) { d.builders = 1; d.build2Kind = -1; }
             if (d.gear == null) d.gear = new List<Meta.GearItem>();
             if (d.equipped == null || d.equipped.Length < 3) d.equipped = new int[3];
+            if (d.seenScenes == null) d.seenScenes = new List<string>();
             if (d.questKeys == null) d.questKeys = new List<string>();
             if (d.questVals == null) d.questVals = new List<int>();
             if (d.storyBase == null) d.storyBase = new List<string>();
