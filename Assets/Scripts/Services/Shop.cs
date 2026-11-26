@@ -17,8 +17,10 @@ namespace SuruSavasi.Services
             store.Purchase(productId, r =>
             {
                 if (r.status != PurchaseStatus.Success) { done?.Invoke(false); return; }
-                // TODO: makbuzu (r.receipt) sunucuda doğrula, elmasları sunucu versin.
-                Grant(def);
+                // Elmaslar defterde makbuzla birlikte "satın alma" işlemi olur; sunucu makbuzu doğrulayıp elmasları kesinleştirir
+                GameServices.Wallet.BeginPurchase(StoreCode(store.Name), def.id, r.receipt);
+                try { Grant(def); } finally { GameServices.Wallet.EndPurchase(); }
+                Game.EconomySync.SyncSoon();
                 GameServices.Analytics?.LogPurchase(def.id, def.localizedPrice, store.Name);
                 done?.Invoke(true);
             });
@@ -26,6 +28,19 @@ namespace SuruSavasi.Services
 
         /// <summary>Son paket içeriği (ekranda göstermek için).</summary>
         public static string LastPackText = "";
+
+        /// <summary>Sunucunun makbuz doğrulayıcısını seçmesi için mağaza kodu.</summary>
+        public static string StoreCode(string storeName)
+        {
+            string n = (storeName ?? "").ToLowerInvariant();
+            if (n.Contains("editor")) return "editor";
+            if (n.Contains("google")) return "google";
+            if (n.Contains("app store") || n.Contains("apple")) return "apple";
+            if (n.Contains("samsung")) return "samsung";
+            if (n.Contains("amazon")) return "amazon";
+            if (n.Contains("huawei")) return "huawei";
+            return n;
+        }
 
         public static bool IsDiamondPack(string id) => id.StartsWith("diamonds_");
 

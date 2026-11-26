@@ -54,7 +54,7 @@ namespace SuruSavasi.Game
                 if (snap.savedAt > d.savedAt && snap.progress != Progress(d)) { Conflict = snap; return; }
                 await I.Upload();
             }
-            finally { Busy = false; }
+            finally { Busy = false; EconomySync.SyncSoon(); }
         }
 
         /// <summary>Buluttaki kaydı bu cihaza uygular (yerindeki veri nesnesi üzerine yazılır, ekranlar hemen günceli görür).</summary>
@@ -66,6 +66,7 @@ namespace SuruSavasi.Game
             GameServices.Save.Save();
             if (I != null) I.uploadedAt = d.savedAt;
             Debug.Log("[Bulut] Buluttaki kayıt uygulandı");
+            EconomySync.SyncSoon(); // elmaslar bu hesabın sunucu bakiyesine çekilir
             if (GameFlow.I != null && !GameFlow.I.InBattle) GameFlow.I.Show(GameScreen.Base);
         }
 
@@ -89,6 +90,7 @@ namespace SuruSavasi.Game
 
         void Update()
         {
+            EconomySync.Tick();
             if (Busy || Conflict != null || CloudSync.Status != CloudSync.State.Ready || D == null) return;
             if (Time.unscaledTime < nextCheck) return;
             nextCheck = Time.unscaledTime + UploadEvery;
@@ -97,6 +99,7 @@ namespace SuruSavasi.Game
 
         void OnApplicationPause(bool paused)
         {
+            if (paused && D != null && Core.Meta.GemLedger.Pending(D) > 0) EconomySync.SyncNow();
             if (paused && !Busy && Conflict == null && CloudSync.Status == CloudSync.State.Ready && D != null && D.savedAt > uploadedAt) UploadNow();
         }
 

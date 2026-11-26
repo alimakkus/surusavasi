@@ -30,6 +30,10 @@ namespace SuruSavasi.Core
         public List<string> tips = new List<string>();
         // Teklifler: ilk alım, haftalık kahraman paketi, hız paketi ve hızlandırıcılar
         public bool firstPurchaseDone;
+        // Elmas defteri: sunucuya gönderilmeyi bekleyen elmas işlemleri ve son bilinen sunucu bakiyesi (Meta.GemLedger)
+        public List<Meta.GemOp> gemOps = new List<Meta.GemOp>();
+        public int gemSeq, gemServerBal = -1;
+        public long gemSyncAt;
         public long savedAt;                   // son kayıt zamanı (Unix ms) — bulut kaydıyla karşılaştırmak için
         public int heroPackWeek, speedPackDay, speedTokens, offerSeenWeek, offerSeenDay;   // rehber: görülen ipuçları ve tanıtımlar                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
@@ -155,6 +159,7 @@ namespace SuruSavasi.Core
             if (d.questVals == null) d.questVals = new List<int>();
             if (d.storyBase == null) d.storyBase = new List<string>();
             if (d.storyBaseVals == null) d.storyBaseVals = new List<int>();
+            if (d.gemOps == null) d.gemOps = new List<Meta.GemOp>();
         }
 
         public static void Save(SaveData data)

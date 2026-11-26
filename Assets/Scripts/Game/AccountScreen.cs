@@ -22,7 +22,7 @@ namespace SuruSavasi.Game
             var sm = new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true, fontSize = 13 };
 
             // Durum kartı
-            var r = new Rect(x0, 98, w, 150);
+            var r = new Rect(x0, 98, w, 172);
             GUI.Box(r, "", UiSkin.Card);
             string st = !CloudSync.Supported ? "<color=#ff8a80>Bulut paketi kurulu değil</color>"
                 : CloudSync.Status == CloudSync.State.Ready ? "<color=#8be39d>Bağlı</color>"
@@ -30,8 +30,13 @@ namespace SuruSavasi.Game
                 : $"<color=#ff8a80>{CloudSync.Message}</color>";
             string acc = CloudSync.Username != null ? $"<color=#8be39d>Korunuyor</color> · kullanıcı adı: <b>{CloudSync.Username}</b>" : "<color=#ffb02e>Korunmuyor</color> (sadece bu cihaza bağlı)";
             string last = CloudSaveManager.LastUpload.HasValue ? CloudSaveManager.LastUpload.Value.ToString("HH:mm") : "—";
-            GUI.Label(new Rect(r.x + 16, r.y + 10, r.width - 32, 130),
-                $"Bulut: {st}\nHesap: {acc}\nSon yedek: <b>{last}</b>   ·   Seviye {D.unlocked}, ★ {Core.Meta.Progress.TotalStars(D)}\n<size=11><color=#7d8696>Oyuncu kimliği: {CloudSync.PlayerId ?? "—"}</color></size>", lab);
+            int pend = Core.Meta.GemLedger.Pending(D);
+            string gem = !CloudEconomy.Supported ? "<color=#7d8696>sunucu doğrulaması kapalı</color>"
+                : EconomySync.Verified ? "<color=#8be39d>sunucuda doğrulandı</color>"
+                : !string.IsNullOrEmpty(EconomySync.Status) ? $"<color=#ffb02e>{pend} işlem bekliyor</color> <size=11>({EconomySync.Status})</size>"
+                : $"<color=#ffd23f>{pend} işlem bekliyor</color>";
+            GUI.Label(new Rect(r.x + 16, r.y + 10, r.width - 32, 152),
+                $"Bulut: {st}\nHesap: {acc}\nSon yedek: <b>{last}</b>   ·   Seviye {D.unlocked}, ★ {Core.Meta.Progress.TotalStars(D)}\nElmas: <b>{D.diamonds}</b> · {gem}\n<size=11><color=#7d8696>Oyuncu kimliği: {CloudSync.PlayerId ?? "—"}</color></size>", lab);
 
             float y = r.yMax + 12;
             if (mode == 0)
@@ -39,7 +44,7 @@ namespace SuruSavasi.Game
                 if (CloudSync.Status == CloudSync.State.Ready)
                 {
                     GUI.enabled = !CloudSaveManager.Busy;
-                    if (GUI.Button(new Rect(x0, y, w, 56), "Şimdi yedekle", UiSkin.ButtonGreen)) { CloudSaveManager.UploadNow(); info = "Yedeklendi"; }
+                    if (GUI.Button(new Rect(x0, y, w, 56), "Şimdi yedekle", UiSkin.ButtonGreen)) { CloudSaveManager.UploadNow(); EconomySync.SyncNow(); info = "Yedeklendi"; }
                     GUI.enabled = true;
                 }
                 else
