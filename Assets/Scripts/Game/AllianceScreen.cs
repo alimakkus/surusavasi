@@ -163,7 +163,8 @@ namespace SuruSavasi.Game
             float y = by + 74;
             var reqs = Alliance.OthersRequests(d);
             int hl = Alliance.HelpsLeft(d);
-            GUI.Label(new Rect(area.x, y, area.width - 170, 26), $"<b>Yardım bekleyenler</b>  <size=12>her yardım +{Alliance.HelpCoins} katkı</size>", Lb);
+            GUI.Label(new Rect(area.x, y - 4, area.width - 170, 22), "<b>Yardım bekleyenler</b>", Lb);
+            GUI.Label(new Rect(area.x, y + 16, area.width - 170, 18), $"<size=11>her yardım +{Alliance.HelpCoins} katkı</size>", Sm);
             GUI.enabled = hl > 0;
             if (GUI.Button(new Rect(area.xMax - 164, y - 4, 164, 34), $"Hepsine yardım ({hl})", new GUIStyle(UiSkin.ButtonGold) { fontSize = 13 }))
             {
@@ -273,8 +274,9 @@ namespace SuruSavasi.Game
         // ---------------- Mağaza ----------------
         static void ShopTab(GameFlow flow, Rect area, SaveData d)
         {
-            GUI.Label(new Rect(area.x, area.y, area.width, 24), $"<b>Katkı puanın: <color=#ffd23f>{d.allyCoins}</color></b>  <size=12>bağış, yardım ve patrondan kazanılır · haftalık sınırlar pazartesi yenilenir</size>", Lb);
-            float y = area.y + 34;
+            GUI.Label(new Rect(area.x, area.y, area.width, 24), $"<b>Katkı puanın: <color=#ffd23f>{d.allyCoins}</color></b>", Lb);
+            GUI.Label(new Rect(area.x, area.y + 24, area.width, 20), "<size=11>Bağış, yardım ve patrondan kazanılır · haftalık sınırlar pazartesi yenilenir</size>", Sm);
+            float y = area.y + 50;
             for (int i = 0; i < Alliance.Shop.Length; i++)
             {
                 var it = Alliance.Shop[i]; var r = new Rect(area.x, y, area.width, 78);
