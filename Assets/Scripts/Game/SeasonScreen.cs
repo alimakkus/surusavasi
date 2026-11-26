@@ -16,6 +16,7 @@ namespace SuruSavasi.Game
         static readonly System.Random rnd = new System.Random();
 
         public static void Focus() { focus = true; tasks = false; }
+        public static void ShowTasks(bool on) { tasks = on; }
 
         static void Grant(string kind, int n)
         {

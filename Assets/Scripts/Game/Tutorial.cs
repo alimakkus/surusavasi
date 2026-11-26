@@ -14,6 +14,12 @@ namespace SuruSavasi.Game
     {
         static SaveData D => GameServices.Save?.Data;
         public static bool Seen(string id) { var d = D; return d == null || (d.tips != null && d.tips.Contains(id)); }
+        /// <summary>Bütün ekran tanıtımlarını ve açılış pencerelerini görülmüş sayar (otomatik ekran görüntüsü testi için).</summary>
+        public static void SkipAll()
+        {
+            foreach (var k in Intros.Keys) Mark("intro_" + k);
+            foreach (var u in Unlocks) Mark(u.id);
+        }
         public static void Mark(string id) { var d = D; if (d == null) return; if (d.tips == null) d.tips = new List<string>(); if (!d.tips.Contains(id)) { d.tips.Add(id); GameServices.Save.Save(); } }
 
         // ======================= Savaş ipuçları =======================
