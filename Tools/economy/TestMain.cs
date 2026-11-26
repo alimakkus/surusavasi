@@ -130,6 +130,8 @@ static class TestMain
         string outJson = JsonSerializer.Serialize(Run(new EcoState(), 1, null, Wed), o);
         Check(outJson.Contains("\"bal\":1") && outJson.Contains("\"acked\":[]"), "yanıt camelCase: " + outJson);
 
+        FlowTest.Run(Check);
+
         Console.WriteLine($"Sunucu elmas testleri: {pass} geçti, {fail} hata");
         return fail == 0 ? 0 : 1;
     }
