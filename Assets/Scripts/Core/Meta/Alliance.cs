@@ -92,7 +92,7 @@ namespace SuruSavasi.Core.Meta
         }
 
         // ---------------- Seviye ----------------
-        public static int XpFor(int level) => (int)(1500 * Math.Pow(level, 1.35));   // level → level+1 için gereken
+        public static int XpFor(int level) => (int)(1000 * Math.Pow(level, 1.3));   // level → level+1 için gereken
         public static int Level(SaveData d)
         {
             int lv = Describe(d.allyId).baseLevel; long xp = d.allyXp;
@@ -122,7 +122,7 @@ namespace SuruSavasi.Core.Meta
             while (d.allyBotDay < today)
             {
                 d.allyBotDay++;
-                d.allyXp += (int)(info.members * 30 * info.activity);
+                d.allyXp += (int)(info.members * 60 * info.activity);
             }
             BossCheck(d);
             ApplyHelps(d);
