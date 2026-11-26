@@ -81,7 +81,9 @@ namespace SuruSavasi.Core.Meta
                     Add(30, NoteCat.Alliance, 65, "İttifaktan yardım geldi", $"Üyeler {d.allyReqMax} kez yardım etti, inşaatın kısaldı. Teşekkür etmeyi unutma!", Local(d.allyReqAt).AddSeconds(d.allyReqMax * 25 + 5));
                 // Patron: bir sonraki alınmamış sandığa ne zaman ulaşılır (botların hızına göre)
                 float mine = Alliance.MinePct(d);
-                for (int i = 0; i < Alliance.BossMilestones.Length - 1; i++)
+                int ready = 0; for (int i = 0; i < Alliance.BossMilestones.Length; i++) if (Alliance.MilestoneReady(d, i)) ready++;
+                if (ready > 0) Add(34, NoteCat.Alliance, 62, "Patron sandığın hazır", ready > 1 ? $"İttifak patronunda {ready} sandık seni bekliyor." : "İttifak patronunda bir sandık seni bekliyor.", now.AddHours(2));
+                else for (int i = 0; i < Alliance.BossMilestones.Length - 1; i++)
                 {
                     if (Alliance.MilestoneClaimed(d, i)) continue;
                     var at = BossReach(d, now, Alliance.BossMilestones[i] - mine);
