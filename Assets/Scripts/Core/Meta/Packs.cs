@@ -47,7 +47,7 @@ namespace SuruSavasi.Core.Meta
         {
             var (h, s) = Skins.WeeklyDeal();
             if (Progress.HeroOpen(d, h) && !Skins.Owned(d, h, s)) return (h, s);
-            for (int i = 0; i < Progress.Heroes.Length; i++) for (int k = 1; k < Skins.Ids.Length; k++)
+            for (int i = 0; i < Progress.Heroes.Length; i++) for (int k = 1; k < Skins.Ids.Length; k++) if (!Skins.Exclusive(k))
                     if (Progress.HeroOpen(d, i) && !Skins.Owned(d, i, k)) return (i, k);
             return (-1, -1);
         }

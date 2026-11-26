@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    /// <summary>Kahraman görünümleri ekranı: büyük önizleme + 4 görünüm kartı + Kuşan / Satın al.</summary>
+    /// <summary>Kahraman görünümleri ekranı: büyük önizleme + 5 görünüm kartı + Kuşan / Satın al (sezon görünümü: Sezon Bileti'ne yönlendirir).</summary>
     public static class SkinScreen
     {
         static int hero, preview;
         static float buyPop;
         static SaveData D => GameServices.Save.Data;
-        static readonly string[] Bg = { "#2a3550", "#5a4512", "#101836", "#5a1420" };
+        static readonly string[] Bg = { "#2a3550", "#5a4512", "#101836", "#5a1420", "#12405e" };
 
         public static void Open(GameFlow flow, int h) { hero = h; preview = Skins.Current(D, h); flow.Show(GameScreen.Skins); }
 
@@ -33,33 +33,39 @@ namespace SuruSavasi.Game
             if (port != null) GUI.DrawTexture(new Rect(pv.center.x - ps / 2, pv.y + 2 + bob - (ps - 270) / 2, ps, ps), port, ScaleMode.ScaleToFit);
             GUI.Label(new Rect(pv.x, pv.yMax - 48, pv.width, 24), $"<b><size=20>{Skins.Names[preview]}</size></b>", ModeUi.Center);
             GUI.Label(new Rect(pv.x + 10, pv.yMax - 26, pv.width - 20, 20), $"<size=12>{Skins.Descs[preview]}</size>", ModeUi.Small);
-            if (preview > 0) GUI.Label(new Rect(pv.x + 16, pv.y + 16, 160, 40), $"<size=11>Savaşta:\n{(preview == 1 ? "altın mermi, parıltı" : preview == 2 ? "mavi mermi, yıldız tozu" : "renkli mermi, konfeti")}</size>", new GUIStyle(UiSkin.Small) { richText = true });
+            if (preview > 0) GUI.Label(new Rect(pv.x + 16, pv.y + 16, 160, 40), $"<size=11>Savaşta:\n{(preview == 1 ? "altın mermi, parıltı" : preview == 2 ? "mavi mermi, yıldız tozu" : preview == Skins.Ice ? "buz mermi, kar fırtınası" : "renkli mermi, konfeti")}</size>", new GUIStyle(UiSkin.Small) { richText = true });
 
-            // Görünüm kartları (2x2)
-            float tw = (w - 10) / 2, th = 96, ty = 404;
+            // Görünüm kartları (2 sütun)
+            float tw = (w - 10) / 2, th = 78, ty = 402;
             for (int s = 0; s < Skins.Ids.Length; s++)
             {
-                var r = new Rect(x0 + (s % 2) * (tw + 10), ty + (s / 2) * (th + 8), tw, th);
+                var r = new Rect(x0 + (s % 2) * (tw + 10), ty + (s / 2) * (th + 6), tw, th);
                 bool owned = Skins.Owned(d, hero, s), on = Skins.Current(d, hero) == s, sel = preview == s;
                 GUI.Box(r, "", sel ? UiSkin.CardGold : UiSkin.Card);
-                GUI.DrawTexture(new Rect(r.x + 8, r.y + 8, 80, 80), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(Bg[s]), 0, 8);
+                GUI.DrawTexture(new Rect(r.x + 8, r.y + 7, 64, 64), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(Bg[s]), 0, 8);
                 var mini = Art.HeroPortrait(hero, 0, s);
-                if (mini != null) GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, 92, 92), mini, ScaleMode.ScaleToFit);
-                GUI.Label(new Rect(r.x + 96, r.y + 10, r.width - 100, 24), $"<b>{Skins.Names[s]}</b>", new GUIStyle(UiSkin.Label) { richText = true });
+                if (mini != null) GUI.DrawTexture(new Rect(r.x + 2, r.y + 1, 76, 76), mini, ScaleMode.ScaleToFit);
+                GUI.Label(new Rect(r.x + 80, r.y + 6, r.width - 84, 24), $"<b>{Skins.Names[s]}</b>", new GUIStyle(UiSkin.Label) { richText = true });
                 string st = on ? "<color=#8be39d>Kuşanıldı</color>" : owned ? "<color=#c9d3e0>Sahipsin</color>"
+                    : Skins.Exclusive(s) ? "<color=#9fe4ff>Sezon Bileti ödülü</color>\n<size=10>satılmaz</size>"
                     : Skins.IsDeal(hero, s) ? $"<color=#ff8a80>{Skins.Price[s]} →</color> <color=#9fe8ff><b>{Skins.PriceFor(hero, s)} elmas</b></color>\n<size=10><color=#ffd23f>Haftanın görünümü %40</color></size>"
                     : $"<color=#9fe8ff>{Skins.Price[s]} elmas</color>" + (s == 3 ? "\n<size=10>ya da lig ödülü</size>" : "");
-                GUI.Label(new Rect(r.x + 96, r.y + 36, r.width - 100, 50), st, new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
+                GUI.Label(new Rect(r.x + 80, r.y + 30, r.width - 84, 46), st, new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
                 if (GUI.Button(r, "", GUIStyle.none)) { preview = s; SoundFx.Play("click"); }
             }
 
             // Eylem düğmesi
-            var br = new Rect(x0 + 20, 620, w - 40, 64);
+            var br = new Rect(x0 + 20, 664, w - 40, 60);
             bool pOwned = Skins.Owned(d, hero, preview), pOn = Skins.Current(d, hero) == preview;
             if (pOn) { GUI.enabled = false; GUI.Button(br, "Kuşanıldı", UiSkin.ButtonGray); GUI.enabled = true; }
             else if (pOwned)
             {
                 if (GUI.Button(br, "KUŞAN", UiSkin.ButtonGreen)) { Skins.Equip(d, hero, preview); GameServices.Save.Save(); SoundFx.Play("power"); buyPop = 1; }
+            }
+            else if (Skins.Exclusive(preview))
+            {
+                if (GUI.Button(br, Season.Open(d) ? "SEZON BİLETİ'NDE KAZAN ›" : "Sezon Bileti 4. bölümden sonra açılır", UiSkin.ButtonGold) && Season.Open(d))
+                { SoundFx.Play("click"); flow.Show(GameScreen.Season); }
             }
             else if (GUI.Button(br, $"SATIN AL  <size=14>({Skins.PriceFor(hero, preview)} elmas)</size>", UiSkin.ButtonGold))
             {

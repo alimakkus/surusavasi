@@ -12,7 +12,7 @@ namespace SuruSavasi.Game
     {
         static SaveData D => GameServices.Save.Data;
         static Wallet Wl => GameServices.Wallet;
-        const float CH = 194, ART_W = 96, ART_H = 128;
+        const float CH = 186, ART_W = 96, ART_H = 128;
 
         public static void Draw(GameFlow flow, float x0, float w)
         {
@@ -25,6 +25,7 @@ namespace SuruSavasi.Game
             { SoundFx.Play("click"); flow.Show(GameScreen.League); return; }
             if (d.leagueResPending) Dot(lr);
             float y = 96;
+            y = Storm(flow, x0, y, w);
             Tower(flow, x0, y, w); y += CH + 8;
             Hunt(flow, x0, y, w); y += CH + 8;
             Survival(flow, x0, y, w);
@@ -62,6 +63,35 @@ namespace SuruSavasi.Game
 
         static GUIStyle info;
         static GUIStyle Info => info ??= new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true, fontSize = 12 };
+
+        // ---------------- Kar Fırtınası (hafta sonu etkinliği) ----------------
+        static float Storm(GameFlow flow, float x0, float y, float w)
+        {
+            var d = D; var now = SnowEvent.Now;
+            if (!SnowEvent.Unlocked(d)) return y;
+            bool open = SnowEvent.Active(now);
+            var r = new Rect(x0, y, w, 84);
+            float pu = .5f + .5f * Mathf.Sin(Time.time * 2.5f);
+            if (open) GUI.DrawTexture(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.6f, .88f, 1f, .2f + .2f * pu), 0, 14);
+            GUI.DrawTexture(r, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, ModeUi.C(open ? "#1d4f78" : "#1c2738"), 0, 12);
+            // Kar taneleri
+            for (int i = 0; i < 14; i++)
+            {
+                float fx = r.x + Mathf.Repeat(i * 61f + Time.time * 12, r.width - 6), fy = r.y + Mathf.Repeat(i * 23f + Time.time * (18 + i % 4 * 5), r.height - 6);
+                GUI.DrawTexture(new Rect(fx, fy, 3, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1, 1, 1, open ? .7f : .25f), 0, 1.5f);
+            }
+            var tl = SnowEvent.Until(now);
+            string when = open ? $"bitişe {(int)tl.TotalHours}sa {tl.Minutes}dk" : $"cumartesi açılır · {(int)tl.TotalDays}g {tl.Hours}sa";
+            GUI.Label(new Rect(r.x + 14, r.y + 6, r.width - 180, 26), $"<b><color=#bff4ff>KAR FIRTINASI</color></b>  <size=11>hafta sonu etkinliği</size>", new GUIStyle(UiSkin.Label) { richText = true, fontSize = 16 });
+            GUI.Label(new Rect(r.x + 14, r.y + 32, r.width - 180, 48), $"<size=12>Düşmanlar yavaş ama dayanıklı, kapılar güçlü. Zafer: +{SnowEvent.WinSP} SP, {SnowEvent.WinGems} elmas · {when}</size>", new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });
+            var br = new Rect(r.xMax - 156, r.y + 14, 146, 56);
+            int left = SnowEvent.TriesLeft(d, now);
+            GUI.enabled = open && left > 0;
+            if (GUI.Button(br, open ? (left > 0 ? $"FIRTINAYA GİR\n<size=12>{left}/{SnowEvent.TriesPerDay} hak</size>" : "Haklar bitti") : "Kapalı", new GUIStyle(open ? UiSkin.ButtonGold : UiSkin.ButtonGray) { fontSize = 14, richText = true }))
+            { SoundFx.Play("click"); SnowEvent.UseTry(d, now); GameServices.Save.Save(); flow.PlayMode(new EventMode()); }
+            GUI.enabled = true;
+            return r.yMax + 8;
+        }
 
         // ---------------- Kule Tırmanışı ----------------
         static void Tower(GameFlow flow, float x0, float y, float w)

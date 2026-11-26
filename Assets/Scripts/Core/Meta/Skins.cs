@@ -3,19 +3,24 @@ using System;
 namespace SuruSavasi.Core.Meta
 {
     /// <summary>Kahraman görünümleri (yalnızca görsel, güç vermez). Klasik ücretsiz; Altın ve Gece elmasla;
-    /// Bayram elmasla ya da ligden (ilk 3 veya Altın lige yükselince seçili kahramana) kazanılır.</summary>
+    /// Bayram elmasla ya da ligden (ilk 3 veya Altın lige yükselince seçili kahramana) kazanılır.
+    /// Buz: 1. sezona özel, satılmaz; yalnızca Sezon Bileti 30. kademede (5 kahramana birden).</summary>
     public static class Skins
     {
-        public static readonly string[] Ids = { "default", "gold", "night", "fest" };
-        public static readonly string[] Names = { "Klasik", "Altın", "Gece", "Bayram" };
+        public static readonly string[] Ids = { "default", "gold", "night", "fest", "ice" };
+        public static readonly string[] Names = { "Klasik", "Altın", "Gece", "Bayram", "Buz" };
+        public const int Ice = 4;
+        /// <summary>Sezona özel görünüm: mağazada satılmaz, indirime ve kahraman paketine girmez.</summary>
+        public static bool Exclusive(int skin) => skin == Ice;
         public static readonly string[] Descs =
         {
             "Kahramanın ilk görünümü.",
             "Altın zırh ve pelerin, etrafında parıltılar.",
             "Gece mavisi pelerin, parlayan gözler, yıldız tozu.",
             "Kırmızı-beyaz pelerin ve uçuşan konfeti. Ligden de kazanılır.",
+            "Buz tacı, dönen kristaller, kar taneleri. 1. sezona özel.",
         };
-        public static readonly int[] Price = { 0, 300, 200, 250 };
+        public static readonly int[] Price = { 0, 300, 200, 250, 0 };
 
         static void Ensure(SaveData d)
         {
@@ -40,7 +45,8 @@ namespace SuruSavasi.Core.Meta
         public static int PriceFor(int hero, int skin) => IsDeal(hero, skin) ? (int)Math.Round(Price[skin] * (1 - DealOff)) : Price[skin];
 
         /// <summary>Görünüme özel mermi rengi (null: silah rengi). Bayram her mermide başka renk.</summary>
-        public static readonly string[] Bullet = { null, "#ffd23f", "#7fe8ff", null };
+        public static readonly string[] Bullet = { null, "#ffd23f", "#7fe8ff", null, "#c8f4ff" };
+        public static readonly string[] IceColors = { "#e8fbff", "#9fe4ff", "#5fb4e6", "#ffffff" };
         public static readonly string[] FestColors = { "#ff6f91", "#ffd23f", "#5ad1ff", "#8be39d", "#ffffff" };
 
         public static int OwnedCount(SaveData d, int hero) { int c = 0; for (int s = 0; s < Ids.Length; s++) if (Owned(d, hero, s)) c++; return c; }

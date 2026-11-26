@@ -205,6 +205,7 @@ namespace SuruSavasi.Core.Meta
         /// <summary>Üs ekranındaki "Modlar" düğmesinde kırmızı nokta: oynanabilecek ücretsiz hak var ya da lig sonucu bekliyor.</summary>
         public static bool AnyFree(SaveData d) =>
             (TowerOpen(d) && (TowerInRun(d) || TowerFreeLeft(d) > 0)) || (HuntOpen(d) && HuntTriesLeft(d) > 0)
-            || (SurvOpen(d) && SurvFreeLeft(d) > 0) || League.HasResult(d);
+            || (SurvOpen(d) && SurvFreeLeft(d) > 0) || League.HasResult(d)
+            || (SnowEvent.Open(d, SnowEvent.Now) && SnowEvent.TriesLeft(d, SnowEvent.Now) > 0);
     }
 }

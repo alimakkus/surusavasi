@@ -282,6 +282,7 @@ namespace SuruSavasi.Core.Battle
             return 0;
         }
 
+        public float enemySlow = 1f;   // Kar Fırtınası: düşmanlar yavaşlar
         public bool noFatigue;   // Patron Avı: süre zaten sınırlı, yorgunluk yok
         public const float WeakMul = 3f, WeakDur = 3.5f, WeakGap = 5f, FatigueAt = 45f;
 
@@ -360,8 +361,8 @@ namespace SuruSavasi.Core.Battle
                         var T = o.type;
                         if (sy > -30)
                         {
-                            o.adv += T.spd * dt;
-                            float dx = x - o.x, mv = (T.spd > 40 ? 40 : 22) * dt; o.x += Math.Max(-mv, Math.Min(mv, dx));
+                            o.adv += T.spd * enemySlow * dt;
+                            float dx = x - o.x, mv = (T.spd > 40 ? 40 : 22) * enemySlow * dt; o.x += Math.Max(-mv, Math.Min(mv, dx));
                             anyTarget = true;
                             if (T.shootInt > 0 && sy > 0 && sy < Field.SQY - 90)
                             {

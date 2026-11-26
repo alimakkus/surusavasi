@@ -10,6 +10,11 @@ public static class AutoShotBuild
         var args = System.Environment.GetCommandLineArgs();
         int i = System.Array.IndexOf(args, "-out");
         string path = i >= 0 ? args[i + 1] : "Builds/AutoShot/Suru.exe";
+        // URP varlıkları eski düzende kayıtlıysa oyunda "different serialization layout" hatası verir: yeniden yazdır
+        var urp = AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset").Concat(AssetDatabase.FindAssets("t:Renderer2DData"))
+            .Concat(AssetDatabase.FindAssets("t:UniversalRendererData")).Select(AssetDatabase.GUIDToAssetPath).Distinct().ToArray();
+        Debug.Log("[AutoShotBuild] URP varlıkları: " + string.Join(", ", urp));
+        if (urp.Length > 0) AssetDatabase.ForceReserializeAssets(urp);
         var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
         PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
         PlayerSettings.defaultScreenWidth = 450; PlayerSettings.defaultScreenHeight = 800;

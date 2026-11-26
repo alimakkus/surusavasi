@@ -53,7 +53,21 @@ static class P
         Check(gems > 300 && gems < 1200, "sezon elması sunucu sınırının (1200) altında: " + gems);
         Check(d.seasonTitles.Contains("season1") && Season.TitleName("season1") == "Kış Uyanışı Gazisi", "unvan");
         d.title = "season1"; Check(Achievements.Title(d) == "Kış Uyanışı Gazisi", "unvan gösterimi");
-        Check(d.ownedSkins.Count == 1, "görünüm verildi");
+        Check(d.ownedSkins.Count == 5 && Skins.Owned(d, 3, Skins.Ice), "Buz görünümü 5 kahramana verildi");
+        Check(Skins.Current(d, Progress.HeroIndex(d.hero)) == Skins.Ice, "Buz kuşanıldı");
+        var hp = Packs.HeroPackSkin(new SaveData { unlocked = 40 }); Check(!Skins.Exclusive(hp.skin), "kahraman paketi sezon görünümü vermez");
+
+        // Kar Fırtınası
+        var sat = new DateTime(2026, 11, 28, 13, 0, 0); var thu = new DateTime(2026, 11, 26, 13, 0, 0);
+        var ev = new SaveData { unlocked = 20 }; SaveSystem.Migrate(ev);
+        Check(SnowEvent.Open(ev, sat) && !SnowEvent.Open(ev, thu), "fırtına yalnızca hafta sonu");
+        Check(SnowEvent.Until(thu) == new TimeSpan(1, 11, 0, 0), "cumartesiye kalan: " + SnowEvent.Until(thu));
+        Check(SnowEvent.Until(sat) == new TimeSpan(1, 11, 0, 0), "pazar sonuna kalan: " + SnowEvent.Until(sat));
+        for (int i = 0; i < 3; i++) SnowEvent.UseTry(ev, sat);
+        Check(SnowEvent.TriesLeft(ev, sat) == 0 && SnowEvent.TriesLeft(ev, sat.AddDays(1)) == 3, "günde 3 hak");
+        var er = SnowEvent.Reward(ev, 3, new SuruSavasi.Core.Battle.BattleMods());
+        Check(er.gems == SnowEvent.WinGems && er.gold > 0, "fırtına ödülü");
+        Check(!SnowEvent.Open(new SaveData(), sat), "4. bölümden önce kapalı");
 
         // Bilet yoksa ücretli yol kilitli
         var e = new SaveData { unlocked = 40 }; SaveSystem.Migrate(e); Season.Ensure(e); e.seasonPts = 500;

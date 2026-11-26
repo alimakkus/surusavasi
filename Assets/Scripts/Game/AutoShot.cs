@@ -60,6 +60,13 @@ namespace SuruSavasi.Game
             SeasonScreen.ShowTasks(false); Season.UnlockPremium(d); f.Show(GameScreen.Season); yield return Shot("04_sezon_bilet");
             d.seasonPts = Season.Tiers * Season.TierPts + 650; f.Show(GameScreen.Season); yield return Shot("05_sezon_son");
             f.Show(GameScreen.Account); yield return Shot("06_hesap");
+            Season.ClaimPrem(d, Season.Tiers, (k, n) => { }, new System.Random(1)); d.unlocked = 14;
+            SkinScreen.Open(f, 0); yield return Shot("07_gorunum_buz");
+            var sat = DateTime.Today; while (sat.DayOfWeek != DayOfWeek.Saturday) sat = sat.AddDays(1);
+            SnowEvent.Clock = () => sat.AddHours(14);
+            f.Show(GameScreen.Modes); yield return Shot("08_modlar_firtina");
+            SnowEvent.UseTry(d, SnowEvent.Now); f.PlayMode(new EventMode());
+            yield return new WaitForSecondsRealtime(6f); yield return Shot("09_firtina_savas");
             Debug.Log("[AutoShot] bitti");
             Application.Quit();
         }

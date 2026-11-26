@@ -263,6 +263,7 @@ namespace SuruSavasi.Game
                     if (skinId == 1) Burst(x, y - 20, 40, new[] { "#ffd23f", "#fff3b8", "#ffffff" }, 190, 60);
                     else if (skinId == 2) { Burst(x, y - 20, 40, new[] { "#7fe8ff", "#c9b8ff", "#ffffff" }, 200, 70); flash = 1.3f; }
                     else if (skinId == 3) for (int cf = 0; cf < 5; cf++) Burst(x + (cf - 2) * 50, y - 60, 12, Skins.FestColors, 150, 20);
+                    else if (skinId == Skins.Ice) { Burst(x, y - 20, 46, Skins.IceColors, 210, 40); for (int cf = 0; cf < 4; cf++) Burst(x + (cf - 1.5f) * 60, y - 90, 8, Skins.IceColors, 90, 10); flash = .8f; }
                     break;
                 case "bossin":
                     if (!bossBannerShown && sim.boss != null)
@@ -351,7 +352,7 @@ namespace SuruSavasi.Game
             // Görünüm parıltısı: kahramanın çevresinde ara sıra kıvılcım
             if (skinId > 0 && sim.Live && Random.value < dt * 7)
                 Burst(sim.x + (Random.value - .5f) * 30, Field.SQY - 6 - Random.value * 20, 1,
-                    skinId == 1 ? new[] { "#ffd23f", "#fff3b8" } : skinId == 2 ? new[] { "#7fe8ff", "#ffffff" } : Skins.FestColors, 25, 30);
+                    skinId == 1 ? new[] { "#ffd23f", "#fff3b8" } : skinId == 2 ? new[] { "#7fe8ff", "#ffffff" } : skinId == Skins.Ice ? Skins.IceColors : Skins.FestColors, 25, 30);
             bannerT += Time.unscaledDeltaTime;
             foreach (var p in parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 260 * dt; p.life -= dt; }
             parts.RemoveAll(p => p.life <= 0);

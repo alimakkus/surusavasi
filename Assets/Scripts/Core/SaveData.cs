@@ -34,6 +34,9 @@ namespace SuruSavasi.Core
         public List<Meta.GemOp> gemOps = new List<Meta.GemOp>();
         public int gemSeq, gemServerBal = -1;
         public long gemSyncAt;
+        // Hafta sonu etkinliği (Kar Fırtınası)
+        public string eventDay = "";
+        public int eventTries, eventBest, eventWins;
         // Sezon bileti (Meta.Season)
         public int seasonId, seasonPts, seasonFree, seasonPrem, seasonBonus, seasonDayPts, seasonWeek = -1, seasonWeekDone;
         public bool seasonPremium, seasonSeen;
@@ -172,6 +175,7 @@ namespace SuruSavasi.Core
             if (d.seasonKeyVals == null) d.seasonKeyVals = new List<int>();
             if (d.seasonTitles == null) d.seasonTitles = new List<string>();
             if (d.seasonDay == null) d.seasonDay = "";
+            if (d.eventDay == null) d.eventDay = "";
             if (d.seasonKeyDay == null) d.seasonKeyDay = "";
         }
 

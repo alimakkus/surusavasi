@@ -149,11 +149,11 @@ namespace SuruSavasi.Game
                 {
                     var p2 = Art.HeroPortrait(i, 0, s);
                     var old = GUI.color; if (!Skins.Owned(D, i, s)) GUI.color = new Color(1, 1, 1, .35f);
-                    if (p2 != null) GUI.DrawTexture(new Rect(4 + s * 46, y + 10, 64, 64), p2, ScaleMode.ScaleToFit);
+                    if (p2 != null) GUI.DrawTexture(new Rect(4 + s * 38, y + 14, 56, 56), p2, ScaleMode.ScaleToFit);
                     GUI.color = old;
                 }
-                GUI.Label(new Rect(196, y + 10, w - 330, 26), $"<b>{Progress.Heroes[i].name}</b>", new GUIStyle(UiSkin.Label) { richText = true });
-                GUI.Label(new Rect(196, y + 38, w - 330, 30), $"<size=12>{Skins.OwnedCount(D, i)}/{Skins.Ids.Length} görünüm</size>", new GUIStyle(UiSkin.Small) { richText = true });
+                GUI.Label(new Rect(214, y + 10, w - 348, 26), $"<b>{Progress.Heroes[i].name}</b>", new GUIStyle(UiSkin.Label) { richText = true });
+                GUI.Label(new Rect(214, y + 38, w - 348, 30), $"<size=12>{Skins.OwnedCount(D, i)}/{Skins.Ids.Length} görünüm</size>", new GUIStyle(UiSkin.Small) { richText = true });
                 GUI.enabled = ho;
                 if (GUI.Button(new Rect(w - 130, y + 18, 116, 48), ho ? "Görünümler" : "Kilitli", new GUIStyle(UiSkin.Button) { fontSize = 14 })) SkinScreen.Open(flow, i);
                 GUI.enabled = true;

@@ -79,7 +79,7 @@ namespace SuruSavasi.Core.Meta
                 case "tokens": return r.n == 1 ? "1 hızlandırıcı" : $"{r.n} hızlandırıcı";
                 case "gear": return r.n >= 2 ? "Epik ekipman" : "Nadir ekipman";
                 case "title": return "Sezon unvanı";
-                case "skin": return "Kahraman görünümü";
+                case "skin": return SkinFor(d.seasonId) > 0 ? $"{Skins.Names[SkinFor(d.seasonId)]} görünümü (5 kahraman)" : "Kahraman görünümü";
             }
             return r.kind;
         }
@@ -269,6 +269,13 @@ namespace SuruSavasi.Core.Meta
                 case "skin":
                     {
                         grant("gems", FinalPremiumGems);
+                        int ex = SkinFor(d.seasonId);
+                        if (ex > 0)
+                        {
+                            for (int hh = 0; hh < Progress.Heroes.Length; hh++) Skins.Give(d, hh, ex);
+                            Skins.Equip(d, Progress.HeroIndex(d.hero), ex);
+                            return $"{Skins.Names[ex]} görünümü (5 kahraman) + {FinalPremiumGems} elmas";
+                        }
                         var (h, s) = Packs.HeroPackSkin(d);
                         if (h >= 0) { Skins.Give(d, h, s); return $"{Progress.Heroes[h].name} {Skins.Names[s]} görünümü + {FinalPremiumGems} elmas"; }
                         grant("gems", 200); return $"{FinalPremiumGems + 200} elmas (tüm görünümler sende)";
@@ -306,6 +313,9 @@ namespace SuruSavasi.Core.Meta
         public static void Skip(SaveData d) { int need = (Tier(d) + 1) * TierPts - d.seasonPts; d.seasonPts += Math.Max(0, need); }
 
         public static void UnlockPremium(SaveData d) { Ensure(d); d.seasonPremium = true; }
+
+        /// <summary>Sezona özel görünüm (Skins dizini; 0 = yok, o sezon eksik bir normal görünüm verilir).</summary>
+        public static int SkinFor(int season) => season == 1 ? Skins.Ice : 0;
 
         public static string TitleName(string key)
         {
