@@ -119,6 +119,7 @@ namespace SuruSavasi.Game
             { GameScreen.Modes, new Intro("Oyun Modları", "<b>Kule Tırmanışı:</b> tek can, her kattan sonra güçlendirme seç.\n<b>Patron Avı:</b> 75 saniyede en çok hasarı ver.\n<b>Hayatta Kalma:</b> dalgalara dayan, aralarda mağazadan güçlen.\n\nHepsi lig puanı ve kahraman parçası verir.") },
             { GameScreen.League, new Intro("Haftalık Lig", "30 kişilik grupta yarışırsın. Hafta sonunda <b>ilk 5 yükselir</b>, son 5 düşer.\n\nPuanlar kampanyadan ve bütün modlardan gelir. Sıralamana göre sandık kazanırsın.") },
             { GameScreen.Achievements, new Intro("Başarımlar", "Her başarımın Bronz, Gümüş ve Altın kademesi var. Kademe dolunca <b>elmasını al</b>.\n\nAltın kademeyi aldığın başarımın adını <b>unvan</b> yapabilirsin; ligde adının yanında görünür.") },
+            { GameScreen.Season, new Intro("Sezon Bileti", "Her sezon <b>4 hafta</b> sürer. Savaştıkça, bina geliştirdikçe ve görev bitirdikçe <b>sezon puanı (SP)</b> toplarsın; her 100 SP bir kademe.\n\n30 kademede iki ödül yolu var: <b>ücretsiz</b> ve <b>Sezon Bileti</b>. Her hafta 3 sezon görevi büyük SP verir.") },
             { GameScreen.Daily, new Intro("Günlük", "Her gün <b>giriş ödülü</b> al, 4 görevi tamamla, hepsini bitirince bonus kazan.\n\nGörevlerin ikisi oyun modlarından gelir: her gün farklı bir tarz dene.") },
         };
 
@@ -136,6 +137,7 @@ namespace SuruSavasi.Game
         class Unlock { public string id, title, body; public GameScreen to; public System.Func<SaveData, bool> cond; }
         static readonly Unlock[] Unlocks =
         {
+            new Unlock { id = "unlock_season", title = "Sezon Bileti açıldı!", body = "Oynadıkça <b>sezon puanı</b> topla, 30 kademede ödülleri al. Her hafta yeni sezon görevleri var!", to = GameScreen.Season, cond = d => Season.Open(d) },
             new Unlock { id = "unlock_league", title = "Haftalık Lig açıldı!", body = "Artık her savaş ve mod <b>lig puanı</b> veriyor. Haftanın sonunda sıralamana göre sandık kazan, üst lige çık!", to = GameScreen.League, cond = d => d.unlocked >= 6 },
             new Unlock { id = "unlock_tower", title = "Yeni mod: Kule Tırmanışı", body = "Tek canla kat kat tırman, her kattan sonra <b>3 güçlendirmeden birini seç</b>. Günde 1 koşu ücretsiz!", to = GameScreen.Modes, cond = d => Modes.TowerOpen(d) },
             new Unlock { id = "unlock_surv", title = "Yeni mod: Hayatta Kalma", body = "Dalga dalga gelen zombilere dayan; aralarda <b>asker, hasar ve savunma kulesi</b> al.", to = GameScreen.Modes, cond = d => Modes.SurvOpen(d) },

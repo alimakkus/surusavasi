@@ -58,6 +58,7 @@ namespace SuruSavasi.Services
                 LastPackText = Core.Meta.Packs.GrantHeroPack(data);
                 if (LastPackText == "BONUS") { GameServices.Wallet.Add(Currency.Diamonds, Core.Meta.Packs.HeroPackGems, "purchase:" + def.id); LastPackText = $"+{Core.Meta.Packs.HeroPackGems} ek elmas"; }
             }
+            if (def.id == Catalog.SeasonPass) { Core.Meta.Season.UnlockPremium(data); LastPackText = "Sezon Bileti açıldı"; }
             if (def.id == Catalog.SpeedPack) { Core.Meta.Packs.GrantSpeedPack(data); LastPackText = $"+{Core.Meta.Packs.SpeedPackTokens} hızlandırıcı"; }
             if (def.id == Catalog.NoAds || def.id == Catalog.StarterPack)
             {

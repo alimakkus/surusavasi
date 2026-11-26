@@ -100,6 +100,12 @@ static class TestMain
         s = new EcoState(); r = Run(s, 0, null, Wed, E("achievement:kill", 10), E("achievement:kill", 25), E("achievement:kill", 60), E("achievement:kill", 60));
         Check(s.Bal == 95, "başarım başına 95");
 
+        // 10b) Sezon: sezon başına 1200
+        s = new EcoState(); r = Run(s, 0, null, Wed, E("season:1", 800), E("season:1", 800));
+        Check(s.Bal == 1200, "sezon başına 1200");
+        r = Run(s, 0, null, Wed.AddDays(1), E("season:1", 100), E("season:2", 100));
+        Check(s.Bal == 1300, "yeni sezon ayrı sınır");
+
         // 11) Çevrimdışı günler
         s = new EcoState();
         r = Run(s, 0, null, Wed, E("level", 400, "20261123"), E("level", 400, "20261124"), E("level", 400, "20261125"), E("level", 400, "20261001"), E("level", 100, "20991231"));

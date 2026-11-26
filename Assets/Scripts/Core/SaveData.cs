@@ -34,6 +34,13 @@ namespace SuruSavasi.Core
         public List<Meta.GemOp> gemOps = new List<Meta.GemOp>();
         public int gemSeq, gemServerBal = -1;
         public long gemSyncAt;
+        // Sezon bileti (Meta.Season)
+        public int seasonId, seasonPts, seasonFree, seasonPrem, seasonBonus, seasonDayPts, seasonWeek = -1, seasonWeekDone;
+        public bool seasonPremium, seasonSeen;
+        public string seasonDay = "", seasonKeyDay = "";
+        public int[] seasonWeekProg = new int[3];
+        public List<string> seasonKeyKeys = new List<string>(), seasonTitles = new List<string>();
+        public List<int> seasonKeyVals = new List<int>();
         public long savedAt;                   // son kayıt zamanı (Unix ms) — bulut kaydıyla karşılaştırmak için
         public int heroPackWeek, speedPackDay, speedTokens, offerSeenWeek, offerSeenDay;   // rehber: görülen ipuçları ve tanıtımlar                 // lig sonucunda kazanılan Bayram görünümü (kahraman sırası)
         public int[] weaponLevels = { 0, 0, 0, 0 };  // tabanca, delici, alev, roket
@@ -160,6 +167,12 @@ namespace SuruSavasi.Core
             if (d.storyBase == null) d.storyBase = new List<string>();
             if (d.storyBaseVals == null) d.storyBaseVals = new List<int>();
             if (d.gemOps == null) d.gemOps = new List<Meta.GemOp>();
+            if (d.seasonWeekProg == null || d.seasonWeekProg.Length < 3) d.seasonWeekProg = new int[3];
+            if (d.seasonKeyKeys == null) d.seasonKeyKeys = new List<string>();
+            if (d.seasonKeyVals == null) d.seasonKeyVals = new List<int>();
+            if (d.seasonTitles == null) d.seasonTitles = new List<string>();
+            if (d.seasonDay == null) d.seasonDay = "";
+            if (d.seasonKeyDay == null) d.seasonKeyDay = "";
         }
 
         public static void Save(SaveData data)

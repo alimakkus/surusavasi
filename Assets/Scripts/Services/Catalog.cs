@@ -18,6 +18,7 @@ namespace SuruSavasi.Services
         public const string FounderPack = "founder_pack";      // 72 saatlik kurucu teklifi (inşaatçı + elmas + epik ekipman)
         public const string HeroPack = "pack_hero_week";       // haftalık kahraman paketi (parça ya da görünüm + elmas), haftada 1
         public const string SpeedPack = "pack_speed";          // 3 hızlandırıcı + elmas, günde 1
+        public const string SeasonPass = "season_pass";        // Sezon Bileti: o sezonun ücretli ödül yolunu açar (sezonda 1)
 
         public static readonly IReadOnlyList<ProductDef> All = new List<ProductDef>
         {
@@ -33,6 +34,7 @@ namespace SuruSavasi.Services
             new ProductDef(FounderPack, ProductKind.NonConsumable, Core.Meta.Offers.FounderGems),
             new ProductDef(HeroPack, ProductKind.Consumable, Core.Meta.Packs.HeroPackGems),
             new ProductDef(SpeedPack, ProductKind.Consumable, Core.Meta.Packs.SpeedPackGems),
+            new ProductDef(SeasonPass, ProductKind.Consumable, 0),
         };
 
         public static ProductDef Find(string id)

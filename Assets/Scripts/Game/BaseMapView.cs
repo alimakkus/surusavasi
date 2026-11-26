@@ -710,6 +710,7 @@ namespace SuruSavasi.Game
             if (Packs.AnyNew(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(x0 + w - 12 - 6 * pu, 42 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
 
             QuestPanel(x0, 90, Mathf.Min(270, w - 110));
+            SeasonHudButton(x0 + w - 104, 90);
 
             FounderHudButton(x0);
 
@@ -733,6 +734,24 @@ namespace SuruSavasi.Game
             if (GUI.Button(mr, Modes.TowerOpen(D) ? "Modlar" : "Modlar\n<size=10>Bölüm 6</size>", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Modes); }
             if (Modes.AnyFree(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(mr.xMax - 12 - 6 * pu, mr.y - 2 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + 28 + mid + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
+        }
+
+        /// <summary>Sağ üstte sezon kartı: sezon adı, kademe ve SP çubuğu; alınacak ödül varsa kırmızı nokta.</summary>
+        void SeasonHudButton(float x, float y)
+        {
+            if (!Season.Open(D)) return;
+            Season.Ensure(D);
+            var r = new Rect(x, y, 104, 62);
+            var sc = Hex(Season.Color(D.seasonId));
+            if (GUI.Button(r, "", btn)) { SoundFx.Play("click"); flow.Show(GameScreen.Season); }
+            GUI.Label(new Rect(r.x + 4, r.y + 3, r.width - 8, 20), $"<b><color={Season.Color(D.seasonId)}>Sezon {D.seasonId}</color></b>", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 13, richText = true });
+            GUI.Label(new Rect(r.x + 4, r.y + 21, r.width - 8, 18), $"Kademe <b>{Season.Tier(D)}</b>" + (D.seasonPremium ? " <color=#ffd23f>♛</color>" : ""), new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 12, richText = true });
+            bool past = D.seasonPts >= Season.Tiers * Season.TierPts;
+            float f = Season.TierProgress(D) / (float)(past ? Season.BonusPts : Season.TierPts);
+            GUI.DrawTexture(new Rect(r.x + 10, r.y + 44, r.width - 20, 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 4);
+            GUI.DrawTexture(new Rect(r.x + 10, r.y + 44, Mathf.Max(6, (r.width - 20) * f), 8), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, sc, 0, 4);
+            if (Season.Claimable(D) > 0 || !D.seasonSeen)
+            { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(r.xMax - 10 - 6 * pu, r.y - 4 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
         }
 
 #if UNITY_EDITOR

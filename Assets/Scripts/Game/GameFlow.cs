@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace SuruSavasi.Game
 {
-    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents, Skins, Achievements, Account }
+    public enum GameScreen { Splash, Base, Levels, Heroes, Weapons, Battle, Shop, Daily, Gear, Modes, League, Talents, Skins, Achievements, Account, Season }
 
     /// <summary>Oyunun ekran akışı: açılış (yükleme) → üs. Üsten savaş, bölümler, kahramanlar ve silahlara gidilir.
     /// Geçici arayüz (OnGUI); ileride Unity UI'ya taşınacak.</summary>
@@ -58,6 +58,7 @@ namespace SuruSavasi.Game
         {
             screen = s; scroll = Vector2.zero;
             if (s == GameScreen.Levels) LevelMapScreen.Focus();
+            if (s == GameScreen.Season) SeasonScreen.Focus();
             if (s == GameScreen.Base) baseMap.Open(); else baseMap.Close();
         }
 
@@ -201,6 +202,7 @@ namespace SuruSavasi.Game
                     case GameScreen.Skins: SkinScreen.Draw(this, x0, w); break;
                     case GameScreen.Achievements: AchievementsScreen.Draw(this, x0, w); break;
                     case GameScreen.Account: AccountScreen.Draw(this, x0, w); break;
+                    case GameScreen.Season: SeasonScreen.Draw(this, x0, w); break;
                 }
                 GUI.enabled = true;
                 if (intro) Tutorial.DrawIntro(screen, VW);

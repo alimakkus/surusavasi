@@ -62,6 +62,7 @@ namespace SuruSavasi.Core.Meta
         public static string Title(SaveData d)
         {
             if (string.IsNullOrEmpty(d.title)) return null;
+            if (d.title.StartsWith("season")) return d.seasonTitles != null && d.seasonTitles.Contains(d.title) ? Season.TitleName(d.title) : null;
             foreach (var a in All) if (a.id == d.title && ClaimedTiers(d, a) >= 3) return a.title;
             return null;
         }

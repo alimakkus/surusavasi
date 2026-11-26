@@ -78,6 +78,7 @@ namespace SuruSavasi.Core.Meta
         {
             var D = Ensure(d);
             foreach (var q in D.quests) if (q.id == id && !q.c) q.p = Math.Min(Def(id).n, q.p + n);
+            Season.OnEvent(d, id, n); // sezon puanı ve haftalık sezon görevleri
         }
 
         public static bool CanLogin(SaveData d) => Ensure(d).last != Today;

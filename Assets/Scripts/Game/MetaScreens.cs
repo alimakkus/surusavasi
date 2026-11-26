@@ -396,7 +396,7 @@ namespace SuruSavasi.Game
             if (GUI.Button(new Rect(0, y, w, 48), can ? "Bugünkü ödülü al" : "Bugünkü ödül alındı, yarın gel", can ? UiSkin.ButtonGold : btn))
             {
                 Dd.streak = Dd.last == Daily.Yesterday ? Dd.streak % 7 + 1 : 1; Dd.last = Daily.Today;
-                int k = Dd.streak - 1; Grant(Daily.Login[k, 0], Daily.Login[k, 1], Daily.Login[k, 2], Daily.Login[k, 3], "login");
+                int k = Dd.streak - 1; Grant(Daily.Login[k, 0], Daily.Login[k, 1], Daily.Login[k, 2], Daily.Login[k, 3], "login"); Season.OnEvent(D, "login");
                 flow.ShowToast($"{Dd.streak}. gün ödülü alındı");
             }
             GUI.enabled = true;
@@ -429,14 +429,14 @@ namespace SuruSavasi.Game
                 GUI.Label(new Rect(14, y + 54, w - 170, 26), $"{q.p}/{def.n} · {Rew(qg, 0, 0, qe)}", new GUIStyle(small) { fontSize = 13 });
                 GUI.enabled = fin && !q.c;
                 if (GUI.Button(new Rect(w - 150, y + 16, 136, 50), q.c ? "Alındı" : fin ? "Al" : "Devam", fin && !q.c ? UiSkin.ButtonGold : btn))
-                { q.c = true; Grant(qg, 0, 0, qe, "quest:" + q.id); }
+                { q.c = true; Season.OnEvent(D, "quest"); Grant(qg, 0, 0, qe, "quest:" + q.id); }
                 GUI.enabled = true;
                 y += 94;
             }
             bool all = Daily.AllClaimed(D);
             GUI.enabled = all && !Dd.bonus;
             if (GUI.Button(new Rect(0, y, w, 50), Dd.bonus ? "Bonus alındı" : $"Tüm görevler bonusu: {Daily.BonusGems} elmas, {Daily.BonusFood} yiyecek", all && !Dd.bonus ? UiSkin.ButtonGold : btn))
-            { Dd.bonus = true; Grant(0, 0, Daily.BonusFood, Daily.BonusGems, "quest_bonus"); }
+            { Dd.bonus = true; Season.OnEvent(D, "quest_bonus"); Grant(0, 0, Daily.BonusFood, Daily.BonusGems, "quest_bonus"); }
             GUI.enabled = true;
             GUI.EndScrollView();
         }

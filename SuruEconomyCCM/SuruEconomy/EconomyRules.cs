@@ -91,6 +91,7 @@ namespace SuruEconomy
             { "night_raid", 20 },
             { "chapter_chest", 400 },
             { "achievement", 300 },
+            { "season", 1200 },        // sezon bileti ödülleri (sezon başına da 1200 sınırı var)
             { "other", 50 },
         };
 
@@ -101,14 +102,15 @@ namespace SuruEconomy
             { "survival", 100 },       // 10/20/30/40. dalga ödülleri
             { "achievement", 1300 },   // 13 başarım × (10+25+60)
         };
-        public const int PerAchievement = 95;
+        /// <summary>Alt anahtar başına ömür boyu sınır: "achievement:kills" başarım başına 95, "season:3" sezon başına 1200.</summary>
+        public static readonly Dictionary<string, int> PerKey = new() { { "achievement", 95 }, { "season", 1200 } };
 
         /// <summary>Ürün başına en çok elmas. Elmas paketlerinde ilk alım ×2, hafta sonu ×1.5 ayrıca hesaplanır.</summary>
         public static readonly Dictionary<string, int> ProductGems = new()
         {
             { "diamonds_100", 100 }, { "diamonds_550", 550 }, { "diamonds_1200", 1200 }, { "diamonds_2600", 2600 }, { "diamonds_7000", 7000 },
             { "starter_pack", 500 }, { "monthly_card", 300 }, { "no_ads", 0 }, { "piggy_bank", 600 }, { "founder_pack", 500 },
-            { "pack_hero_week", 600 }, { "pack_speed", 150 },
+            { "pack_hero_week", 600 }, { "pack_speed", 150 }, { "season_pass", 0 },
         };
         public static readonly HashSet<string> OneTime = new() { "starter_pack", "founder_pack", "no_ads" };
 
@@ -162,10 +164,11 @@ namespace SuruEconomy
             string dk = OpDay(op, utc) + "|" + cat;
             int allow = Math.Max(0, Daily[cat] - Get(s.Used, dk));
             if (Lifetime.TryGetValue(cat, out int life)) allow = Math.Min(allow, Math.Max(0, life - Get(s.Life, cat)));
-            if (cat == "achievement")
+            if (PerKey.TryGetValue(cat, out int per))
             {
-                string ak = "ach:" + op.R.Substring(Math.Min(op.R.Length, "achievement:".Length));
-                allow = Math.Min(allow, Math.Max(0, PerAchievement - Get(s.Life, ak)));
+                string sub = op.R.Length > cat.Length + 1 ? op.R.Substring(cat.Length + 1) : "";
+                string ak = (cat == "achievement" ? "ach:" : cat + ":") + sub;
+                allow = Math.Min(allow, Math.Max(0, per - Get(s.Life, ak)));
                 if (Math.Min(op.N, allow) > 0) Add(s.Life, ak, Math.Min(op.N, allow));
             }
             int give = Math.Min(op.N, allow);
