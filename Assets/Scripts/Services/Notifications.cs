@@ -26,6 +26,10 @@ namespace SuruSavasi.Services
             set { PlayerPrefs.SetInt("surusavasi-notif", value ? 1 : 0); PlayerPrefs.Save(); }
         }
 
+        /// <summary>Tür bazında açık/kapalı (Ayarlar > Bildirim türleri).</summary>
+        public static bool CatOn(Core.Meta.NoteCat c) => PlayerPrefs.GetInt("surusavasi-notif-" + (int)c, 1) == 1;
+        public static void SetCat(Core.Meta.NoteCat c, bool on) { PlayerPrefs.SetInt("surusavasi-notif-" + (int)c, on ? 1 : 0); PlayerPrefs.Save(); }
+
         public static INotifications Create()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR

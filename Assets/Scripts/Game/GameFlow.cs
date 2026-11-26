@@ -90,7 +90,7 @@ namespace SuruSavasi.Game
             if (n == null || GameServices.Save == null || !GameServices.Ready) return;
             n.CancelAll();
             if (!NotificationsFactory.Enabled) return;
-            foreach (var p in NotificationPlan.Make(D, System.DateTime.Now)) n.Schedule(p.id, p.title, p.body, p.when);
+            foreach (var p in NotificationPlan.Make(D, System.DateTime.Now, NotificationsFactory.CatOn)) n.Schedule(p.id, p.title, p.body, p.when);
             GameServices.Save.Save();
         }
 

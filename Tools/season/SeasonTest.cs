@@ -136,6 +136,31 @@ static class P
         Check(al.allyReqGot == al.allyReqMax && g2 == al.allyReqMax - 1, "kalan yardımlar zamanla geldi");
         Check(Alliance.Feed(al).Count > 0, "akış dolu");
 
+        // ---------------- Bildirim planı ----------------
+        var nd = new SaveData { unlocked = 20 }; SaveSystem.Migrate(nd);
+        var nnow = new DateTime(2026, 12, 17, 20, 0, 0); // perşembe akşamı, sezon 1'in son haftası
+        Alliance.Clock = () => nnow; Season.Clock = () => nnow.ToUniversalTime();
+        Alliance.Join(nd, 12345); Season.Ensure(nd); nd.seasonPts = 12 * Season.TierPts;
+        nd.buildKind = (int)BuildingKind.Farm; nd.buildFrom = 3; nd.buildEnd = BaseLogic.Now + 40 * 60 * 1000L;
+        var plan = NotificationPlan.Make(nd, nnow);
+        Console.WriteLine("Bildirim planı (" + plan.Count + "):");
+        foreach (var p in plan) Console.WriteLine($"  {p.when:ddd dd.MM HH:mm} [{p.cat}] {p.title}");
+        bool quiet = true, perDay = true, gap = true;
+        for (int i = 0; i < plan.Count; i++)
+        {
+            if (plan[i].when.Hour >= 22 || plan[i].when.Hour < 9) quiet = false;
+            int same = 0; for (int j = 0; j < plan.Count; j++) if (plan[j].when.Date == plan[i].when.Date) same++;
+            if (same > NotificationPlan.PerDay) perDay = false;
+            if (i > 0 && (plan[i].when - plan[i - 1].when).TotalMinutes < 120) gap = false;
+        }
+        Check(plan.Count > 3 && quiet && perDay && gap, "bildirim kuralları: gece sessiz, günde en çok 2, 2 saat ara");
+        Check(plan.Exists(p => p.title.StartsWith("Sezonun bitmesine")), "sezon bitiyor bildirimi");
+        Check(plan.Exists(p => p.title == "Kar Fırtınası başladı!" && p.when.DayOfWeek == DayOfWeek.Saturday), "fırtına cumartesi bildirimi");
+        Check(plan.Exists(p => p.cat == NoteCat.Alliance), "ittifak bildirimi");
+        var noEv = NotificationPlan.Make(nd, nnow, c => c != NoteCat.Event);
+        Check(!noEv.Exists(p => p.cat == NoteCat.Event), "tür kapatılınca o tür gelmez");
+        Season.Clock = () => DateTime.UtcNow; Alliance.Clock = () => DateTime.Now;
+
         Console.WriteLine(fail == 0 ? "Sezon testleri: hepsi geçti" : $"Sezon testleri: {fail} hata");
         return fail == 0 ? 0 : 1;
     }

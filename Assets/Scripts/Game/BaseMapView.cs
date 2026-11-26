@@ -61,7 +61,7 @@ namespace SuruSavasi.Game
         float evTimer = 8, nextTick;
 
         // Seçim ve pencereler
-        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train, Builder, Founder }
+        enum Popup { None, Upgrade, Info, Trade, Settings, Defense, Train, Builder, Founder, Notif }
         BuildingKind? sel;
         Popup popup;
         Rect popupRect;
@@ -829,7 +829,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 520 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : popup == Popup.Upgrade && BaseLogic.Busy(D, popKind) && Alliance.Joined(D) ? 470 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 520 : popup == Popup.Notif ? 440 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : popup == Popup.Upgrade && BaseLogic.Busy(D, popKind) && Alliance.Joined(D) ? 470 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -841,6 +841,20 @@ namespace SuruSavasi.Game
             if (popup == Popup.Train) { TrainPopup(x, y, w, h, head); return; }
             if (popup == Popup.Builder) { BuilderPopup(x, y, w, h, head); return; }
             if (popup == Popup.Founder) { FounderPopup(x, y, w, h, head); return; }
+            if (popup == Popup.Notif)
+            {
+                GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Bildirim türleri", head);
+                GUI.Label(new Rect(x + 20, y + 52, w - 40, 50), "<size=13>Gece 22:00-09:00 arası bildirim gelmez. Günde en çok 2 bildirim gönderilir.</size>", new GUIStyle(small) { wordWrap = true, richText = true });
+                string[] sub = { "inşaat bitti, depolar doldu, askerler hazır", "sezon bitişi, Kar Fırtınası, sezon görevleri", "yardımlar, patron sandıkları, bağış", "günlük ödül, geri dön hatırlatmaları" };
+                for (int i = 0; i < 4; i++)
+                {
+                    var c = (NoteCat)i; bool on = NotificationsFactory.CatOn(c);
+                    if (GUI.Button(new Rect(x + 20, y + 108 + i * 62, w - 40, 54), $"{NotificationPlan.CatNames[i]}: {(on ? "<color=#8be39d>Açık</color>" : "<color=#ff8a80>Kapalı</color>")}\n<size=11>{sub[i]}</size>", new GUIStyle(btn) { richText = true, fontSize = 15 }))
+                    { NotificationsFactory.SetCat(c, !on); SoundFx.Play("click"); }
+                }
+                if (GUI.Button(new Rect(x + 20, y + h - 64, w - 40, 46), "‹ Ayarlar", btn)) popup = Popup.Settings;
+                return;
+            }
             if (popup == Popup.Settings)
             {
                 GUI.Label(new Rect(x + 16, y + 10, w - 70, 36), "Ayarlar", head);
@@ -849,7 +863,10 @@ namespace SuruSavasi.Game
                 if (GUI.Button(new Rect(x + 30 + hw2, y + 64, hw2, 50), SoundFx.MusicOn ? "Müzik: Açık" : "Müzik: Kapalı", btn)) SoundFx.MusicOn = !SoundFx.MusicOn;
                 if (GUI.Button(new Rect(x + 20, y + 124, w - 40, 50), SoundFx.Vibrate ? "Titreşim: Açık" : "Titreşim: Kapalı", btn)) SoundFx.Vibrate = !SoundFx.Vibrate;
                 if (GUI.Button(new Rect(x + 20, y + 184, w - 40, 50), NightEnabled ? "Gece görünümü: Saate göre" : "Gece görünümü: Kapalı", btn)) NightEnabled = !NightEnabled;
-                if (GUI.Button(new Rect(x + 20, y + 244, w - 40, 50), NotificationsFactory.Enabled ? "Bildirimler: Açık" : "Bildirimler: Kapalı", btn)) NotificationsFactory.Enabled = !NotificationsFactory.Enabled;
+                if (GUI.Button(new Rect(x + 20, y + 244, hw2, 50), NotificationsFactory.Enabled ? "Bildirimler: Açık" : "Bildirimler: Kapalı", btn)) NotificationsFactory.Enabled = !NotificationsFactory.Enabled;
+                GUI.enabled = NotificationsFactory.Enabled;
+                if (GUI.Button(new Rect(x + 30 + hw2, y + 244, hw2, 50), "Türler ›", btn)) { popup = Popup.Notif; SoundFx.Play("click"); }
+                GUI.enabled = true;
                 bool pers = GameServices.Consent != null && GameServices.Consent.PersonalizedAds;
                 if (GUI.Button(new Rect(x + 20, y + 304, w - 40, 50), pers ? "Kişiselleştirilmiş reklam: Açık" : "Kişiselleştirilmiş reklam: Kapalı", btn)) LocalConsent.SetAnswer(!pers);
                 if (GUI.Button(new Rect(x + 20, y + 364, w - 40, 50), "Hesap ve bulut kayıt ›" + (Cloud.CloudSync.Username == null ? "  <size=11><color=#ffb02e>(korunmuyor)</color></size>" : "  <size=11><color=#8be39d>(korunuyor)</color></size>"), new GUIStyle(UiSkin.ButtonGold) { richText = true, fontSize = 15 }))
