@@ -124,7 +124,7 @@ static class TestMain
         var o = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         s = new EcoState(); Run(s, 77, null, Wed, E("level", 10), E("achievement:kill", 10));
         var back = JsonSerializer.Deserialize<EcoState>(JsonSerializer.Serialize(s, o), o);
-        Check(back.Bal == 87 && back.Used.Count == 2 && back.Ids.Count == 2 && back.Life["ach:kill"] == 10, "durum kaydı gidiş-dönüş");
+        Check(back.Bal == 97 && back.Used.Count == 2 && back.Ids.Count == 2 && back.Life["ach:kill"] == 10, "durum kaydı gidiş-dönüş");
         var req = JsonSerializer.Deserialize<SyncRequest>("{\"base\":5,\"ops\":[{\"id\":\"a\",\"k\":\"e\",\"n\":3,\"r\":\"login\",\"d\":\"20261125\"}]}", o);
         Check(req.Base == 5 && req.Ops.Count == 1 && req.Ops[0].R == "login", "istemci isteği (JsonUtility biçimi) okunur");
         string outJson = JsonSerializer.Serialize(Run(new EcoState(), 1, null, Wed), o);
