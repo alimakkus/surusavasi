@@ -16,6 +16,33 @@ namespace SuruSavasi.Core.Meta
         public const int PerDay = 2, MaxTotal = 12;
         public static readonly string[] CatNames = { "İnşaat ve üretim", "Sezon ve etkinlikler", "İttifak", "Hatırlatmalar" };
 
+        /// <summary>Bildirime dokununca açılacak ekran (GameFlow.Route çözer).</summary>
+        public static string TargetOf(int id)
+        {
+            switch (id)
+            {
+                case 10: case 11: case 13: return "season";
+                case 12: return "season_tasks";
+                case 20: case 21: return "modes";
+                case 31: case 32: case 34: return "alliance:2";
+                case 33: return "alliance:1";
+                case 40: return "daily";
+                default: return "base";
+            }
+        }
+
+        /// <summary>Bildirimin taşıdığı veri: "hedef|kimlik|planlandığı an (Unix sn)|tür". Dokunulunca ölçüm ve yönlendirme için.</summary>
+        public static string DataOf(PlannedNote n, DateTime now) => $"{TargetOf(n.id)}|{n.id}|{new DateTimeOffset(now).ToUnixTimeSeconds()}|{(int)n.cat}";
+
+        public static bool TryParse(string data, out string target, out int id, out long plannedAt, out int cat)
+        {
+            target = null; id = 0; plannedAt = 0; cat = 0;
+            if (string.IsNullOrEmpty(data)) return false;
+            var p = data.Split('|');
+            if (p.Length < 4 || !int.TryParse(p[1], out id) || !long.TryParse(p[2], out plannedAt) || !int.TryParse(p[3], out cat)) return false;
+            target = p[0]; return true;
+        }
+
         public static List<PlannedNote> Make(SaveData d, DateTime now, Func<NoteCat, bool> enabled = null)
         {
             var all = new List<PlannedNote>();

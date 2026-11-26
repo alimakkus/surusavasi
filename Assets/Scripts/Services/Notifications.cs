@@ -15,7 +15,21 @@ namespace SuruSavasi.Services
     {
         void Init();
         void CancelAll();
-        void Schedule(int id, string title, string body, DateTime when);
+        void Schedule(int id, string title, string body, DateTime when, string data);
+        /// <summary>Oyun bir bildirime dokunularak açıldıysa/öne geldiyse o bildirimin verisi (bir kez döner), yoksa null.</summary>
+        string TakeOpened();
+    }
+
+    /// <summary>Aynı bildirimi iki kez işlememek için son işlenen bildirim verisi.</summary>
+    static class OpenedGuard
+    {
+        const string Key = "surusavasi-notif-handled";
+        public static string Filter(string data)
+        {
+            if (string.IsNullOrEmpty(data) || PlayerPrefs.GetString(Key, "") == data) return null;
+            PlayerPrefs.SetString(Key, data); PlayerPrefs.Save();
+            return data;
+        }
     }
 
     public static class NotificationsFactory
@@ -45,10 +59,13 @@ namespace SuruSavasi.Services
     /// <summary>Editor: bildirim gönderilmez, planlananlar konsola yazılır.</summary>
     public class EditorNotifications : INotifications
     {
+        /// <summary>Test: "dokunulmuş bildirim" taklidi (Editor menüsü ve otomatik görüntü kullanır).</summary>
+        public static string Pending;
         public void Init() { }
         public void CancelAll() { }
-        public void Schedule(int id, string title, string body, DateTime when) =>
-            Debug.Log($"[Bildirim] {when:dd.MM HH:mm} · {title} · {body}");
+        public void Schedule(int id, string title, string body, DateTime when, string data) =>
+            Debug.Log($"[Bildirim] {when:dd.MM HH:mm} · {title} · {body} → {data}");
+        public string TakeOpened() { var p = Pending; Pending = null; return p; }
     }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -61,8 +78,9 @@ namespace SuruSavasi.Services
             if (AndroidNotificationCenter.UserPermissionToPost != PermissionStatus.Allowed) new PermissionRequest(); // Android 13+
         }
         public void CancelAll() { AndroidNotificationCenter.CancelAllScheduledNotifications(); AndroidNotificationCenter.CancelAllDisplayedNotifications(); }
-        public void Schedule(int id, string title, string body, DateTime when) =>
-            AndroidNotificationCenter.SendNotificationWithExplicitID(new AndroidNotification { Title = title, Text = body, FireTime = when }, Channel, id);
+        public void Schedule(int id, string title, string body, DateTime when, string data) =>
+            AndroidNotificationCenter.SendNotificationWithExplicitID(new AndroidNotification { Title = title, Text = body, FireTime = when, IntentData = data }, Channel, id);
+        public string TakeOpened() => OpenedGuard.Filter(AndroidNotificationCenter.GetLastNotificationIntent()?.Notification.IntentData);
     }
 #endif
 
@@ -74,12 +92,13 @@ namespace SuruSavasi.Services
             var req = new AuthorizationRequest(AuthorizationOption.Alert | AuthorizationOption.Badge | AuthorizationOption.Sound, false);
         }
         public void CancelAll() { iOSNotificationCenter.RemoveAllScheduledNotifications(); iOSNotificationCenter.RemoveAllDeliveredNotifications(); }
-        public void Schedule(int id, string title, string body, DateTime when)
+        public string TakeOpened() => OpenedGuard.Filter(iOSNotificationCenter.GetLastRespondedNotification()?.Data);
+        public void Schedule(int id, string title, string body, DateTime when, string data)
         {
             var span = when - DateTime.Now; if (span.TotalSeconds < 5) return;
             iOSNotificationCenter.ScheduleNotification(new iOSNotification(id.ToString())
             {
-                Title = title, Body = body, ShowInForeground = false,
+                Title = title, Body = body, ShowInForeground = false, Data = data,
                 Trigger = new iOSNotificationTimeIntervalTrigger { TimeInterval = span, Repeats = false },
             });
         }

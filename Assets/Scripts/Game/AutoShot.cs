@@ -75,6 +75,13 @@ namespace SuruSavasi.Game
             AllianceScreen.Open(f, 3); yield return Shot("14_ittifak_uyeler");
             AllianceScreen.Open(f, 4); yield return Shot("15_ittifak_magaza");
             f.Show(GameScreen.Base); yield return Shot("16_us_ittifak");
+            // Bildirime dokunarak açılış: doğru ekrana gitmeli
+            long ts = DateTimeOffset.UtcNow.AddHours(-3).ToUnixTimeSeconds();
+            f.Show(GameScreen.Base); EditorNotifications.Pending = $"season_tasks|12|{ts}|1"; f.CheckOpened();
+            yield return Shot("17_bildirim_sezon_gorev");
+            f.Show(GameScreen.Base); EditorNotifications.Pending = $"alliance:2|31|{ts}|2"; f.CheckOpened();
+            yield return Shot("18_bildirim_ittifak_patron");
+            Debug.Log("[AutoShot] bildirim sayaçları: " + NotifStats.TallyText() + " · ekran: " + f.screen);
             // Not: Windows test sürümünde URP dünya çizimi çalışmıyor (serileştirme uyumsuzluğu), savaş görüntüsü alınmaz.
             Debug.Log("[AutoShot] bitti");
             Application.Quit();

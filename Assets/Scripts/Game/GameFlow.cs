@@ -80,7 +80,44 @@ namespace SuruSavasi.Game
         public void Toast(string s) { toast = s; toastT = 2.2f; }
 
         // ---------- Bildirimler: arka plana geçince planla, geri gelince sil ----------
-        void OnApplicationPause(bool paused) { if (paused) PlanNotifications(); else GameServices.Notifications?.CancelAll(); }
+        void OnApplicationPause(bool paused)
+        {
+            if (paused) { PlanNotifications(); return; }
+            GameServices.Notifications?.CancelAll();
+            if (screen != GameScreen.Splash) CheckOpened();
+        }
+
+        // ---------- Bildirimden açılış: doğru ekrana yönlendirme + ölçüm ----------
+        string pendingRoute;
+
+        /// <summary>Oyun bir bildirime dokunularak açıldıysa hedef ekranı sıraya koyar; değilse dönüşü ölçer.</summary>
+        public void CheckOpened()
+        {
+            var n = GameServices.Notifications; if (n == null || GameServices.Save == null) return;
+            var now = System.DateTime.Now;
+            string data = n.TakeOpened();
+            if (data != null && NotificationPlan.TryParse(data, out var target, out _, out _, out _)) { NotifStats.Opened(data, now); pendingRoute = target; }
+            else NotifStats.Returned(now);
+        }
+
+        void TryRoute()
+        {
+            if (pendingRoute == null || screen != GameScreen.Base || startWait >= 0 || ConsentScreen.Needed || CloudSaveManager.Conflict != null) return;
+            string t = pendingRoute; pendingRoute = null;
+            if (NewPlayer) return;
+            Route(t);
+        }
+
+        /// <summary>Bildirim hedefini ekrana çevirir. Hedef henüz açılmamışsa üste kalır.</summary>
+        public void Route(string t)
+        {
+            var d = D;
+            if (t == "season" || t == "season_tasks") { if (!Season.Open(d)) return; Show(GameScreen.Season); if (t == "season_tasks") SeasonScreen.ShowTasks(true); }
+            else if (t == "modes") { if (Modes.TowerOpen(d) || SnowEvent.Unlocked(d)) Show(GameScreen.Modes); }
+            else if (t.StartsWith("alliance")) { if (!Alliance.Open(d)) return; int tab = t.Length > 9 && int.TryParse(t.Substring(9), out int k) ? k : 0; AllianceScreen.Open(this, Alliance.Joined(d) ? tab : 0); }
+            else if (t == "daily") Show(GameScreen.Daily);
+            Debug.Log("[Bildirim] Yönlendirildi: " + t);
+        }
         void OnApplicationQuit() => PlanNotifications();
         void Start() => GameServices.Notifications?.CancelAll();
 
@@ -90,7 +127,10 @@ namespace SuruSavasi.Game
             if (n == null || GameServices.Save == null || !GameServices.Ready) return;
             n.CancelAll();
             if (!NotificationsFactory.Enabled) return;
-            foreach (var p in NotificationPlan.Make(D, System.DateTime.Now, NotificationsFactory.CatOn)) n.Schedule(p.id, p.title, p.body, p.when);
+            var now = System.DateTime.Now;
+            var plan = NotificationPlan.Make(D, now, NotificationsFactory.CatOn);
+            foreach (var p in plan) n.Schedule(p.id, p.title, p.body, p.when, NotificationPlan.DataOf(p, now));
+            NotifStats.Planned(plan, now);
             GameServices.Save.Save();
         }
 
@@ -109,6 +149,7 @@ namespace SuruSavasi.Game
                 SoundFx.Music(BaseMapView.NightEnabled && (h >= 20 || h < 6) ? "base_night" : "base_day");
             }
             TickStartWait();
+            TryRoute();
             if (screen != GameScreen.Splash) return;
             splashT += Time.unscaledDeltaTime;
             // Her karede birkaç görsel yüklenir: ilerleme çubuğu gerçek yüklemeyi gösterir
@@ -121,6 +162,7 @@ namespace SuruSavasi.Game
                 // Bulut kaydı: arka planda giriş + karşılaştırma (yeniden kurulumda kayıt geri gelir)
                 CloudSaveManager.Begin();
                 // İlk açılış: önce gizlilik onayı (üs ekranında), sonra günlük ödül
+                CheckOpened();
                 if (ConsentScreen.Needed) LocalConsent.Answered += AfterConsent;
                 else StartAfterLoad();
             }
@@ -139,7 +181,7 @@ namespace SuruSavasi.Game
         {
             if (NewPlayer && CloudSync.Supported) { startWait = 4f; return; }
             if (NewPlayer) Play(1);
-            else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
+            else if (pendingRoute == null && Daily.CanLogin(D)) Show(GameScreen.Daily);
         }
         void TickStartWait()
         {
@@ -149,7 +191,7 @@ namespace SuruSavasi.Game
             startWait = -1;
             if (screen != GameScreen.Base || CloudSaveManager.Conflict != null) return;
             if (NewPlayer) Play(1);
-            else if (Daily.CanLogin(D)) Show(GameScreen.Daily);
+            else if (pendingRoute == null && Daily.CanLogin(D)) Show(GameScreen.Daily);
         }
         public bool InBattle => screen == GameScreen.Battle;
 
