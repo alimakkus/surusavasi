@@ -19,6 +19,7 @@ namespace SuruSavasi.Game
         {
             foreach (var k in Intros.Keys) Mark("intro_" + k);
             foreach (var u in Unlocks) Mark(u.id);
+            foreach (var t in new[] { "move", "barrel", "board", "power", "gate", "skill", "weak" }) Mark("tip_" + t);
         }
         public static void Mark(string id) { var d = D; if (d == null) return; if (d.tips == null) d.tips = new List<string>(); if (!d.tips.Contains(id)) { d.tips.Add(id); GameServices.Save.Save(); } }
 
