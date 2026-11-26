@@ -65,8 +65,7 @@ namespace SuruSavasi.Game
             var sat = DateTime.Today; while (sat.DayOfWeek != DayOfWeek.Saturday) sat = sat.AddDays(1);
             SnowEvent.Clock = () => sat.AddHours(14);
             f.Show(GameScreen.Modes); yield return Shot("08_modlar_firtina");
-            SnowEvent.UseTry(d, SnowEvent.Now); f.PlayMode(new EventMode());
-            yield return new WaitForSecondsRealtime(6f); yield return Shot("09_firtina_savas");
+            // Not: Windows test sürümünde URP dünya çizimi çalışmıyor (serileştirme uyumsuzluğu), savaş görüntüsü alınmaz.
             Debug.Log("[AutoShot] bitti");
             Application.Quit();
         }
