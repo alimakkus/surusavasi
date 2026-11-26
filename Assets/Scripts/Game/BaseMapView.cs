@@ -711,6 +711,7 @@ namespace SuruSavasi.Game
 
             QuestPanel(x0, 90, Mathf.Min(270, w - 110));
             SeasonHudButton(x0 + w - 104, 90);
+            AllianceHudButton(x0 + w - 104, 158);
 
             FounderHudButton(x0);
 
@@ -734,6 +735,18 @@ namespace SuruSavasi.Game
             if (GUI.Button(mr, Modes.TowerOpen(D) ? "Modlar" : "Modlar\n<size=10>Bölüm 6</size>", sb)) { SoundFx.Play("click"); flow.Show(GameScreen.Modes); }
             if (Modes.AnyFree(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(mr.xMax - 12 - 6 * pu, mr.y - 2 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
             if (GUI.Button(new Rect(x0 + 28 + mid + side * 3, by, side, bh), "Ayarlar", sb)) { SoundFx.Play("click"); popup = Popup.Settings; }
+        }
+
+        /// <summary>Sezon kartının altında İttifak düğmesi; gelen yardımları işler, yapılacak iş varsa kırmızı nokta.</summary>
+        void AllianceHudButton(float x, float y)
+        {
+            if (!Alliance.Open(D)) return;
+            int got = Alliance.ApplyHelps(D);
+            if (got > 0) { GameServices.Save.Save(); nextTick = 0; flow.ShowToast(got > 1 ? $"İttifaktan {got} yardım geldi!" : "İttifaktan yardım geldi!"); }
+            var r = new Rect(x, y, 104, 44);
+            string tag = Alliance.Joined(D) ? $"<size=10>[{Alliance.Describe(D.allyId).tag}]</size>" : "<size=10>katıl</size>";
+            if (GUI.Button(r, $"İttifak\n{tag}", new GUIStyle(btn) { fontSize = 13, richText = true })) { SoundFx.Play("click"); AllianceScreen.Open(flow); }
+            if (Alliance.AnyTodo(D)) { float pu = 1 + .15f * Mathf.Sin(t * 6); GUI.DrawTexture(new Rect(r.xMax - 10 - 6 * pu, r.y - 4 - 6 * pu, 14 * pu, 14 * pu), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.88f, .27f, .23f), 0, 7 * pu); }
         }
 
         /// <summary>Sağ üstte sezon kartı: sezon adı, kademe ve SP çubuğu; alınacak ödül varsa kırmızı nokta.</summary>
@@ -816,7 +829,7 @@ namespace SuruSavasi.Game
         void DrawPopup()
         {
             GUI.DrawTexture(new Rect(0, 0, VW, 800), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .55f), 0, 0);
-            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 520 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : 420, y = 400 - h / 2;
+            float w = Mathf.Min(400, VW - 24), x = VW / 2 - w / 2, h = popup == Popup.Settings ? 520 : popup == Popup.Defense ? 340 : popup == Popup.Train ? 380 : popup == Popup.Builder ? 340 : popup == Popup.Founder ? 440 : popup == Popup.Upgrade && BaseLogic.Busy(D, popKind) && Alliance.Joined(D) ? 470 : 420, y = 400 - h / 2;
             popupRect = new Rect(x, y, w, h);
             GUI.Box(popupRect, "", card);
             if (GUI.Button(new Rect(x + w - 48, y + 8, 40, 40), "✕", new GUIStyle(btn) { fontSize = 16 })) { popup = Popup.None; return; }
@@ -898,6 +911,16 @@ namespace SuruSavasi.Game
                 if (GUI.Button(new Rect(x + 20, y + 354, w - 40, 46), D.speedTokens > 0 ? $"Hızlandırıcı kullan: 1 saat kısalt  <size=12>(elinde {D.speedTokens})</size>" : "Hızlandırıcı yok (Mağaza > Teklif)", new GUIStyle(btn) { fontSize = 14, richText = true }))
                 { if (Packs.UseToken(D, k)) { nextTick = 0; GameServices.Save.Save(); SoundFx.Play("power"); } }
                 GUI.enabled = true;
+                // İttifak yardımı: her yükseltmede bir kez
+                if (Alliance.Joined(D))
+                {
+                    bool asking = Alliance.Asking(D, k), can = Alliance.CanAskHelp(D, k);
+                    GUI.enabled = can;
+                    string ht = can ? $"İttifaktan yardım iste  <size=12>({Alliance.HelpsPerBuild(D)} yardım)</size>" : asking ? $"Yardımlar geliyor… {D.allyReqGot}/{D.allyReqMax}" : "Bu inşaat için yardım istendi";
+                    if (GUI.Button(new Rect(x + 20, y + 408, w - 40, 44), ht, new GUIStyle(UiSkin.ButtonGreen) { fontSize = 14, richText = true }))
+                    { Alliance.AskHelp(D, k); Alliance.ApplyHelps(D); nextTick = 0; GameServices.Save.Save(); SoundFx.Play("power"); }
+                    GUI.enabled = true;
+                }
                 return;
             }
             if (L >= Progress.MaxLevel(k)) { GUI.Label(new Rect(x, y + 180, w, 40), "<color=#8be39d><b>En üst seviye</b></color>", mid); return; }

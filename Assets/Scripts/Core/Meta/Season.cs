@@ -139,6 +139,7 @@ namespace SuruSavasi.Core.Meta
             { "clear", (10, 200) }, { "stars3", (3, 30) }, { "boss", (5, 40) }, { "tower_floor", (3, 45) }, { "hunt_tier", (5, 20) },
             { "surv_wave", (1, 30) }, { "talent", (3, 15) }, { "upgrade", (8, 48) }, { "train", (3, 24) }, { "gather", (1, 10) },
             { "gates", (1, 10) }, { "turret", (1, 5) }, { "dice6", (1, 5) }, { "quest", (15, 60) }, { "quest_bonus", (20, 20) }, { "login", (15, 15) },
+            { "donate", (4, 20) }, { "ally_help", (1, 8) }, { "ally_boss", (8, 16) },
         };
 
         static int KeyGet(SaveData d, string k) { int i = d.seasonKeyKeys.IndexOf(k); return i < 0 ? 0 : d.seasonKeyVals[i]; }

@@ -91,6 +91,51 @@ static class P
         // Haftalık görevler sezon ve hafta içinde sabit
         var a = Season.WeeklyDef(e, 0).key; Check(a == Season.WeeklyDef(e, 0).key, "haftalık görev sabit");
 
+        // ---------------- İttifak ----------------
+        var al = new SaveData { unlocked = 12 }; SaveSystem.Migrate(al); al.allySeed = 77;
+        var t0 = new DateTime(2026, 11, 23, 10, 0, 0); Alliance.Clock = () => t0;
+        Check(Alliance.Open(al) && !Alliance.Joined(al) && Alliance.AnyTodo(al), "ittifak açık, katılım bekliyor");
+        var sug = Alliance.Suggestions(al); Check(sug.Count == 3 && sug[0].id != sug[1].id, "3 öneri");
+        Alliance.Join(al, sug[0].id); Check(Alliance.Joined(al) && Alliance.MembersOf(al).Count == sug[0].members + 1, "katıldı, üye sayısı");
+        int lv0 = Alliance.Level(al);
+        for (int i = 0; i < 6; i++) { Check(Alliance.DonationsLeft(al) == 5 - i || i == 5, "bağış hakkı"); if (Alliance.DonationsLeft(al) > 0) Alliance.Donated(al, Alliance.Res.Gold); }
+        Check(Alliance.DonationsLeft(al) == 0 && al.allyCoins == 50, "günde 5 bağış: " + al.allyCoins);
+        t0 = t0.AddDays(10); Alliance.Tick(al);
+        Check(Alliance.Level(al) > lv0, "botlarla ittifak seviye atlar: " + lv0 + "→" + Alliance.Level(al));
+        Check(Alliance.DonationsLeft(al) == 5, "ertesi gün bağış yenilenir");
+        int hc = 0; foreach (var q in Alliance.OthersRequests(al)) hc += Alliance.HelpOthers(al, q.idx);
+        Check(hc == Alliance.HelpsOthersPerDay * Alliance.HelpCoins && Alliance.HelpsLeft(al) == 0, "başkalarına yardım");
+        // Patron: hafta başı düşük, hafta sonu yüksek
+        var mon = new DateTime(2026, 11, 30, 9, 0, 0); var sun = new DateTime(2026, 12, 6, 22, 0, 0);
+        Alliance.Clock = () => mon; Alliance.Tick(al); float pm = Alliance.BotsPct(al);
+        Alliance.Clock = () => sun; float ps = Alliance.BotsPct(al);
+        Check(pm < 10 && ps > 55 && ps < 99, $"botların patron payı: pzt %{pm:0}, paz %{ps:0}");
+        Alliance.Clock = () => mon;
+        float hit = Alliance.BossHit(al, 1f); Check(Math.Abs(hit - Alliance.BossRunPct) < .01f, "tam vuruş %5");
+        Check(Alliance.BossTriesLeft(al) == 2, "patron hakkı 2");
+        Alliance.Clock = () => sun;
+        Check(Alliance.MilestoneReady(al, 0) && Alliance.MilestoneReady(al, 1), "hafta sonunda %25 ve %50 sandıkları hazır");
+        var mr = Alliance.MilestoneReward(al, 0); Alliance.ClaimMilestone(al, 0);
+        Check(!Alliance.MilestoneReady(al, 0) && mr.gems == 10, "sandık bir kez, 10 elmas");
+        var nw = new DateTime(2026, 12, 8, 9, 0, 0); Alliance.Clock = () => nw; Alliance.Tick(al);
+        Check(al.allyBossMine == 0 && al.allyBossClaim == 0, "yeni hafta patronu sıfırlar");
+        // Mağaza
+        al.allyCoins = 500; int tok = al.speedTokens;
+        Check(Alliance.Buy(al, 0, (k, n) => { }, new Random(1)) != null && al.speedTokens == tok + 1, "mağazadan hızlandırıcı");
+        for (int i = 0; i < 5; i++) Alliance.Buy(al, 0, (k, n) => { }, new Random(1));
+        Check(Alliance.Bought(al, 0) == 3, "haftalık sınır 3");
+        // İnşaat yardımı
+        al.buildKind = (int)BuildingKind.Farm; al.buildFrom = 4; al.buildEnd = BaseLogic.Now + 2 * 3600 * 1000L;
+        float r0 = BaseLogic.Remaining(al, BuildingKind.Farm);
+        Check(Alliance.CanAskHelp(al, BuildingKind.Farm), "yardım istenebilir");
+        Alliance.AskHelp(al, BuildingKind.Farm); int g1 = Alliance.ApplyHelps(al);
+        float r1 = BaseLogic.Remaining(al, BuildingKind.Farm);
+        Check(g1 == 1 && r0 - r1 >= 60, $"ilk yardım hemen geldi: {r0 - r1:0} sn");
+        Check(!Alliance.CanAskHelp(al, BuildingKind.Farm), "aynı inşaat için ikinci kez istenmez");
+        al.allyReqAt -= 1000L * 60 * 10; int g2 = Alliance.ApplyHelps(al);
+        Check(al.allyReqGot == al.allyReqMax && g2 == al.allyReqMax - 1, "kalan yardımlar zamanla geldi");
+        Check(Alliance.Feed(al).Count > 0, "akış dolu");
+
         Console.WriteLine(fail == 0 ? "Sezon testleri: hepsi geçti" : $"Sezon testleri: {fail} hata");
         return fail == 0 ? 0 : 1;
     }

@@ -34,6 +34,14 @@ namespace SuruSavasi.Core
         public List<Meta.GemOp> gemOps = new List<Meta.GemOp>();
         public int gemSeq, gemServerBal = -1;
         public long gemSyncAt;
+        // İttifak (Meta.Alliance): şimdilik botlarla
+        public int allyId, allySeed, allyJoinDay, allyBotDay, allyXp, allyCoins, allyDonCount, allyHelpMask;
+        public string allyDonDay = "", allyHelpDay = "", allyBossTriesDay = "";
+        public int allyReqKind = -1, allyReqGot, allyReqMax;
+        public long allyReqAt, allyReqEnd;
+        public int allyBossWeek, allyBossMine, allyBossClaim, allyBossTries, allyShopWeek;
+        public int[] allyShopBuys = new int[4];
+        public List<string> allyMsgs = new List<string>();
         // Hafta sonu etkinliği (Kar Fırtınası)
         public string eventDay = "";
         public int eventTries, eventBest, eventWins;
@@ -176,6 +184,9 @@ namespace SuruSavasi.Core
             if (d.seasonTitles == null) d.seasonTitles = new List<string>();
             if (d.seasonDay == null) d.seasonDay = "";
             if (d.eventDay == null) d.eventDay = "";
+            if (d.allyMsgs == null) d.allyMsgs = new List<string>();
+            if (d.allyShopBuys == null || d.allyShopBuys.Length < 4) d.allyShopBuys = new int[4];
+            if (d.allyDonDay == null) d.allyDonDay = ""; if (d.allyHelpDay == null) d.allyHelpDay = ""; if (d.allyBossTriesDay == null) d.allyBossTriesDay = "";
             if (d.seasonKeyDay == null) d.seasonKeyDay = "";
         }
 

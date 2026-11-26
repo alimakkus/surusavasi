@@ -65,6 +65,16 @@ namespace SuruSavasi.Game
             var sat = DateTime.Today; while (sat.DayOfWeek != DayOfWeek.Saturday) sat = sat.AddDays(1);
             SnowEvent.Clock = () => sat.AddHours(14);
             f.Show(GameScreen.Modes); yield return Shot("08_modlar_firtina");
+            d.allySeed = 4242;
+            AllianceScreen.Open(f, 0); yield return Shot("10_ittifak_sec");
+            Alliance.Join(d, Alliance.Suggestions(d)[0].id); d.allyXp = 2600; d.allyCoins = 140;
+            Alliance.Donated(d, Alliance.Res.Gold); Alliance.Say(d, "Sen", "Merhaba herkese!");
+            AllianceScreen.Open(f, 0); yield return Shot("11_ittifak_akis");
+            AllianceScreen.Open(f, 1); yield return Shot("12_ittifak_bagis");
+            Alliance.BossHit(d, .7f); AllianceScreen.Open(f, 2); yield return Shot("13_ittifak_patron");
+            AllianceScreen.Open(f, 3); yield return Shot("14_ittifak_uyeler");
+            AllianceScreen.Open(f, 4); yield return Shot("15_ittifak_magaza");
+            f.Show(GameScreen.Base); yield return Shot("16_us_ittifak");
             // Not: Windows test sürümünde URP dünya çizimi çalışmıyor (serileştirme uyumsuzluğu), savaş görüntüsü alınmaz.
             Debug.Log("[AutoShot] bitti");
             Application.Quit();

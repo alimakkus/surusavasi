@@ -92,7 +92,8 @@ namespace SuruEconomy
             { "chapter_chest", 400 },
             { "achievement", 300 },
             { "season", 1200 },
-            { "event", 30 },           // Kar Fırtınası: zafer başına 5, günde 3 hak        // sezon bileti ödülleri (sezon başına da 1200 sınırı var)
+            { "event", 30 },
+            { "alliance", 100 },       // ittifak patronu sandıkları (haftada 75)           // Kar Fırtınası: zafer başına 5, günde 3 hak        // sezon bileti ödülleri (sezon başına da 1200 sınırı var)
             { "other", 50 },
         };
 
