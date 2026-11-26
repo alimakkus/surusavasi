@@ -33,6 +33,7 @@ namespace SuruSavasi.Game
             int pend = Core.Meta.GemLedger.Pending(D);
             string gem = !CloudEconomy.Supported ? "<color=#7d8696>sunucu doğrulaması kapalı</color>"
                 : EconomySync.Verified ? "<color=#8be39d>sunucuda doğrulandı</color>"
+                : D.gemServerBal < 0 && pend == 0 ? "<color=#7d8696>sunucuya henüz bağlanmadı</color>"
                 : !string.IsNullOrEmpty(EconomySync.Status) ? $"<color=#ffb02e>{pend} işlem bekliyor</color> <size=11>({EconomySync.Status})</size>"
                 : $"<color=#ffd23f>{pend} işlem bekliyor</color>";
             GUI.Label(new Rect(r.x + 16, r.y + 10, r.width - 32, 152),

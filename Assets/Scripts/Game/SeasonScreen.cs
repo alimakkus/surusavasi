@@ -186,7 +186,7 @@ namespace SuruSavasi.Game
                 float y = Season.Tiers * rowH; var row = new Rect(0, y, rw, rowH - 6);
                 GUI.Box(row, "", UiSkin.CardDark);
                 int earned = Season.BonusEarned(d), left = earned - d.seasonBonus;
-                GUI.Label(new Rect(14, y + 4, rw - 170, rowH - 14), $"<b>Bonus sandıklar</b>\n<size=12>30. kademeden sonra her {Season.BonusPts} SP bir sandık · açılan {d.seasonBonus}</size>", new GUIStyle(UiSkin.Label) { richText = true, wordWrap = true, fontSize = 15 });
+                GUI.Label(new Rect(14, y + 4, rw - 170, rowH - 14), $"<b>Bonus sandıklar</b>\n<size=12>Her {Season.BonusPts} SP bir sandık · açılan {d.seasonBonus}</size>", new GUIStyle(UiSkin.Label) { richText = true, wordWrap = true, fontSize = 15 });
                 GUI.enabled = left > 0;
                 if (GUI.Button(new Rect(rw - 150, y + 10, 136, rowH - 26), left > 0 ? $"AÇ ({left})" : "Bekliyor", left > 0 ? UiSkin.ButtonGold : UiSkin.Button))
                 { var s = Season.ClaimBonus(d, Grant); if (s != null) { GameServices.Save.Save(); SoundFx.Play("chest"); Pop(s); } }

@@ -43,7 +43,7 @@ namespace SuruSavasi.Game
             while (!GameServices.Ready || GameServices.Save?.Data == null) yield return null;
             var d = GameServices.Save.Data;
             d.unlocked = 14; for (int i = 0; i < 13; i++) d.stars[i] = i % 3 + 1;
-            d.diamonds = 420; d.gold = 5200; d.iron = 2600; d.food = 3100;
+            d.diamonds = 420; d.founderBought = true; d.gold = 5200; d.iron = 2600; d.food = 3100;
             Daily.Ensure(d).last = Daily.Today;
             Tutorial.SkipAll();
             Season.Ensure(d);
