@@ -239,10 +239,10 @@ namespace SuruSavasi.Game
             GUI.Box(hr, "", UiSkin.CardDark);
             GUI.Label(new Rect(hr.x + 14, hr.y + 8, hr.width - 28, hr.height - 16),
                 "<b>Sezon puanı (SP) nasıl kazanılır?</b>\n" +
-                "<size=13>• Savaş kazan: 15 SP  ·  3 yıldız: +5\n" +
-                "• Patron/elit yen: 8  ·  Bina geliştir: 12\n" +
-                "• Günlük görev: 20  ·  Tüm görevler bonusu: 30  ·  Giriş: 20\n" +
-                "• Kule katı: 4  ·  Av kademesi: 8  ·  Hayatta kalma dalgası: 2\n" +
+                "<size=13>• Savaş kazan: 10 SP  ·  3 yıldız: +3\n" +
+                "• Patron/elit yen: 5  ·  Bina geliştir: 8  ·  Asker eğit: 3\n" +
+                "• Günlük görev: 15  ·  Tüm görevler bonusu: 20  ·  Giriş: 15\n" +
+                "• Kule katı: 3  ·  Av kademesi: 5  ·  Hayatta kalma dalgası: 1\n" +
                 $"• Haftalık sezon görevi: {Season.WeeklyPts} (günlük sınıra sayılmaz)\n" +
                 $"Günde en çok {Season.DailyCap} SP · her {Season.TierPts} SP bir kademe</size>",
                 new GUIStyle(UiSkin.Small) { richText = true, wordWrap = true });

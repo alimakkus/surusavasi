@@ -42,7 +42,7 @@ static class P
         // Ödüller: tüm kademeleri al
         var d = new SaveData { unlocked = 40 }; SaveSystem.Migrate(d);
         var now = new DateTime(2026, 12, 1, 10, 0, 0, DateTimeKind.Utc); Season.Clock = () => now;
-        Season.Ensure(d); d.seasonPts = 3000; Season.UnlockPremium(d);
+        Season.Ensure(d); d.seasonPts = Season.Tiers * Season.TierPts; Season.UnlockPremium(d);
         int gems = 0, gold = 0; var rnd = new Random(1);
         Action<string, int> g = (k, n) => { if (k == "gems") gems += n; if (k == "gold") gold += n; };
         int claimed = 0;

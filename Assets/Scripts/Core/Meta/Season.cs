@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace SuruSavasi.Core.Meta
 {
-    /// <summary>Sezon bileti: 28 günlük sezonlar (pazartesi başlar). Oynadıkça sezon puanı (SP) toplanır; her 100 SP bir kademe.
+    /// <summary>Sezon bileti: 28 günlük sezonlar (pazartesi başlar). Oynadıkça sezon puanı (SP) toplanır; her 200 SP bir kademe.
     /// 30 kademede iki ödül yolu: ücretsiz ve Sezon Bileti (ücretli). Her hafta 3 sezon görevi büyük SP verir.
-    /// 30. kademeden sonra her 200 SP bir bonus sandık.</summary>
+    /// 30. kademeden sonra her 300 SP bir bonus sandık.</summary>
     public static class Season
     {
         public const int OpenAt = 4;   // 4. bölümden sonra açılır (yeni oyuncuyu boğmasın)
         public static bool Open(SaveData d) => d.unlocked >= OpenAt;
-        public const int Days = 28, Tiers = 30, TierPts = 100, DailyCap = 350, WeeklyPts = 150, BonusPts = 200, SkipGems = 60;
+        public const int Days = 28, Tiers = 30, TierPts = 200, DailyCap = 220, WeeklyPts = 150, BonusPts = 300, SkipGems = 60;
         static readonly DateTime Epoch = new DateTime(2026, 11, 23, 0, 0, 0, DateTimeKind.Utc); // 1. sezon: 23 Kasım 2026 pazartesi
 
         public static readonly string[] Names = { "Kış Uyanışı", "Buz Sürüsü", "Bahar Kaçışı", "Kızıl Yaz", "Kum Fırtınası", "Hasat Gecesi", "Sis Ayı", "Demir Kış" };
@@ -136,9 +136,9 @@ namespace SuruSavasi.Core.Meta
         /// <summary>Olay başına SP ve günlük olay sınırı (Daily.Add'den gelir).</summary>
         static readonly Dictionary<string, (int pts, int cap)> EventPts = new Dictionary<string, (int, int)>
         {
-            { "clear", (15, 300) }, { "stars3", (5, 60) }, { "boss", (8, 80) }, { "tower_floor", (4, 80) }, { "hunt_tier", (8, 40) },
-            { "surv_wave", (2, 60) }, { "talent", (5, 25) }, { "upgrade", (12, 72) }, { "train", (4, 40) }, { "gather", (1, 20) },
-            { "gates", (1, 20) }, { "turret", (1, 10) }, { "dice6", (2, 10) }, { "quest", (20, 80) }, { "quest_bonus", (30, 30) }, { "login", (20, 20) },
+            { "clear", (10, 200) }, { "stars3", (3, 30) }, { "boss", (5, 40) }, { "tower_floor", (3, 45) }, { "hunt_tier", (5, 20) },
+            { "surv_wave", (1, 30) }, { "talent", (3, 15) }, { "upgrade", (8, 48) }, { "train", (3, 24) }, { "gather", (1, 10) },
+            { "gates", (1, 10) }, { "turret", (1, 5) }, { "dice6", (1, 5) }, { "quest", (15, 60) }, { "quest_bonus", (20, 20) }, { "login", (15, 15) },
         };
 
         static int KeyGet(SaveData d, string k) { int i = d.seasonKeyKeys.IndexOf(k); return i < 0 ? 0 : d.seasonKeyVals[i]; }
@@ -166,7 +166,7 @@ namespace SuruSavasi.Core.Meta
             return give;
         }
 
-        /// <summary>SP ekler; daily=true ise günlük toplam sınırına (350) tabi.</summary>
+        /// <summary>SP ekler; daily=true ise günlük toplam sınırına (220) tabi.</summary>
         public static int AddPts(SaveData d, int pts, bool daily)
         {
             Ensure(d);
@@ -291,7 +291,7 @@ namespace SuruSavasi.Core.Meta
             return Give(d, Premium(t), grant, rnd);
         }
 
-        /// <summary>Bonus sandık (30. kademeden sonra her 200 SP): kaynak + bilette 10 elmas.</summary>
+        /// <summary>Bonus sandık (30. kademeden sonra her 300 SP): kaynak + bilette 10 elmas.</summary>
         public static string ClaimBonus(SaveData d, Action<string, int> grant)
         {
             if (BonusEarned(d) <= d.seasonBonus) return null;

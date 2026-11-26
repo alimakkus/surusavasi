@@ -119,7 +119,7 @@ namespace SuruSavasi.Game
             { GameScreen.Modes, new Intro("Oyun Modları", "<b>Kule Tırmanışı:</b> tek can, her kattan sonra güçlendirme seç.\n<b>Patron Avı:</b> 75 saniyede en çok hasarı ver.\n<b>Hayatta Kalma:</b> dalgalara dayan, aralarda mağazadan güçlen.\n\nHepsi lig puanı ve kahraman parçası verir.") },
             { GameScreen.League, new Intro("Haftalık Lig", "30 kişilik grupta yarışırsın. Hafta sonunda <b>ilk 5 yükselir</b>, son 5 düşer.\n\nPuanlar kampanyadan ve bütün modlardan gelir. Sıralamana göre sandık kazanırsın.") },
             { GameScreen.Achievements, new Intro("Başarımlar", "Her başarımın Bronz, Gümüş ve Altın kademesi var. Kademe dolunca <b>elmasını al</b>.\n\nAltın kademeyi aldığın başarımın adını <b>unvan</b> yapabilirsin; ligde adının yanında görünür.") },
-            { GameScreen.Season, new Intro("Sezon Bileti", "Her sezon <b>4 hafta</b> sürer. Savaştıkça, bina geliştirdikçe ve görev bitirdikçe <b>sezon puanı (SP)</b> toplarsın; her 100 SP bir kademe.\n\n30 kademede iki ödül yolu var: <b>ücretsiz</b> ve <b>Sezon Bileti</b>. Her hafta 3 sezon görevi büyük SP verir.") },
+            { GameScreen.Season, new Intro("Sezon Bileti", "Her sezon <b>4 hafta</b> sürer. Savaştıkça, bina geliştirdikçe ve görev bitirdikçe <b>sezon puanı (SP)</b> toplarsın; her 200 SP bir kademe.\n\n30 kademede iki ödül yolu var: <b>ücretsiz</b> ve <b>Sezon Bileti</b>. Her hafta 3 sezon görevi büyük SP verir.") },
             { GameScreen.Daily, new Intro("Günlük", "Her gün <b>giriş ödülü</b> al, 4 görevi tamamla, hepsini bitirince bonus kazan.\n\nGörevlerin ikisi oyun modlarından gelir: her gün farklı bir tarz dene.") },
         };
 
